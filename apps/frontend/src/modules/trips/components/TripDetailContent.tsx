@@ -102,6 +102,9 @@ export function TripDetailContent() {
   const [isLeaving, setIsLeaving] = useState(false);
   const [localSelected, setLocalSelected] = useState<Place[] | null>(null);
 
+  const shareUrl = trip?.publicSlug ? `${window.location.origin}/share/${trip.publicSlug}` : "";
+  const { hasCopied, onCopy } = useClipboard(shareUrl);
+
   if (isTripLoading) return <LoadingState />;
   if (!trip) return <EmptyState title="Trip not found" />;
 
@@ -120,9 +123,6 @@ export function TripDetailContent() {
     const next = ids.map((placeId) => catalog.get(placeId)).filter((p): p is Place => Boolean(p));
     setLocalSelected(next);
   };
-
-  const shareUrl = trip.publicSlug ? `${window.location.origin}/share/${trip.publicSlug}` : "";
-  const { hasCopied, onCopy } = useClipboard(shareUrl);
 
   const hasDiscoveryPool =
     trip.legs.length > 0
