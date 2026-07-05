@@ -4,7 +4,7 @@ Use this before finalizing any response to ensure token efficiency and quality.
 
 ## Context & Understanding
 
-- [ ] Identified correct workspace (web/ or mobile/)
+- [ ] Identified correct workspace (apps/frontend/, apps/backend/, or apps/mobile-app/)
 - [ ] Checked relevant configuration files first (package.json/pubspec.yaml/tsconfig.json)
 - [ ] Did NOT explore unnecessarily (searched before reading files)
 - [ ] Consulted `/memories/` to avoid re-exploring past work

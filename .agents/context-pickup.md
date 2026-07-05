@@ -4,55 +4,67 @@ Help agents understand workspace state quickly without excessive file reading.
 
 ## Pattern Recognition
 
-### Web Project Indicators
+### Frontend Project Indicators
 
 ```
-- web/package.json exists → Next.js 15 project
-- web/tsconfig.json exists → TypeScript strict mode
-- web/eslint.config.mjs exists → ESLint configured
-- web/src/app/ exists → App Router pattern
-- web/AGENTS.md exists → Project-specific rules apply
+- apps/frontend/package.json exists → React 19 + Vite project
+- apps/frontend/tsconfig.app.json exists → TypeScript strict mode
+- apps/frontend/vite.config.ts exists → Vite build config
+- apps/frontend/src/App.tsx exists → react-router-dom routing
+```
+
+### Backend Project Indicators
+
+```
+- apps/backend/package.json exists → Express + Mongoose project
+- apps/backend/tsconfig.json exists → TypeScript strict mode, ESM
+- apps/backend/src/index.ts exists → Express app entrypoint
 ```
 
 ### Mobile Project Indicators
 
 ```
-- mobile/pubspec.yaml exists → Flutter/Dart project
-- mobile/android/ + mobile/ios/ → Cross-platform native targets
-- mobile/analysis_options.yaml exists → Dart linter configured
-- mobile/lib/main.dart exists → Entry point structure known
+- apps/mobile-app/pubspec.yaml exists → Flutter/Dart project
+- apps/mobile-app/android/ + apps/mobile-app/ios/ → Cross-platform native targets
+- apps/mobile-app/analysis_options.yaml exists → Dart linter configured
+- apps/mobile-app/lib/main.dart exists → Entry point structure known
 ```
 
 ## Context Assumptions
 
 **Always safe to assume:**
 
-- Both projects are independent (don't share code directly)
-- Web uses TypeScript, Dart uses static typing
-- Monorepo root is decision point (web/ vs mobile/ split)
+- All three apps are independent (don't share code directly)
+- Frontend and backend use TypeScript, mobile uses Dart static typing
+- Monorepo root is decision point (apps/frontend/ vs apps/backend/ vs apps/mobile-app/ split)
 - Configuration files are source of truth (pubspec.yaml, package.json, tsconfig.json)
 
 **Never assume:**
 
 - Dependency versions match documentation
-- Patterns from web apply to mobile or vice versa
+- Patterns from frontend apply to backend or mobile (or vice versa)
 - Build/run commands are standard (check package.json/pubspec.yaml first)
 
 ## Fast File Reads Strategy
 
-### For Web Tasks
+### For Frontend Tasks
 
-1. Read `web/package.json` (dependencies, scripts)
+1. Read `apps/frontend/package.json` (dependencies, scripts)
 2. Read target file directly (don't explore everything)
-3. If TypeScript errors, check `web/tsconfig.json`
-4. If style issues, check `web/eslint.config.mjs`
+3. If TypeScript errors, check `apps/frontend/tsconfig.app.json`
+
+### For Backend Tasks
+
+1. Read `apps/backend/package.json` (dependencies, scripts)
+2. Read target file directly (don't explore everything)
+3. If TypeScript errors, check `apps/backend/tsconfig.json`
 
 ### For Mobile Tasks
 
-1. Read `mobile/pubspec.yaml` (dependencies, versions)
-2. Read target file directly in `mobile/lib/`
-3. If lint errors, check `mobile/analysis_options.yaml`
-4. If build issues, check `mobile/android/build.gradle.kts` or `mobile/ios/`
+1. Read `apps/mobile-app/pubspec.yaml` (dependencies, versions)
+2. Read target file directly in `apps/mobile-app/lib/`
+3. If lint errors, check `apps/mobile-app/analysis_options.yaml`
+4. If build issues, check `apps/mobile-app/android/build.gradle.kts` or `apps/mobile-app/ios/`
 
 ### For General Questions
 

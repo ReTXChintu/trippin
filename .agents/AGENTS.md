@@ -13,13 +13,15 @@ This folder contains comprehensive guidelines for all agents working in this mon
 
 ### 1. Workspace Structure
 
-- **Web**: `web/` - Next.js 15 frontend (TypeScript, React 19)
-- **Mobile**: `mobile/` - Flutter/Dart cross-platform app
+- **Frontend**: `apps/frontend/` - React 19 + Vite + Chakra UI (TypeScript)
+- **Backend**: `apps/backend/` - Node + Express + Mongoose REST API (`/api/v1`), used by both frontend and mobile
+- **Mobile**: `apps/mobile-app/` - Flutter/Dart cross-platform app
 - **Shared**: Common patterns, guidelines in files/ and this .agents/ folder
 
 ### 2. Project Types
 
-- **Web**: TypeScript, Next.js, React, ESLint, Prettier
+- **Frontend**: TypeScript, React, Vite, Chakra UI, React Query
+- **Backend**: TypeScript, Express, Mongoose, JWT auth
 - **Mobile**: Dart, Flutter, Gradle, Xcode
 - **Each has distinct conventions** — do not mix patterns
 
@@ -34,7 +36,7 @@ This folder contains comprehensive guidelines for all agents working in this mon
 
 **For any task:**
 
-1. Identify workspace (web/ or mobile/)
+1. Identify workspace (apps/frontend/, apps/backend/, or apps/mobile-app/)
 2. Read relevant project config (`pubspec.yaml`, `package.json`, `tsconfig.json`)
 3. Gather minimum context needed
 4. Execute with zero explanation overhead
@@ -55,7 +57,8 @@ This folder contains comprehensive guidelines for all agents working in this mon
 ## Token Limits
 
 - Session memory: Assume 200K token budget
-- Web project: ~50-70K tokens when loaded fully
+- Frontend project: ~50-70K tokens when loaded fully
+- Backend project: ~30-50K tokens when loaded fully
 - Mobile project: ~60-80K tokens when loaded fully
 - Reserve 30K for reasoning and response
 

@@ -2,62 +2,98 @@
 
 Quick lookup for project-specific patterns, tools, and commands.
 
-## Web Project (`web/`)
+## Frontend Project (`apps/frontend/`)
 
 ### Technology Stack
 
-- Framework: Next.js 15 (App Router)
+- Framework: React 19 + Vite
 - Language: TypeScript (strict mode)
-- UI: React 19
-- Styling: [check web/src for convention]
-- Package Manager: npm/yarn
+- UI: Chakra UI v2
+- Data fetching: axios + @tanstack/react-query
+- Routing: react-router-dom
+- Package Manager: npm
 
 ### Configuration Files
 
-- `web/package.json` - Dependencies, scripts
-- `web/tsconfig.json` - TypeScript configuration
-- `web/eslint.config.mjs` - ESLint rules
-- `web/next.config.ts` - Next.js config
-- `web/README.md` - Project docs
+- `apps/frontend/package.json` - Dependencies, scripts
+- `apps/frontend/tsconfig.app.json` - TypeScript configuration (`@/*` path alias)
+- `apps/frontend/vite.config.ts` - Vite config
+- `apps/frontend/.env.example` - Env vars (`VITE_API_BASE_URL`, etc.)
 
 ### Project Structure
 
 ```
-web/src/
-  app/          → Next.js routes
-  components/   → React components
-  modules/      → Feature modules
-  lib/          → Utilities
-  types/        → TypeScript types
-  services/     → API/external services
-  store/        → State management (if used)
+apps/frontend/src/
+  App.tsx        → Router setup
+  pages/         → Route-level page components
+  layouts/       → AuthLayout, DashboardLayout
+  routes/        → RequireAuth, RedirectIfAuthed guards
+  components/    → Shared UI (layout/, trips/, ui/)
+  modules/       → Feature modules (api/, hooks/, components/, types/)
+  store/         → Zustand state (authStore, tripStore, itineraryStore)
+  lib/           → axios instance, theme, misc utilities
 ```
 
 ### Common Commands
 
-- `npm run dev` - Development server
-- `npm run build` - Production build
-- `npm run lint` - Run ESLint
-- `npm test` - Run tests (if configured)
+- `npm run dev -w apps/frontend` - Development server (port 5173)
+- `npm run build -w apps/frontend` - Production build
+- `npm run lint -w apps/frontend` - oxlint
 
 ### Conventions
 
 - ✅ Use TypeScript for all new files
 - ✅ Components in PascalCase
-- ✅ Utilities in camelCase
-- ✅ Follow ESLint config rules
-- ✅ Use App Router patterns (not Pages Router)
-
-### Key Deprecations (Next.js 15)
-
-- Pages Router (use App Router)
-- API Routes structure (new format)
-- Image component changes
-- Check `node_modules/next/dist/docs/` for details
+- ✅ Data fetching via React Query hooks in `modules/*/hooks/`, never raw fetch in components
+- ✅ Auth state lives in `store/authStore.ts`; auth guards are `<RequireAuth />` / `<RedirectIfAuthed />`
 
 ---
 
-## Mobile Project (`mobile/`)
+## Backend Project (`apps/backend/`)
+
+### Technology Stack
+
+- Framework: Express
+- Language: TypeScript (strict mode, ESM)
+- DB: MongoDB via Mongoose
+- Auth: JWT (jose) — Bearer header (mobile) or httpOnly cookie (web), same token
+- Package Manager: npm
+
+### Configuration Files
+
+- `apps/backend/package.json` - Dependencies, scripts
+- `apps/backend/tsconfig.json` - TypeScript configuration (`@/*` path alias)
+- `apps/backend/.env.example` - Env vars (`MONGODB_URI`, `JWT_SECRET`, `FRONTEND_URL`, etc.)
+
+### Project Structure
+
+```
+apps/backend/src/
+  index.ts        → Express app bootstrap, route mounting
+  middleware/      → auth.middleware.ts (Bearer or cookie JWT check)
+  models/          → Mongoose schemas
+  repositories/    → Data-access layer wrapping models
+  services/        → Cross-cutting services (email, nlp)
+  lib/             → jwt.ts, mongodb.ts, response.ts, ai.ts, places.ts
+  modules/         → Feature modules (controllers/, routes/, services/, validators/)
+```
+
+### Common Commands
+
+- `npm run dev -w apps/backend` - Dev server via tsx watch (port 4000)
+- `npm run build -w apps/backend` - tsc build to dist/
+- `npm run lint -w apps/backend` - ESLint
+
+### Conventions
+
+- ✅ Every route: `router.ts` (wires paths to controller) → `controller.ts` (req/res, calls service) → `service.ts` (business logic, pure of req/res)
+- ✅ Response shape is always `{ success: true, data }` or `{ success: false, error }` — use helpers in `lib/response.ts` (`sendOk`, `sendError`, `sendResult`)
+- ✅ Auth: `req.user` is set by `authMiddleware`; never re-derive the user id another way
+- ✅ Port 4000 must not change — the mobile app's `API_BASE_URL` is hardcoded to it
+
+---
+
+## Mobile Project (`apps/mobile-app/`)
 
 ### Technology Stack
 
@@ -68,27 +104,22 @@ web/src/
 
 ### Configuration Files
 
-- `mobile/pubspec.yaml` - Dependencies, project config
-- `mobile/analysis_options.yaml` - Dart analyzer rules
-- `mobile/android/build.gradle.kts` - Android build config
-- `mobile/ios/Runner.xcodeproj` - iOS project
-- `mobile/README.md` - Project docs
+- `apps/mobile-app/pubspec.yaml` - Dependencies, project config
+- `apps/mobile-app/analysis_options.yaml` - Dart analyzer rules
+- `apps/mobile-app/android/build.gradle.kts` - Android build config
+- `apps/mobile-app/ios/Runner.xcodeproj` - iOS project
+- `apps/mobile-app/README.md` - Project docs
 
 ### Project Structure
 
 ```
-mobile/lib/
+apps/mobile-app/lib/
   main.dart       → Entry point
-  core/           → Core business logic
+  core/           → Core business logic (api client, config)
   features/       → Feature modules
-  shared/         → Shared code
 
-mobile/android/  → Android native code
-mobile/ios/      → iOS native code
-mobile/web/      → Web compilation
-mobile/linux/    → Linux native
-mobile/macos/    → macOS native
-mobile/windows/  → Windows native
+apps/mobile-app/android/  → Android native code
+apps/mobile-app/ios/      → iOS native code
 ```
 
 ### Common Commands
@@ -106,26 +137,23 @@ mobile/windows/  → Windows native
 - ✅ Classes in PascalCase
 - ✅ Functions/variables in camelCase
 - ✅ Follow analysis_options.yaml lint rules
-- ✅ Use meaningful error handling (not silent failures)
+- ✅ Talks only to `apps/backend`'s `/api/v1` REST API — never assume shared code with frontend
 
 ### Platform-Specific Notes
 
 - Android: Gradle build system, API levels in android/
 - iOS: CocoaPods for dependencies, Xcode project config
-- Web: Flutter web compilation (check flutter/web/)
-- Linux/macOS/Windows: Native build tools required
+- Windows: cross-drive builds (project vs pub cache) can break Kotlin incremental compilation — `kotlin.incremental=false` is already set in `android/gradle.properties`
 
 ---
 
-## Build & Deployment Scripts
+## Build & Release Scripts
 
-Located in: `mobile/scripts/` and `web/scripts/`
+- Root `scripts/sync-all-versions.js` - Propagates a version bump (via root `release-it`) to all three apps' `package.json` + mobile's `pubspec.yaml`
+- `apps/mobile-app/scripts/sync-pubspec-version.js` - Bumps pubspec.yaml's build number to match `package.json`'s version
+- `apps/mobile-app/scripts/copy-apk.js` - Copies the built APK into `apps/mobile-app/dist/` after release
 
-- `release.js` - Prepare release versions
-- `sync-pubspec-version.js` - Sync version numbers
-- `copy-apk.js` - Copy APK after build (Android)
-
-Check script headers for usage instructions.
+Versioning is controlled from the **root** only (`npm run release:patch|minor|major` from repo root) — do not run release-it from inside an individual app.
 
 ---
 
@@ -140,62 +168,37 @@ Located in: `files/`
 
 ## When to Check Specific Files
 
-| Question              | Check                                                     |
-| --------------------- | --------------------------------------------------------- |
-| Dependency available? | pubspec.yaml (mobile) or package.json (web)               |
-| How to run project?   | README.md in project root                                 |
-| Build failing?        | build.gradle.kts (android) or specific platform dir       |
-| Lint errors?          | analysis_options.yaml (mobile) or eslint.config.mjs (web) |
-| TypeScript errors?    | tsconfig.json (web only)                                  |
-| Version info?         | package.json/pubspec.yaml first line                      |
-| Branding rules?       | files/brand_guidelines.md                                 |
-
----
-
-## Fast Command Reference
-
-### Web (Next.js)
-
-```bash
-npm install          # Install dependencies
-npm run dev          # Start dev server (localhost:3000)
-npm run build        # Production build
-npm run lint         # Check code quality
-npm test             # Run tests
-```
-
-### Mobile (Flutter)
-
-```bash
-flutter pub get      # Get dependencies
-flutter run          # Run on connected device/emulator
-flutter run -d web   # Run web version
-flutter analyze      # Lint check
-flutter test         # Run tests
-flutter build apk    # Build Android APK
-flutter build ios    # Build iOS app
-```
+| Question              | Check                                                                 |
+| ---------------------- | ---------------------------------------------------------------------- |
+| Dependency available?  | pubspec.yaml (mobile) or package.json (frontend/backend)             |
+| How to run project?    | Root README.md, or README.md in `apps/mobile-app/`                    |
+| Build failing?         | build.gradle.kts (android) or specific platform dir                   |
+| Lint errors?           | analysis_options.yaml (mobile) or eslint config (frontend/backend)    |
+| TypeScript errors?     | tsconfig.json / tsconfig.app.json                                      |
+| Version info?         | root package.json (all 3 apps share this version)                     |
+| Branding rules?        | files/brand_guidelines.md                                             |
 
 ---
 
 ## Decision Trees
 
-### Should I read web/X.ts or mobile/lib/X.dart?
+### Should I read apps/frontend/X.tsx, apps/backend/X.ts, or apps/mobile-app/lib/X.dart?
 
 → Check the file path in error/request
 → If ambiguous, check imports/context from user
 
 ### Is this a TypeScript or Dart question?
 
-→ TypeScript → web project
+→ TypeScript → frontend or backend project
 → Dart → mobile project
 → Both → treat separately, don't mix patterns
 
-### When should I use web code style vs mobile?
+### When should I use frontend, backend, or mobile code style?
 
-→ Working in web/ → use web conventions
-→ Working in mobile/ → use mobile conventions
-→ Never use patterns across projects unless explicitly building cross-project feature
+→ Working in apps/frontend/ → use frontend conventions
+→ Working in apps/backend/ → use backend conventions
+→ Working in apps/mobile-app/ → use mobile conventions
+→ Never use patterns across projects unless explicitly building a cross-project feature
 
 ---
 

@@ -17,7 +17,7 @@ This folder contains comprehensive guidelines to optimize how agents work in thi
 **During implementation:**
 
 - [what-to-avoid.md](what-to-avoid.md) — Common token waste patterns
-- [project-conventions.md](project-conventions.md) — Web vs Mobile differences
+- [project-conventions.md](project-conventions.md) — Frontend vs Backend vs Mobile differences
 - [pre-response-checklist.md](pre-response-checklist.md) — Verify before sending
 
 ## File Descriptions
@@ -96,7 +96,7 @@ This folder contains comprehensive guidelines to optimize how agents work in thi
 These guidelines apply to:
 
 - ✅ All agents working on this monorepo
-- ✅ Both web/ and mobile/ projects
+- ✅ apps/frontend/, apps/backend/, and apps/mobile-app/ projects
 - ✅ Any implementation or investigation task
 - ✅ Every response generated
 
