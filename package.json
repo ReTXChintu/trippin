@@ -1,0 +1,25 @@
+{
+  "name": "itinerary-planner",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "apps/frontend",
+    "apps/backend"
+  ],
+  "scripts": {
+    "dev": "concurrently -n backend,frontend -c blue,green \"npm run dev -w apps/backend\" \"npm run dev -w apps/frontend\"",
+    "dev:backend": "npm run dev -w apps/backend",
+    "dev:frontend": "npm run dev -w apps/frontend",
+    "build": "npm run build -w apps/backend && npm run build -w apps/frontend",
+    "release": "release-it",
+    "release:patch": "release-it patch",
+    "release:minor": "release-it minor",
+    "release:major": "release-it major",
+    "release:dry": "release-it --dry-run"
+  },
+  "devDependencies": {
+    "@release-it/conventional-changelog": "^11.0.0",
+    "concurrently": "^9.1.0",
+    "release-it": "^18.1.2"
+  }
+}

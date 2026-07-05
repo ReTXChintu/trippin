@@ -1,0 +1,56 @@
+import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { AppProviders } from "@/providers/AppProviders";
+import { RequireAuth } from "@/routes/RequireAuth";
+import { RedirectIfAuthed } from "@/routes/RedirectIfAuthed";
+import { AuthLayout } from "@/layouts/AuthLayout";
+import { DashboardLayout } from "@/layouts/DashboardLayout";
+import { HomePage } from "@/pages/HomePage";
+import { LoginPage } from "@/pages/LoginPage";
+import { RegisterPage } from "@/pages/RegisterPage";
+import { ForgotPasswordPage } from "@/pages/ForgotPasswordPage";
+import { ResetPasswordPage } from "@/pages/ResetPasswordPage";
+import { DashboardPage } from "@/pages/DashboardPage";
+import { ProfilePage } from "@/pages/ProfilePage";
+import { TripsPage } from "@/pages/TripsPage";
+import { NewTripPage } from "@/pages/NewTripPage";
+import { TripDetailPage } from "@/pages/TripDetailPage";
+import { TripEditPage } from "@/pages/TripEditPage";
+import { ItineraryPage } from "@/pages/ItineraryPage";
+import { SharePage } from "@/pages/SharePage";
+
+function App() {
+  return (
+    <AppProviders>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+
+          <Route element={<RedirectIfAuthed />}>
+            <Route element={<AuthLayout />}>
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/register" element={<RegisterPage />} />
+              <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+              <Route path="/reset-password" element={<ResetPasswordPage />} />
+            </Route>
+          </Route>
+
+          <Route element={<RequireAuth />}>
+            <Route element={<DashboardLayout />}>
+              <Route path="/dashboard" element={<DashboardPage />} />
+              <Route path="/profile" element={<ProfilePage />} />
+              <Route path="/trips" element={<TripsPage />} />
+              <Route path="/trips/new" element={<NewTripPage />} />
+              <Route path="/trips/:id" element={<TripDetailPage />} />
+              <Route path="/trips/:id/edit" element={<TripEditPage />} />
+              <Route path="/trips/:id/itinerary" element={<ItineraryPage />} />
+            </Route>
+          </Route>
+
+          <Route path="/share/:slug" element={<SharePage />} />
+        </Routes>
+      </BrowserRouter>
+    </AppProviders>
+  );
+}
+
+export default App;

@@ -1,0 +1,130 @@
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import * as tripsApi from "@/modules/trips/api/trips.api";
+import type { TripStatus } from "@/types";
+
+export function useTripsQuery(status?: TripStatus) {
+  return useQuery({
+    queryKey: ["trips", status ?? "all"],
+    queryFn: () => tripsApi.listTrips(status),
+  });
+}
+
+export function useTripQuery(id: string) {
+  return useQuery({
+    queryKey: ["trips", id],
+    queryFn: () => tripsApi.getTrip(id),
+    enabled: !!id,
+  });
+}
+
+export function useDashboardQuery() {
+  return useQuery({
+    queryKey: ["dashboard"],
+    queryFn: tripsApi.getTripStats,
+  });
+}
+
+function useInvalidateTrips() {
+  const queryClient = useQueryClient();
+  return (tripId?: string) => {
+    queryClient.invalidateQueries({ queryKey: ["trips"] });
+    queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+    if (tripId) queryClient.invalidateQueries({ queryKey: ["trips", tripId] });
+  };
+}
+
+export function useCreateTrip() {
+  const invalidate = useInvalidateTrips();
+  return useMutation({
+    mutationFn: (body: Record<string, unknown>) => tripsApi.createTrip(body),
+    onSuccess: () => invalidate(),
+  });
+}
+
+export function useUpdateTrip(tripId: string) {
+  const invalidate = useInvalidateTrips();
+  return useMutation({
+    mutationFn: (body: Record<string, unknown>) => tripsApi.updateTrip(tripId, body),
+    onSuccess: () => invalidate(tripId),
+  });
+}
+
+export function useDeleteTrip() {
+  const invalidate = useInvalidateTrips();
+  return useMutation({
+    mutationFn: (tripId: string) => tripsApi.deleteTrip(tripId),
+    onSuccess: () => invalidate(),
+  });
+}
+
+export function useArchiveTrip() {
+  const invalidate = useInvalidateTrips();
+  return useMutation({
+    mutationFn: (tripId: string) => tripsApi.archiveTrip(tripId),
+    onSuccess: (_data, tripId) => invalidate(tripId),
+  });
+}
+
+export function useDuplicateTrip() {
+  const invalidate = useInvalidateTrips();
+  return useMutation({
+    mutationFn: (tripId: string) => tripsApi.duplicateTrip(tripId),
+    onSuccess: () => invalidate(),
+  });
+}
+
+export function useShareTrip(tripId: string) {
+  const invalidate = useInvalidateTrips();
+  return useMutation({
+    mutationFn: () => tripsApi.shareTrip(tripId),
+    onSuccess: () => invalidate(tripId),
+  });
+}
+
+export function useUnshareTrip(tripId: string) {
+  const invalidate = useInvalidateTrips();
+  return useMutation({
+    mutationFn: () => tripsApi.unshareTrip(tripId),
+    onSuccess: () => invalidate(tripId),
+  });
+}
+
+export function useGenerateTripFromPrompt() {
+  const invalidate = useInvalidateTrips();
+  return useMutation({
+    mutationFn: (prompt: string) => tripsApi.generateTripFromPrompt(prompt),
+    onSuccess: () => invalidate(),
+  });
+}
+
+export function useTripMembersQuery(tripId: string) {
+  return useQuery({
+    queryKey: ["trips", tripId, "members"],
+    queryFn: () => tripsApi.getTripMembers(tripId),
+    enabled: !!tripId,
+  });
+}
+
+export function useAddTripMember(tripId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (email: string) => tripsApi.addTripMember(tripId, email),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["trips", tripId, "members"] }),
+  });
+}
+
+export function useRemoveTripMember(tripId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (memberUserId: string) => tripsApi.removeTripMember(tripId, memberUserId),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["trips", tripId, "members"] }),
+  });
+}
+
+export function useLeaveTrip() {
+  const invalidate = useInvalidateTrips();
+  return useMutation({
+    mutationFn: (tripId: string) => tripsApi.leaveTrip(tripId),
+    onSuccess: () => invalidate(),
+  });
+}

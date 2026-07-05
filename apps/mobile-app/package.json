@@ -1,0 +1,8 @@
+{
+  "name": "itinerary-planner-mobile",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build:apk": "flutter build apk --release"
+  }
+}

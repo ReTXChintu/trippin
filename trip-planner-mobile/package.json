@@ -1,0 +1,41 @@
+{
+  "name": "itinerary-planner-mobile",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build:apk": "flutter build apk --release",
+    "release": "release-it",
+    "release:patch": "release-it patch",
+    "release:minor": "release-it minor",
+    "release:major": "release-it major",
+    "release:dry": "release-it --dry-run"
+  },
+  "devDependencies": {
+    "release-it": "^18.1.2"
+  },
+  "release-it": {
+    "git": {
+      "commitMessage": "chore(release): v${version}",
+      "tagName": "v${version}",
+      "requireCleanWorkingDir": true
+    },
+    "github": {
+      "release": true,
+      "releaseName": "v${version}",
+      "assets": [
+        "dist/tripplanner.apk"
+      ]
+    },
+    "npm": {
+      "publish": false
+    },
+    "hooks": {
+      "before:init": "flutter pub get",
+      "after:bump": [
+        "node scripts/sync-pubspec-version.js",
+        "npm run build:apk",
+        "node scripts/copy-apk.js"
+      ]
+    }
+  }
+}

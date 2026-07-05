@@ -1,0 +1,236 @@
+"use client";
+
+import {
+  Box,
+  Button,
+  Checkbox,
+  Flex,
+  HStack,
+  IconButton,
+  SimpleGrid,
+  Stack,
+  Tag,
+  Text,
+  useColorModeValue,
+  useToast,
+} from "@chakra-ui/react";
+import { useMemo, useState } from "react";
+import { FiTrash2 } from "react-icons/fi";
+import {
+  addPlaceFromSearchAction,
+  bulkRemovePlacesFromTripAction,
+  removePlaceFromTripAction,
+} from "@/modules/places/actions/places.actions";
+import { PlaceSearchInput } from "@/modules/places/components/PlaceSearchInput";
+import type { Place } from "@/modules/places/types/place.types";
+import type { Trip } from "@/modules/trips/types/trip.types";
+
+interface TripSelectedPlacesPanelProps {
+  trip: Trip;
+  selectedPlaces: Place[];
+  onSelectedChange: (places: Place[]) => void;
+}
+
+export function TripSelectedPlacesPanel({
+  trip,
+  selectedPlaces,
+  onSelectedChange,
+}: TripSelectedPlacesPanelProps) {
+  const toast = useToast();
+  const [checkedIds, setCheckedIds] = useState<Set<string>>(new Set());
+  const [isBulkRemoving, setIsBulkRemoving] = useState(false);
+  const [removingId, setRemovingId] = useState<string | null>(null);
+
+  const bg = useColorModeValue("white", "gray.800");
+  const borderColor = useColorModeValue("gray.200", "gray.700");
+
+  const placeIds = useMemo(
+    () =>
+      selectedPlaces
+        .map((p) => p.googlePlaceId)
+        .filter((id): id is string => Boolean(id)),
+    [selectedPlaces],
+  );
+
+  const allChecked = placeIds.length > 0 && placeIds.every((id) => checkedIds.has(id));
+  const someChecked = placeIds.some((id) => checkedIds.has(id));
+
+  const toggleChecked = (placeId: string, checked: boolean) => {
+    setCheckedIds((prev) => {
+      const next = new Set(prev);
+      if (checked) next.add(placeId);
+      else next.delete(placeId);
+      return next;
+    });
+  };
+
+  const toggleAll = () => {
+    if (allChecked) {
+      setCheckedIds(new Set());
+    } else {
+      setCheckedIds(new Set(placeIds));
+    }
+  };
+
+  const handleAddFromSearch = async (selection: {
+    googlePlaceId: string;
+    name: string;
+  }) => {
+    const result = await addPlaceFromSearchAction({
+      tripId: trip.id,
+      placeId: selection.googlePlaceId,
+    });
+
+    if (!result.success) {
+      toast({ title: result.error, status: "error" });
+      return;
+    }
+
+    onSelectedChange(result.data!.places);
+    toast({ title: `"${selection.name}" added to trip`, status: "success" });
+  };
+
+  const handleRemove = async (placeId: string) => {
+    setRemovingId(placeId);
+    const result = await removePlaceFromTripAction({ tripId: trip.id, placeId });
+    setRemovingId(null);
+
+    if (!result.success) {
+      toast({ title: result.error, status: "error" });
+      return;
+    }
+
+    setCheckedIds((prev) => {
+      const next = new Set(prev);
+      next.delete(placeId);
+      return next;
+    });
+    onSelectedChange(result.data!.places);
+    toast({ title: "Place removed", status: "success" });
+  };
+
+  const handleBulkRemove = async () => {
+    const toRemove = [...checkedIds];
+    if (toRemove.length === 0) return;
+
+    setIsBulkRemoving(true);
+    const result = await bulkRemovePlacesFromTripAction({
+      tripId: trip.id,
+      placeIds: toRemove,
+    });
+    setIsBulkRemoving(false);
+
+    if (!result.success) {
+      toast({ title: result.error, status: "error" });
+      return;
+    }
+
+    setCheckedIds(new Set());
+    onSelectedChange(result.data!.places);
+    toast({ title: result.message, status: "success" });
+  };
+
+  return (
+    <Box p={5} bg={bg} borderWidth="1px" borderColor={borderColor} borderRadius="xl">
+      <Flex justify="space-between" align="center" mb={4} flexWrap="wrap" gap={2}>
+        <Box>
+          <Text fontWeight="semibold" fontSize="sm">
+            Places in my trip ({selectedPlaces.length})
+          </Text>
+          <Text fontSize="xs" color="gray.500">
+            Set preferred arrival & departure times per place. Enable &quot;Plan by place best
+            times&quot; in trip settings to ignore fixed daily start.
+          </Text>
+        </Box>
+        {checkedIds.size > 0 && (
+          <Button
+            size="sm"
+            colorScheme="red"
+            variant="outline"
+            leftIcon={<FiTrash2 />}
+            onClick={handleBulkRemove}
+            isLoading={isBulkRemoving}
+          >
+            Remove selected ({checkedIds.size})
+          </Button>
+        )}
+      </Flex>
+
+      <Box mb={4}>
+        <PlaceSearchInput
+          label="Add a place"
+          placeholder="Search Google Places..."
+          mode="place"
+          city={trip.destinationCity}
+          country={trip.destinationCountry}
+          onSelect={handleAddFromSearch}
+        />
+      </Box>
+
+      {selectedPlaces.length === 0 ? (
+        <Text color="gray.500" fontSize="sm">
+          No places selected yet. Discover places above or search to add attractions manually.
+        </Text>
+      ) : (
+        <Stack spacing={3}>
+          <Checkbox
+            size="sm"
+            isChecked={allChecked}
+            isIndeterminate={!allChecked && someChecked}
+            onChange={toggleAll}
+          >
+            Select all ({placeIds.length})
+          </Checkbox>
+
+          <SimpleGrid columns={{ base: 1, md: 2 }} spacing={3}>
+            {selectedPlaces.map((place) => {
+              const placeId = place.googlePlaceId;
+              if (!placeId) return null;
+
+              return (
+                <Flex
+                  key={placeId}
+                  p={3}
+                  borderWidth="1px"
+                  borderColor={checkedIds.has(placeId) ? "red.300" : borderColor}
+                  borderRadius="lg"
+                  align="start"
+                  gap={2}
+                >
+                  <Checkbox
+                    mt={0.5}
+                    isChecked={checkedIds.has(placeId)}
+                    onChange={(e) => toggleChecked(placeId, e.target.checked)}
+                    aria-label={`Select ${place.name}`}
+                  />
+                  <Box flex={1} minW={0}>
+                    <Text fontWeight="medium" fontSize="sm">
+                      {place.name}
+                    </Text>
+                    <HStack spacing={2} mt={1}>
+                      <Tag size="sm">{place.category}</Tag>
+                      {place.rating !== undefined && (
+                        <Text fontSize="xs" color="gray.500">
+                          {place.rating.toFixed(1)} ★
+                        </Text>
+                      )}
+                    </HStack>
+                  </Box>
+                  <IconButton
+                    aria-label="Remove place"
+                    icon={<FiTrash2 />}
+                    size="sm"
+                    variant="ghost"
+                    colorScheme="red"
+                    isLoading={removingId === placeId}
+                    onClick={() => handleRemove(placeId)}
+                  />
+                </Flex>
+              );
+            })}
+          </SimpleGrid>
+        </Stack>
+      )}
+    </Box>
+  );
+}

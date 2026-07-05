@@ -1,0 +1,33 @@
+# Dependencies
+node_modules/
+apps/*/node_modules/
+
+# Build output
+apps/frontend/dist/
+apps/backend/dist/
+apps/mobile-app/build/
+apps/mobile-app/.dart_tool/
+apps/mobile-app/dist/
+apps/mobile-app/.flutter-plugins
+apps/mobile-app/.flutter-plugins-dependencies
+apps/mobile-app/android/local.properties
+apps/mobile-app/ios/Flutter/Generated.xcconfig
+
+# Env files
+.env
+.env.local
+apps/*/.env
+apps/*/.env.local
+
+# Editor / OS
+.DS_Store
+.vscode/
+.idea/
+*.log
+
+# Claude Code local session state
+.claude/
+
+# TS build info
+node_modules/.tmp/
+*.tsbuildinfo
