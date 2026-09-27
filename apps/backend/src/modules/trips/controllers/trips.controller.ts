@@ -17,15 +17,17 @@ import {
   getTripById,
   removeLegFromTrip,
 } from "@/modules/trips/services/trip.service";
+import { serverApiKeys } from "@/lib/services/trip-api-keys.service";
 
 async function enrichTripWithOwnerKeys(trip: Trip) {
   const owner = await UserRepository.findById(trip.userId);
+  const server = serverApiKeys();
   return {
     ...trip,
     ownerApiKeys: {
-      hasOpenaiKey: !!owner?.openaiApiKeyEncrypted,
-      hasAiKey: !!(owner?.openaiApiKeyEncrypted || owner?.geminiApiKeyEncrypted),
-      hasGoogleMapsKey: !!owner?.googleMapsApiKeyEncrypted,
+      hasOpenaiKey: !!(owner?.openaiApiKeyEncrypted || server.openai),
+      hasAiKey: !!(owner?.openaiApiKeyEncrypted || owner?.geminiApiKeyEncrypted || server.openai || server.gemini),
+      hasGoogleMapsKey: !!(owner?.googleMapsApiKeyEncrypted || server.googleMaps),
     },
   };
 }

@@ -94,7 +94,10 @@ export function AiSettingsCard({ profile }: { profile: ProfileDTO }) {
   const borderColor = useColorModeValue("gray.200", "gray.700");
   const muted = useColorModeValue("gray.500", "gray.400");
 
-  const hasKey: Record<AiProviderName, boolean> = { openai: profile.hasOpenaiKey, gemini: profile.hasGeminiKey };
+  const hasKey: Record<AiProviderName, boolean> = {
+    openai: profile.hasOpenaiKey || !!profile.serverKeys?.openai,
+    gemini: profile.hasGeminiKey || !!profile.serverKeys?.gemini,
+  };
   const keyLast4: Record<AiProviderName, string | undefined> = {
     openai: profile.openaiApiKeyLast4,
     gemini: profile.geminiApiKeyLast4,
@@ -124,7 +127,7 @@ export function AiSettingsCard({ profile }: { profile: ProfileDTO }) {
   const others = withCurrent.filter((m) => !m.recommended);
   const selectedNote = withCurrent.find((m) => m.id === selectedModel)?.note;
 
-  const noKeys = !profile.hasOpenaiKey && !profile.hasGeminiKey;
+  const noKeys = !hasKey.openai && !hasKey.gemini;
   const savedProvider = profile.ai.activeProvider;
   const isDirty =
     provider !== savedProvider ||

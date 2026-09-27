@@ -35,6 +35,7 @@ import type { Trip } from "@/modules/trips/types/trip.types";
 import type { TripLeg } from "@/modules/trips/types/trip-leg.types";
 import {
   addStopSchema,
+  aiEditPlanSchema,
   applyMergedDaysSchema,
   generateLegGuideSchema,
   getRoutesSchema,
@@ -653,6 +654,153 @@ export async function undoItineraryChange(
   if (!result) return { success: false, error: "Nothing to undo" };
   const itinerary = await ItineraryRepository.findByTripId(trip.id);
   return { success: true, data: { itinerary: itinerary ?? result.itinerary }, message: `Undid: ${result.label}` };
+}
+
+// ---------------------------------------------------------------------------------------------
+// "Ask AI to change my plan" — the model proposes operations, the engine applies and re-times them
+// ---------------------------------------------------------------------------------------------
+
+const AI_EDIT_MIN_DURATION = 10;
+const AI_EDIT_MAX_DURATION = 600;
+
+function isStructural(stop: ItineraryStop): boolean {
+  return stop.stopType === "transfer" || stop.stopType === "return";
+}
+
+export async function aiEditPlan(
+  userId: string,
+  input: unknown,
+): Promise<ItineraryActionResult<{ itinerary: Itinerary; summary: string; applied: number }>> {
+  const parsed = aiEditPlanSchema.safeParse(input);
+  if (!parsed.success) return invalid(parsed.error.issues);
+
+  const { tripId, instruction } = parsed.data;
+  const loaded = await loadTripAndItinerary(userId, tripId);
+  if ("error" in loaded) return { success: false, error: loaded.error };
+  const { trip, itinerary: existing } = loaded;
+  if (!existing || existing.days.length === 0) return { success: false, error: "Generate an itinerary first." };
+
+  try {
+    const aiConfig = requireAiConfig(await getOwnerApiKeysForTripDto(trip), "trip");
+
+    // Places the traveller picked that aren't on the plan can be pulled in by the AI.
+    const scheduled = new Set(placeIdsInDays(existing.days));
+    const unscheduledIds = [
+      ...new Set([...existing.optionalPlaces.map((p) => p.placeId), ...getAggregatedSelectedPlaceIds(trip)]),
+    ].filter((id) => id && !scheduled.has(id));
+    const env = await buildEnv(trip, [...scheduled, ...unscheduledIds]);
+
+    const proposal = await getAIProvider(aiConfig).planEdits({
+      instruction,
+      days: existing.days
+        .filter((d) => d.dayType !== "free")
+        .map((d) => ({
+          dayNumber: d.dayNumber,
+          date: d.date,
+          city: d.legName,
+          stops: d.stops.map((s) => ({
+            id: s.id,
+            name: s.placeName,
+            type: s.stopType ?? "sightseeing",
+            time: s.arrivalTime,
+            minutes: s.visitDurationMinutes,
+            locked: s.locked || undefined,
+            fixedTime: s.fixedStartTime,
+          })),
+        })),
+      unscheduled: unscheduledIds
+        .map((id) => {
+          const place = env.placesById.get(id);
+          return place ? { placeId: id, name: place.name, city: place.city } : null;
+        })
+        .filter((p): p is { placeId: string; name: string; city: string } => p !== null)
+        .slice(0, 40),
+    });
+    if (!proposal) return { success: false, error: "The AI didn't return a usable answer — try rephrasing." };
+
+    const days = new Map(existing.days.map((d) => [d.dayNumber, d]));
+    const changed = new Set<number>();
+    let optionalPlaces = existing.optionalPlaces;
+    const selected = new Set(getAggregatedSelectedPlaceIds(trip));
+    let applied = 0;
+
+    const findStop = (stopId: string) => {
+      for (const day of days.values()) {
+        const stop = day.stops.find((s) => s.id === stopId);
+        if (stop) return { day, stop };
+      }
+      return null;
+    };
+    const update = (day: ItineraryDay) => {
+      days.set(day.dayNumber, day);
+      changed.add(day.dayNumber);
+      applied += 1;
+    };
+
+    for (const op of proposal.operations) {
+      if (op.op === "move") {
+        const found = findStop(op.stopId);
+        const toDay = days.get(op.toDayNumber);
+        if (!found || !toDay || isStructural(found.stop) || !isSchedulable(toDay) || toDay.dayNumber === found.day.dayNumber) continue;
+        const moved = moveStopBetweenDays(found.day, toDay, op.stopId, env);
+        update(moved.fromDay);
+        update(moved.toDay);
+        applied -= 1;
+      } else if (op.op === "remove") {
+        const found = findStop(op.stopId);
+        if (!found || isStructural(found.stop)) continue;
+        const { day, stop } = found;
+        update({ ...day, stops: day.stops.filter((s) => s.id !== stop.id) });
+        if (stop.placeId && selected.has(stop.placeId) && stop.stopType !== "meal") {
+          optionalPlaces = [
+            ...optionalPlaces.filter((p) => p.placeId !== stop.placeId),
+            {
+              placeId: stop.placeId,
+              placeName: stop.placeName,
+              category: stop.category,
+              coordinates: stop.coordinates,
+              legId: stop.legId ?? day.legId,
+              reason: `Removed from ${dayLabel(day)} by AI.`,
+            },
+          ];
+        }
+      } else if (op.op === "add") {
+        const day = days.get(op.dayNumber);
+        const place = env.placesById.get(op.placeId);
+        if (!day || !place || !isSchedulable(day) || [...days.values()].some((d) => d.stops.some((s) => s.placeId === op.placeId))) continue;
+        update(forceInsertPlaceIntoDay(day, place, env, { userAdded: true }));
+        optionalPlaces = optionalPlaces.filter((p) => p.placeId !== op.placeId);
+      } else if (op.op === "setDuration") {
+        const found = findStop(op.stopId);
+        if (!found || isStructural(found.stop)) continue;
+        const minutes = Math.round(Math.min(Math.max(op.minutes, AI_EDIT_MIN_DURATION), AI_EDIT_MAX_DURATION));
+        update({
+          ...found.day,
+          stops: found.day.stops.map((s) => (s.id === op.stopId ? { ...s, visitDurationMinutes: minutes } : s)),
+        });
+      } else if (op.op === "lock") {
+        const found = findStop(op.stopId);
+        if (!found || isStructural(found.stop)) continue;
+        update({ ...found.day, stops: found.day.stops.map((s) => (s.id === op.stopId ? { ...s, locked: true } : s)) });
+      } else if (op.op === "reorder") {
+        const day = days.get(op.dayNumber);
+        if (!day || !isSchedulable(day) || !op.stopIds.every((id) => day.stops.some((s) => s.id === id))) continue;
+        update(reorderDayStops(day, op.stopIds, env));
+      }
+    }
+
+    if (applied === 0) {
+      return { success: true, data: { itinerary: existing, summary: proposal.summary, applied: 0 }, message: proposal.summary };
+    }
+
+    const merged = existing.days.map((d) => days.get(d.dayNumber) ?? d);
+    const { days: retimed } = await retimeWithRoutes(env, merged, { dayNumbers: changed });
+    const label = `AI: ${instruction.length > 60 ? `${instruction.slice(0, 57)}…` : instruction}`;
+    const itinerary = await commit(trip, existing, { days: retimed, optionalPlaces }, label);
+    return { success: true, data: { itinerary, summary: proposal.summary, applied }, message: proposal.summary };
+  } catch (err) {
+    return actionError(err, "The AI couldn't change the plan");
+  }
 }
 
 // ---------------------------------------------------------------------------------------------

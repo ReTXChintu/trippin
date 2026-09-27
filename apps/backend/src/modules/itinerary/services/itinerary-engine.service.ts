@@ -109,7 +109,7 @@ interface MealRule {
 export const MEAL_RULES: Record<MealType, MealRule> = {
   breakfast: { label: "Breakfast", durationMin: 30, earliestMin: 7 * 60, dueMin: 7 * 60, latestStartMin: 10 * 60 + 30 },
   lunch: { label: "Lunch", durationMin: 60, earliestMin: 12 * 60, dueMin: 12 * 60 + 30, latestStartMin: 14 * 60 + 30 },
-  tiffin: { label: "Tiffin / Snacks", durationMin: 30, earliestMin: 16 * 60 + 30, dueMin: 16 * 60 + 30, latestStartMin: 18 * 60 },
+  tiffin: { label: "Snacks", durationMin: 30, earliestMin: 16 * 60 + 30, dueMin: 16 * 60 + 30, latestStartMin: 18 * 60 },
   dinner: { label: "Dinner", durationMin: 60, earliestMin: 19 * 60 + 30, dueMin: 19 * 60 + 30, latestStartMin: 22 * 60 },
 };
 

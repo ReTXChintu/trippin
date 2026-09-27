@@ -158,6 +158,7 @@ export function TripDetailContent() {
               trip={trip}
               canEdit={canEdit}
               hasMapsKey={!missingGoogleKey}
+              hasAiKey={!missingAiKey}
               cityId={cityId}
               onCityChange={setCity}
               onGoTo={(t, legId) => go(t, legId)}

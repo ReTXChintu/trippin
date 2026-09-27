@@ -1,7 +1,7 @@
 import { UserRepository } from "@/repositories/user.repository";
 import { encryptApiKey, maskApiKeyLast4 } from "@/lib/crypto/api-key-crypto";
 import type { AiSettingsInput, ApiKeysInput } from "@/modules/auth/validators/auth.validator";
-import { apiKeysFromUser, resolveAiProvider } from "@/lib/services/trip-api-keys.service";
+import { apiKeysFromUser, resolveAiProvider, serverApiKeys } from "@/lib/services/trip-api-keys.service";
 import { listAvailableModels, type AiModelOption } from "@/modules/ai/services/llm-client";
 import { DEFAULT_AI_MODELS, type AiProviderName } from "@/constants/ai";
 
@@ -14,6 +14,7 @@ export async function getProfile(userId: string) {
   if (!user) {
     return null;
   }
+  const server = serverApiKeys();
 
   return {
     id: user._id.toString(),
@@ -27,14 +28,16 @@ export async function getProfile(userId: string) {
     openaiApiKeyLast4: user.openaiApiKeyLast4,
     geminiApiKeyLast4: user.geminiApiKeyLast4,
     googleMapsApiKeyLast4: user.googleMapsApiKeyLast4,
+    /** Keys this server provides for everyone — used when the user hasn't added their own. */
+    serverKeys: { openai: !!server.openai, gemini: !!server.gemini, googleMaps: !!server.googleMaps },
     ai: {
       /** What the user picked (may be unset). */
       preferredProvider: user.aiProvider ?? null,
       /** What actually runs, given which keys exist. */
       activeProvider: resolveAiProvider({
         aiProvider: user.aiProvider,
-        openai: user.openaiApiKeyEncrypted,
-        gemini: user.geminiApiKeyEncrypted,
+        openai: user.openaiApiKeyEncrypted || server.openai,
+        gemini: user.geminiApiKeyEncrypted || server.gemini,
       }),
       openaiModel: user.openaiModel || DEFAULT_AI_MODELS.openai,
       geminiModel: user.geminiModel || DEFAULT_AI_MODELS.gemini,

@@ -172,6 +172,11 @@ export const setStopStatusSchema = z.object({
   status: z.enum(["done", "skipped"]).nullable(),
 });
 
+export const aiEditPlanSchema = z.object({
+  tripId: z.string().min(1),
+  instruction: z.string().trim().min(3, "Tell the AI what to change").max(500, "Keep it under 500 characters"),
+});
+
 export const replanFromNowSchema = z.object({
   tripId: z.string().min(1),
   dayNumber: z.number().int().min(1),

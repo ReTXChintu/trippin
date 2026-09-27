@@ -6,7 +6,10 @@ import type {
   GenerateAiItineraryParams,
   GenerateLegBriefParams,
   GenerateSummaryParams,
-  ParsedPromptResult,
+  AiTripDraft,
+  PlanEditInput,
+  PlanEditOperation,
+  PlanEditProposal,
   SuggestPlacesParams,
 } from "../types/ai-provider.types";
 import { buildRuleBasedLegBrief } from "@/modules/itinerary/services/itinerary-enrichment.service";
@@ -28,9 +31,82 @@ export class LlmAIProvider implements AIProvider {
     this.client = createLlmClient({ ...config, apiKey: config.apiKey.trim() });
   }
 
-  async parseTripPrompt(prompt: string): Promise<ParsedPromptResult> {
-    void prompt;
-    throw new Error("AI parseTripPrompt not yet implemented. Use rule-based NLP parser.");
+  async draftTrip(prompt: string, context: { today: string; interestOptions: string[] }): Promise<AiTripDraft | null> {
+    const parsed = parseJsonAnswer<Partial<AiTripDraft>>(
+      await this.client.complete({
+        json: true,
+        temperature: 0.3,
+        system:
+          'Turn a traveller\'s one-line request into a trip outline. Return JSON: { "title": string, "startDate": "YYYY-MM-DD" | null, ' +
+          '"cities": [{ "city": string, "state": string | null, "country": string, "days": number }], "interests": string[], ' +
+          '"travelStyle": "Relaxed" | "Balanced" | "Fast Paced" | null, "transportationMode": "Walking" | "Cab" | "Self Drive" | "Bike" | "Public Transport" | null, ' +
+          '"budgetLevel": "budget" | "moderate" | "luxury" | null, "notes": string | null }. ' +
+          "cities: the base cities in visiting order (real city names with their country); days = full days to spend there, summing to the trip length. " +
+          "If the request names a region or country but no cities, choose 1–3 sensible base cities. " +
+          `startDate: only if the request gives a date or month (resolve relative to today, ${context.today}; a month alone means the first weekend of that month in the future); otherwise null. ` +
+          `interests: pick only from ${JSON.stringify(context.interestOptions)}. ` +
+          "notes: who is travelling and any needs (kids, elderly parents, wheelchair…), else null. title: short and friendly, e.g. \"Kyoto & Osaka in spring\".",
+        user: prompt,
+      }),
+    );
+    if (!parsed?.cities?.length) return null;
+
+    const cities = parsed.cities
+      .filter((c) => c && typeof c.city === "string" && c.city.trim())
+      .map((c) => ({
+        city: c.city.trim(),
+        state: c.state?.trim() || undefined,
+        country: (c.country ?? "").trim(),
+        days: Math.min(Math.max(Math.round(Number(c.days) || 1), 1), 30),
+      }))
+      .slice(0, 8);
+    if (cities.length === 0) return null;
+
+    const allowed = new Set(context.interestOptions);
+    return {
+      title: (parsed.title ?? "").trim() || `${cities.map((c) => c.city).join(" & ")} trip`,
+      startDate: typeof parsed.startDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(parsed.startDate) ? parsed.startDate : undefined,
+      cities,
+      interests: (parsed.interests ?? []).filter((i): i is string => typeof i === "string" && allowed.has(i)),
+      travelStyle: parsed.travelStyle ?? undefined,
+      transportationMode: parsed.transportationMode ?? undefined,
+      budgetLevel: parsed.budgetLevel ?? undefined,
+      notes: parsed.notes?.trim() || undefined,
+    };
+  }
+
+  async planEdits(input: PlanEditInput): Promise<PlanEditProposal | null> {
+    const parsed = parseJsonAnswer<{ summary?: string; operations?: unknown[] }>(
+      await this.client.complete({
+        json: true,
+        temperature: 0.2,
+        system:
+          "You adjust a traveller's day-by-day itinerary. Return JSON: { \"summary\": string, \"operations\": Operation[] } where Operation is one of " +
+          '{ "op": "move", "stopId": string, "toDayNumber": number } | { "op": "remove", "stopId": string } | ' +
+          '{ "op": "add", "placeId": string, "dayNumber": number } | { "op": "setDuration", "stopId": string, "minutes": number } | ' +
+          '{ "op": "lock", "stopId": string } | { "op": "reorder", "dayNumber": number, "stopIds": string[] }. ' +
+          "Only use stop ids and place ids from the input — never invent any. Don't touch stops of type transfer or return. " +
+          "Make the smallest set of changes that does what was asked. A 'lighter' day means fewer or shorter visits (move extras to a lighter day rather than deleting unless asked). " +
+          "reorder must list every stop id of that day in the new order. Times are recalculated automatically — don't try to set clock times. " +
+          "summary: one or two plain sentences telling the traveller what you changed (or why you couldn't).",
+        user: JSON.stringify(input),
+      }),
+    );
+    if (!parsed) return null;
+
+    const ops: PlanEditOperation[] = [];
+    for (const raw of parsed.operations ?? []) {
+      const o = raw as Record<string, unknown>;
+      if (o.op === "move" && typeof o.stopId === "string" && Number.isInteger(o.toDayNumber)) ops.push({ op: "move", stopId: o.stopId, toDayNumber: o.toDayNumber as number });
+      else if (o.op === "remove" && typeof o.stopId === "string") ops.push({ op: "remove", stopId: o.stopId });
+      else if (o.op === "add" && typeof o.placeId === "string" && Number.isInteger(o.dayNumber)) ops.push({ op: "add", placeId: o.placeId, dayNumber: o.dayNumber as number });
+      else if (o.op === "setDuration" && typeof o.stopId === "string" && typeof o.minutes === "number") ops.push({ op: "setDuration", stopId: o.stopId, minutes: o.minutes });
+      else if (o.op === "lock" && typeof o.stopId === "string") ops.push({ op: "lock", stopId: o.stopId });
+      else if (o.op === "reorder" && Number.isInteger(o.dayNumber) && Array.isArray(o.stopIds)) {
+        ops.push({ op: "reorder", dayNumber: o.dayNumber as number, stopIds: (o.stopIds as unknown[]).filter((x): x is string => typeof x === "string") });
+      }
+    }
+    return { summary: (parsed.summary ?? "").trim() || "Done.", operations: ops.slice(0, 30) };
   }
 
   async rankPlaces(params: RankPlacesParams): Promise<Place[]> {

@@ -39,7 +39,9 @@ export function TripGeneratorCard() {
       const result = await generate.mutateAsync(prompt.trim());
       toast({
         title: "Trip draft created",
-        description: "Review and refine your trip details.",
+        description: result.usedAi
+          ? "Cities and dates are set — pick places next, then generate the plan."
+          : "Drafted without AI (no OpenAI/Gemini key) — check the cities and dates.",
         status: "success",
         duration: 4000,
       });
@@ -57,7 +59,8 @@ export function TripGeneratorCard() {
             Describe your trip
           </Heading>
           <Text color="gray.500" fontSize="sm">
-            Tell us where you&apos;re going, how long, and what you enjoy — we&apos;ll draft a trip.
+            Where, how long, when and what you enjoy — any country, one city or several. We&apos;ll set up the
+            cities, dates and interests for you.
           </Text>
         </Box>
 
@@ -66,7 +69,7 @@ export function TripGeneratorCard() {
           <Textarea
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
-            placeholder="I am staying near Ajmer Railway Station for 2 days. I like temples and photography."
+            placeholder="10 days in Japan in April — Tokyo, Kyoto and Osaka. We love food, temples and gardens."
             rows={4}
             resize="vertical"
           />

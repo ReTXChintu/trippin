@@ -10,7 +10,7 @@ export function newTripLegId(): string {
   return `leg-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 }
 
-export function createEmptyLeg(order: number, country = "India"): TripLeg {
+export function createEmptyLeg(order: number, country = ""): TripLeg {
   const today = new Date().toISOString().slice(0, 10);
   return {
     id: newTripLegId(),

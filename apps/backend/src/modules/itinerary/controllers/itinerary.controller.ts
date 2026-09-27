@@ -22,6 +22,7 @@ import {
   undoItineraryChange,
   setStopStatus,
   replanFromNow,
+  aiEditPlan,
 } from "@/modules/itinerary/services/itinerary.service";
 import { getMealSuggestions } from "@/modules/itinerary/services/itinerary-meals.service";
 
@@ -162,6 +163,8 @@ export async function act(req: Request, res: Response) {
       );
     case "replanFromNow":
       return sendResult(res, await replanFromNow(userId, { tripId, dayNumber: body.dayNumber, time: body.time }));
+    case "aiEdit":
+      return sendResult(res, await aiEditPlan(userId, { tripId, instruction: body.instruction }));
     case "undo":
       return sendResult(res, await undoItineraryChange(userId, { tripId }));
     default:

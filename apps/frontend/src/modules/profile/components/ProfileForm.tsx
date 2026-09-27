@@ -29,6 +29,14 @@ import {
 } from "@/modules/auth/validators/auth.validator";
 import { AiSettingsCard } from "@/modules/profile/components/AiSettingsCard";
 
+function SharedKeyNote() {
+  return (
+    <Text fontSize="sm" color="green.500" mb={1}>
+      Using the shared key from this server — add your own to use it instead.
+    </Text>
+  );
+}
+
 export function ProfileForm() {
   const toast = useToast();
   const { data, isLoading: isFetching } = useProfileQuery();
@@ -205,6 +213,7 @@ export function ProfileForm() {
                   autoComplete="off"
                   {...registerKeys("openaiApiKey")}
                 />
+                {!profile.hasOpenaiKey && profile.serverKeys?.openai && <SharedKeyNote />}
                 <FormHelperText>
                   One of OpenAI or Gemini powers AI guides, summaries and plan comparison — choose which above.{" "}
                   <Link href="https://platform.openai.com/api-keys" isExternal color="brand.500">
@@ -241,6 +250,7 @@ export function ProfileForm() {
                   autoComplete="off"
                   {...registerKeys("geminiApiKey")}
                 />
+                {!profile.hasGeminiKey && profile.serverKeys?.gemini && <SharedKeyNote />}
                 <FormHelperText>
                   An alternative to OpenAI with a generous free tier.{" "}
                   <Link href="https://aistudio.google.com/app/apikey" isExternal color="brand.500">
@@ -277,6 +287,7 @@ export function ProfileForm() {
                   autoComplete="off"
                   {...registerKeys("googleMapsApiKey")}
                 />
+                {!profile.hasGoogleMapsKey && profile.serverKeys?.googleMaps && <SharedKeyNote />}
                 <FormHelperText>
                   Used for place search, discovery, and photos. Enable Places API (New) and Geocoding in Google
                   Cloud.{" "}

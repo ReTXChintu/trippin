@@ -62,7 +62,7 @@ export async function unshareTrip(id: string): Promise<{ trip: Trip }> {
   return res.data.data;
 }
 
-export async function generateTripFromPrompt(prompt: string): Promise<{ trip: Trip; confidence: number }> {
+export async function generateTripFromPrompt(prompt: string): Promise<{ trip: Trip; confidence: number; usedAi: boolean }> {
   const res = await api.post("/trips/generate-from-prompt", { prompt });
   return res.data.data;
 }

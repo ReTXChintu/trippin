@@ -103,6 +103,12 @@ function mapReviews(reviews?: GoogleReview[]): PlaceReview[] | undefined {
   return mapped.length > 0 ? mapped : undefined;
 }
 
+/** Google addresses end with the country ("…, Kyoto, Japan") — a fallback when the trip gives none. */
+function countryFromAddress(address?: string): string {
+  const last = address?.split(",").pop()?.trim() ?? "";
+  return /\d/.test(last) ? "" : last;
+}
+
 function mapTypeToCategory(types: string[] = [], primaryType?: string): string {
   const type = primaryType ?? types[0] ?? "attraction";
   const categoryMap: Record<string, string> = {
@@ -170,7 +176,7 @@ export function mapSearchResultToPlace(
     name: result.name,
     city: context.city ?? "",
     state: context.state,
-    country: context.country ?? "India",
+    country: context.country || countryFromAddress(result.address),
     category: types.includes("lodging") ? "Hotel" : mapTypeToCategory(types, result.primaryType),
     subCategory: result.primaryType,
     coordinates: result.coordinates,
@@ -225,7 +231,7 @@ export function mapGoogleToPlace(
     name: raw.displayName?.text ?? "Unknown",
     city: context.city ?? "",
     state: context.state,
-    country: context.country ?? "India",
+    country: context.country || countryFromAddress(raw.formattedAddress),
     category: isHotel ? "Hotel" : mapTypeToCategory(types, primaryType),
     subCategory: primaryType,
     coordinates:

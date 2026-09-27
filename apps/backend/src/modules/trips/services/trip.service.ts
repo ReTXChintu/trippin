@@ -1,6 +1,6 @@
 import { TripRepository } from "@/repositories/trip.repository";
 import { ItineraryRepository } from "@/repositories/itinerary.repository";
-import { parseTripPrompt } from "@/services/nlp-trip-parser.service";
+import { createTripFromPrompt } from "@/modules/trips/services/trip-prompt.service";
 import {
   buildTripInputFromRaw,
   createTripSchema,
@@ -217,49 +217,12 @@ export async function unshareTrip(tripId: string, userId: string): Promise<Actio
 export async function generateTripFromPrompt(
   userId: string,
   prompt: string,
-): Promise<ActionResult<{ trip: Trip; confidence: number }>> {
+): Promise<ActionResult<{ trip: Trip; confidence: number; usedAi: boolean }>> {
   const parsed = generateTripPromptSchema.safeParse({ prompt });
   if (!parsed.success) {
     return { success: false, error: parsed.error.issues[0]?.message ?? "Invalid prompt" };
   }
-
-  const { draft, confidence, companions } = parseTripPrompt(parsed.data.prompt);
-
-  if (!draft.destinationCity) {
-    return {
-      success: false,
-      error: "Could not detect a destination. Try mentioning a city like Ajmer or Jaipur.",
-    };
-  }
-
-  const notesParts: string[] = [];
-  if (companions.length > 0) {
-    notesParts.push(`Traveling with: ${companions.join(", ")}`);
-  }
-  notesParts.push(`Generated from: "${parsed.data.prompt.slice(0, 200)}"`);
-
-  const trip = await TripRepository.create({
-    userId,
-    title: draft.title ?? `${draft.destinationCity} Trip`,
-    destinationCity: draft.destinationCity,
-    destinationState: draft.destinationState,
-    destinationCountry: draft.destinationCountry ?? "India",
-    startDate: new Date(draft.startDate ?? new Date()),
-    endDate: new Date(draft.endDate ?? new Date()),
-    hotelName: draft.hotelName,
-    hotelAddress: draft.hotelAddress,
-    travelStyle: draft.travelStyle ?? "Balanced",
-    interests: draft.interests ?? [],
-    notes: notesParts.join("\n"),
-    status: "draft",
-    transportationMode: companions.includes("parents") ? "Cab" : "Walking",
-  });
-
-  return {
-    success: true,
-    data: { trip, confidence },
-    message: `Trip draft created (${Math.round(confidence * 100)}% confidence)`,
-  };
+  return createTripFromPrompt(userId, parsed.data.prompt);
 }
 
 export async function getTrips(userId: string, status?: TripStatus): Promise<Trip[]> {

@@ -225,6 +225,14 @@ export function useSetStopStatus(tripId: string) {
   });
 }
 
+export function useAiEditPlan(tripId: string) {
+  const setItinerary = useSetItinerary(tripId);
+  return useMutation({
+    mutationFn: (instruction: string) => itineraryApi.aiEditPlan(tripId, instruction),
+    onSuccess: (data) => setItinerary(data.itinerary),
+  });
+}
+
 export function useReplanFromNow(tripId: string) {
   const setItinerary = useSetItinerary(tripId);
   return useMutation({

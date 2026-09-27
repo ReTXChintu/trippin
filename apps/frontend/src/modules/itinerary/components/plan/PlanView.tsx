@@ -55,6 +55,7 @@ import { useCommentsQuery, useWeatherQuery } from "@/modules/trips/hooks/useTrip
 import { CommentsDrawer, type CommentThreadTarget } from "@/modules/trips/components/collab/CommentsDrawer";
 import { ItineraryExportMenu, ItineraryPrintContent } from "@/modules/itinerary/components/ItineraryExportMenu";
 import { MapView } from "@/modules/itinerary/components/MapView";
+import { AskAiBar } from "@/modules/itinerary/components/plan/AskAiBar";
 import { TripMapView } from "@/modules/itinerary/components/TripMapView";
 import { PlaceDetailModal } from "@/modules/places/components/PlaceDetailModal";
 import type { ItineraryDay, ItineraryStop } from "@/modules/itinerary/types";
@@ -78,6 +79,7 @@ interface PlanViewProps {
   canEdit: boolean;
   /** Whether the trip owner has a Google Maps key (real route times vs estimates). */
   hasMapsKey: boolean;
+  hasAiKey: boolean;
   cityId: string | null;
   onCityChange: (legId: string | null) => void;
   onGoTo: (tab: TripTab, legId?: string) => void;
@@ -150,7 +152,7 @@ function CityHeader({ leg, onGoTo }: { leg: TripLeg; onGoTo: PlanViewProps["onGo
   );
 }
 
-export function PlanView({ trip, canEdit, hasMapsKey, cityId, onCityChange, onGoTo }: PlanViewProps) {
+export function PlanView({ trip, canEdit, hasMapsKey, hasAiKey, cityId, onCityChange, onGoTo }: PlanViewProps) {
   const toast = useToast();
   const navigate = useNavigate();
   const { data, isLoading } = useItineraryQuery(trip.id);
@@ -459,6 +461,8 @@ export function PlanView({ trip, canEdit, hasMapsKey, cityId, onCityChange, onGo
         <Text fontSize="xs" color={muted} mt={-2}>
           Locked stops, things you added and restaurants you chose are kept when you replan.
         </Text>
+
+        {canEdit && itinerary && itinerary.days.length > 0 && <AskAiBar tripId={trip.id} hasAiKey={hasAiKey} />}
 
         {itinerary?.summary && !activeLeg && (
           <Box bg={cardBg} borderWidth="1px" borderColor={border} borderRadius="xl" px={5} py={3}>

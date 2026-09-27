@@ -77,7 +77,7 @@ export function PinnedTimelineStop({ stop, isLast = false }: { stop: ItinerarySt
 const MEAL_LABELS: Record<MealType, string> = {
   breakfast: "Breakfast",
   lunch: "Lunch",
-  tiffin: "Tiffin / Snacks",
+  tiffin: "Snacks",
   dinner: "Dinner",
 };
 

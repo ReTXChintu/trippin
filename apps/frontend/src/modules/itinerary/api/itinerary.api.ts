@@ -238,6 +238,14 @@ export async function setStopStatus(
   return res.data.data;
 }
 
+export async function aiEditPlan(
+  tripId: string,
+  instruction: string,
+): Promise<{ itinerary: Itinerary; summary: string; applied: number }> {
+  const res = await api.post(`/trips/${tripId}/itinerary`, { action: "aiEdit", instruction });
+  return res.data.data;
+}
+
 export async function replanFromNow(tripId: string, params: { dayNumber: number; time: string }): Promise<{ itinerary: Itinerary }> {
   const res = await api.post(`/trips/${tripId}/itinerary`, { action: "replanFromNow", ...params });
   return res.data.data;

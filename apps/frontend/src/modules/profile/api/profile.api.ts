@@ -10,6 +10,8 @@ export interface ProfileDTO extends IUser {
   openaiApiKeyLast4?: string;
   geminiApiKeyLast4?: string;
   googleMapsApiKeyLast4?: string;
+  /** Shared keys the server provides when the user hasn't added their own. */
+  serverKeys?: { openai: boolean; gemini: boolean; googleMaps: boolean };
   ai: {
     preferredProvider: AiProviderName | null;
     /** What actually runs given the keys present; null = no AI key. */

@@ -32,11 +32,22 @@ function decryptOrUndefined(encrypted?: string): string | undefined {
   }
 }
 
-export function apiKeysFromUser(user: IUserDocument): UserApiKeys {
+/** Optional shared keys from the root .env — used whenever a user hasn't added their own, so a
+ * self-hosted install can work for everyone without each person pasting keys into Profile. */
+export function serverApiKeys(): Pick<UserApiKeys, "openai" | "gemini" | "googleMaps"> {
   return {
-    openai: decryptOrUndefined(user.openaiApiKeyEncrypted),
-    gemini: decryptOrUndefined(user.geminiApiKeyEncrypted),
-    googleMaps: decryptOrUndefined(user.googleMapsApiKeyEncrypted),
+    openai: process.env.OPENAI_API_KEY?.trim() || undefined,
+    gemini: process.env.GEMINI_API_KEY?.trim() || undefined,
+    googleMaps: process.env.GOOGLE_MAPS_API_KEY?.trim() || undefined,
+  };
+}
+
+export function apiKeysFromUser(user: IUserDocument): UserApiKeys {
+  const server = serverApiKeys();
+  return {
+    openai: decryptOrUndefined(user.openaiApiKeyEncrypted) ?? server.openai,
+    gemini: decryptOrUndefined(user.geminiApiKeyEncrypted) ?? server.gemini,
+    googleMaps: decryptOrUndefined(user.googleMapsApiKeyEncrypted) ?? server.googleMaps,
     aiProvider: user.aiProvider,
     openaiModel: user.openaiModel,
     geminiModel: user.geminiModel,
@@ -45,7 +56,7 @@ export function apiKeysFromUser(user: IUserDocument): UserApiKeys {
 
 export async function getUserApiKeys(userId: string): Promise<UserApiKeys> {
   const user = await UserRepository.findById(userId);
-  return user ? apiKeysFromUser(user) : {};
+  return user ? apiKeysFromUser(user) : serverApiKeys();
 }
 
 export async function getOwnerApiKeysForTrip(tripId: string): Promise<UserApiKeys> {
