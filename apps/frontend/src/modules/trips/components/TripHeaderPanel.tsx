@@ -156,6 +156,14 @@ export function TripHeaderPanel({ trip, currentUserId, isOwner, embedded = false
             </Select>
           </FormControl>
           <FormControl>
+            <FormLabel fontSize="sm">Currency</FormLabel>
+            <Input size="sm" maxLength={3} textTransform="uppercase" placeholder="INR" {...register("currency")} />
+          </FormControl>
+          <FormControl>
+            <FormLabel fontSize="sm">Total budget</FormLabel>
+            <Input size="sm" type="number" min={0} placeholder="Optional" {...register("budgetAmount")} />
+          </FormControl>
+          <FormControl>
             <FormLabel fontSize="sm">Status</FormLabel>
             <Select size="sm" {...register("status")}>
               <option value="draft">Draft</option>

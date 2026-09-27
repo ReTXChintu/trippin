@@ -1,6 +1,7 @@
 import { createContext, useContext } from "react";
 import type { ItineraryDay, ItineraryStop } from "@/modules/itinerary/types";
 import type { Trip } from "@/modules/trips/types/trip.types";
+import type { TripBooking } from "@/modules/trips/types/trip-extras.types";
 
 export interface MoveTarget {
   dayNumber: number;
@@ -22,6 +23,7 @@ export interface PlanActions {
   moveStop: (stop: ItineraryStop, day: ItineraryDay, toDayNumber: number) => void;
   reorder: (day: ItineraryDay, stopIds: string[]) => void;
   moveTargets: (day: ItineraryDay) => MoveTarget[];
+  addBookingToDay: (booking: TripBooking, day: ItineraryDay) => void;
   busyStopId: string | null;
 }
 

@@ -25,6 +25,8 @@ import { forwardRef } from "react";
 import { FiAlertTriangle, FiExternalLink, FiMap, FiPlus } from "react-icons/fi";
 import { MdHotel } from "react-icons/md";
 import type { ItineraryDay } from "@/modules/itinerary/types";
+import type { DayWeather, TripBooking } from "@/modules/trips/types/trip-extras.types";
+import { BOOKING_META } from "@/modules/trips/components/bookings/bookingMeta";
 import {
   dayGoogleMapsUrl,
   formatDayDate,
@@ -37,13 +39,16 @@ import { usePlan } from "./PlanContext";
 
 interface DayCardProps {
   day: ItineraryDay;
+  weather?: DayWeather;
+  /** Bookings starting this day (transfer-linked ones already show as the travel stop). */
+  bookings?: TripBooking[];
   startStay?: { name: string; coordinates?: { lat: number; lng: number } };
   isSelected: boolean;
   onSelect: () => void;
 }
 
 export const DayCard = forwardRef<HTMLDivElement, DayCardProps>(function DayCard(
-  { day, startStay, isSelected, onSelect },
+  { day, startStay, isSelected, onSelect, weather, bookings = [] },
   ref,
 ) {
   const plan = usePlan();
@@ -121,6 +126,18 @@ export const DayCard = forwardRef<HTMLDivElement, DayCardProps>(function DayCard
               </Badge>
             )}
             {isTravelDay && <Badge colorScheme="purple">Travel day</Badge>}
+            {weather && (
+              <Tooltip
+                label={`${weather.summary}${weather.rainChance !== undefined ? ` · ${weather.rainChance}% chance of rain` : ""}${weather.kind === "typical" ? " · typical weather for these dates (forecast appears ~2 weeks before)" : ""}`}
+                hasArrow
+              >
+                <Badge variant="outline" colorScheme={weather.kind === "forecast" ? "blue" : "gray"} fontWeight="normal" textTransform="none">
+                  {weather.icon} {weather.tempMaxC}°/{weather.tempMinC}°
+                  {weather.kind === "forecast" && (weather.rainChance ?? 0) >= 30 ? ` · ${weather.rainChance}%` : ""}
+                  {weather.kind === "typical" ? " typ." : ""}
+                </Badge>
+              </Tooltip>
+            )}
             {summary.warnings > 0 && (
               <Badge colorScheme="orange" display="flex" alignItems="center" gap={1}>
                 <Icon as={FiAlertTriangle} boxSize={3} />
@@ -171,6 +188,29 @@ export const DayCard = forwardRef<HTMLDivElement, DayCardProps>(function DayCard
       </Flex>
 
       <Box px={{ base: 2, md: 4 }} py={4}>
+        {bookings.length > 0 && (
+          <Stack spacing={2} mb={4} ml={{ base: 0, md: "88px" }}>
+            {bookings.map((b) => {
+              const meta = BOOKING_META[b.type];
+              const inPlan = day.stops.some((s) => s.placeName === b.title && s.fixedStartTime === b.startTime);
+              return (
+                <HStack key={b.id} spacing={2} fontSize="sm" p={2} borderRadius="md" bg={headerBg} flexWrap="wrap">
+                  <Icon as={meta.icon} color={`${meta.color}.500`} />
+                  <Text fontWeight="semibold">{b.startTime ?? "Booked"}</Text>
+                  <Text noOfLines={1} flex={1} minW="120px">
+                    {b.title}
+                    {b.confirmationNumber ? ` · Conf. ${b.confirmationNumber}` : ""}
+                  </Text>
+                  {!plan.readOnly && b.startTime && !inPlan && (
+                    <Button size="xs" variant="outline" onClick={() => plan.addBookingToDay(b, day)}>
+                      Add to plan
+                    </Button>
+                  )}
+                </HStack>
+              );
+            })}
+          </Stack>
+        )}
         {ordered.length === 0 ? (
           <Text fontSize="sm" color={muted} textAlign="center" py={4}>
             {isFreeDay ? "Free day — nothing planned yet." : "Nothing planned for this day yet."}

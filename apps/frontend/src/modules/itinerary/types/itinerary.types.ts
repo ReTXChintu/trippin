@@ -36,6 +36,8 @@ export interface ItineraryStop {
   openingHoursToday?: string;
   travelSource?: TravelSource;
   travelDistanceKm?: number;
+  /** Expected cost in the trip currency. */
+  cost?: number;
 }
 
 export type ItineraryDayType = "sightseeing" | "transfer" | "free";

@@ -50,10 +50,11 @@ interface TripHeaderProps {
   currentUserId: string;
   isOwner: boolean;
   onCityAdded: (legId: string) => void;
+  /** Trip settings drawer — owned by the page so other tabs can open it. */
+  settings: { isOpen: boolean; onOpen: () => void; onClose: () => void };
 }
 
-export function TripHeader({ trip, currentUserId, isOwner, onCityAdded }: TripHeaderProps) {
-  const settings = useDisclosure();
+export function TripHeader({ trip, currentUserId, isOwner, onCityAdded, settings }: TripHeaderProps) {
   const addCity = useDisclosure();
   const [editingLegId, setEditingLegId] = useState<string | null>(null);
   const muted = useColorModeValue("gray.500", "gray.400");

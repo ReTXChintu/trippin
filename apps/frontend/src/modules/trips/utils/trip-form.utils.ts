@@ -21,6 +21,8 @@ export function tripToFormValues(trip: Trip): TripFormValues {
     transportationMode: trip.transportationMode,
     travelStyle: trip.travelStyle,
     budgetLevel: trip.budgetLevel,
+    currency: trip.currency,
+    budgetAmount: trip.budgetAmount,
     interests: trip.interests,
     mustVisitPlaces: trip.mustVisitPlaces,
     excludedPlaces: trip.excludedPlaces,

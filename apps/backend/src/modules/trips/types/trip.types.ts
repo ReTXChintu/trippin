@@ -1,5 +1,6 @@
 import type { TripStatus, TravelStyle, TransportationMode } from "@/types";
 import type { TripLeg, TripLegTransfer } from "@/modules/trips/types/trip-leg.types";
+import type { ChecklistItem, TripBooking } from "@/modules/trips/types/trip-extras.types";
 import type {
   LegDestinationBrief,
   VehicleRentalSuggestion,
@@ -30,6 +31,12 @@ export interface Trip {
   transportationMode: TransportationMode;
   travelStyle: TravelStyle;
   budgetLevel?: "budget" | "moderate" | "luxury";
+  /** ISO 4217 code everything is totalled in (expenses in other currencies are converted). */
+  currency: string;
+  /** Planned total spend for the trip, in `currency`. */
+  budgetAmount?: number;
+  bookings: TripBooking[];
+  checklist: ChecklistItem[];
   interests: string[];
   mustVisitPlaces: string[];
   excludedPlaces: string[];

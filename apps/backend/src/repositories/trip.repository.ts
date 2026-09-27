@@ -8,6 +8,7 @@ import { generatePublicSlug } from "@/utils/trip.utils";
 
 import type { TripLeg, TripLegTransfer } from "@/modules/trips/types/trip-leg.types";
 import type { VehicleRentalSuggestion } from "@/modules/trips/types/trip-enrichment.types";
+import type { ChecklistItem, TripBooking } from "@/modules/trips/types/trip-extras.types";
 
 export interface CreateTripData {
   userId: string;
@@ -30,6 +31,8 @@ export interface CreateTripData {
   transportationMode?: TransportationMode;
   travelStyle?: TravelStyle;
   budgetLevel?: "budget" | "moderate" | "luxury";
+  currency?: string;
+  budgetAmount?: number;
   interests?: string[];
   mustVisitPlaces?: string[];
   excludedPlaces?: string[];
@@ -49,7 +52,11 @@ export type UpdateTripData = Partial<Omit<CreateTripData, "userId">> & {
   legs?: TripLeg[];
   transfers?: TripLegTransfer[];
   memberIds?: string[];
+  bookings?: TripBooking[];
+  checklist?: ChecklistItem[];
 };
+
+export type TripListField = "bookings" | "checklist";
 
 function toObjectId(userId: string): mongoose.Types.ObjectId {
   return new mongoose.Types.ObjectId(userId);
@@ -160,6 +167,51 @@ export class TripRepository {
   }
 
   /** Owner or member can update trip details. */
+  /** Appends one item to an embedded list (bookings, checklist) without rewriting the others. */
+  static async addListItem<T extends { id: string }>(
+    tripId: string,
+    userId: string,
+    field: TripListField,
+    item: T,
+  ): Promise<Trip | null> {
+    await connectDB();
+    if (!mongoose.isValidObjectId(tripId)) return null;
+    const doc = await TripModel.findOneAndUpdate(
+      { _id: tripId, ...userAccessFilter(userId) },
+      { $push: { [field]: item } },
+      { new: true, runValidators: true },
+    ).lean();
+    return doc ? toTripDTO(doc as unknown as ITripDocument) : null;
+  }
+
+  /** Replaces one embedded list item by id. Null when the trip or item isn't found. */
+  static async replaceListItem<T extends { id: string }>(
+    tripId: string,
+    userId: string,
+    field: TripListField,
+    item: T,
+  ): Promise<Trip | null> {
+    await connectDB();
+    if (!mongoose.isValidObjectId(tripId)) return null;
+    const doc = await TripModel.findOneAndUpdate(
+      { _id: tripId, ...userAccessFilter(userId), [`${field}.id`]: item.id },
+      { $set: { [`${field}.$`]: item } },
+      { new: true, runValidators: true },
+    ).lean();
+    return doc ? toTripDTO(doc as unknown as ITripDocument) : null;
+  }
+
+  static async removeListItem(tripId: string, userId: string, field: TripListField, itemId: string): Promise<Trip | null> {
+    await connectDB();
+    if (!mongoose.isValidObjectId(tripId)) return null;
+    const doc = await TripModel.findOneAndUpdate(
+      { _id: tripId, ...userAccessFilter(userId) },
+      { $pull: { [field]: { id: itemId } } },
+      { new: true },
+    ).lean();
+    return doc ? toTripDTO(doc as unknown as ITripDocument) : null;
+  }
+
   static async update(
     id: string,
     userId: string,

@@ -193,7 +193,7 @@ function legForDate(trip: Trip, date: string, legId?: string): TripLeg | undefin
 
 function buildTransferStop(
   trip: Trip,
-  transfer: Pick<TripLegTransfer, "label" | "estimatedTravelMinutes" | "date">,
+  transfer: Pick<TripLegTransfer, "id" | "label" | "estimatedTravelMinutes" | "date">,
   fromLeg: TripLeg,
   toLeg: TripLeg,
 ): ItineraryStop {
@@ -208,14 +208,37 @@ function buildTransferStop(
     );
   }
 
-  const startMin = parseTimeToMinutes(trip.dailyStartTime);
-  const arrivalMin = startMin + 30;
-  const departureMin = arrivalMin + travelMin;
+  let arrivalMin = parseTimeToMinutes(trip.dailyStartTime) + 30;
+  let departureMin = arrivalMin + travelMin;
+  let placeName = transfer.label;
+  let notes = `Inter-city travel from ${fromLeg.baseCity} to ${toLeg.baseCity}`;
+
+  // A booked flight/train/bus for this transfer: its real times drive the day.
+  const booking = (trip.bookings ?? []).find((b) => b.transferId === transfer.id && b.startTime);
+  if (booking?.startTime) {
+    arrivalMin = parseTimeToMinutes(booking.startTime);
+    const sameDayArrival = booking.endTime && (!booking.endDate || booking.endDate === booking.startDate);
+    departureMin = sameDayArrival
+      ? parseTimeToMinutes(booking.endTime!)
+      : booking.endDate && booking.endDate > booking.startDate
+        ? 24 * 60 - 1
+        : arrivalMin + travelMin;
+    if (departureMin <= arrivalMin) departureMin = arrivalMin + travelMin;
+    placeName = booking.title;
+    notes = [
+      `${fromLeg.baseCity} → ${toLeg.baseCity}`,
+      booking.provider,
+      booking.confirmationNumber ? `Conf. ${booking.confirmationNumber}` : undefined,
+    ]
+      .filter(Boolean)
+      .join(" · ");
+    travelMin = departureMin - arrivalMin;
+  }
 
   return {
     id: randomUUID(),
     placeId: `transfer-${fromLeg.id}-${toLeg.id}`,
-    placeName: transfer.label,
+    placeName,
     sequence: 1,
     arrivalTime: minutesToTime(arrivalMin),
     departureTime: minutesToTime(departureMin),
@@ -224,8 +247,26 @@ function buildTransferStop(
     coordinates: toPoint ?? fromPoint ?? undefined,
     category: "Transfer",
     stopType: "transfer",
-    notes: `Inter-city travel from ${fromLeg.baseCity} to ${toLeg.baseCity}`,
+    notes,
   };
+}
+
+/** Rebuilds a day's inter-city transfer stop from the current trip (legs, stays, linked booking),
+ * keeping its id. Days without a transfer are returned unchanged. */
+function refreshTransferStop(day: ItineraryDay, trip: Trip): ItineraryDay {
+  const plan = buildTripDayPlans(trip).find((d) => d.date === day.date)?.plan;
+  const transfer = plan?.type === "transfer" ? plan.transfer : plan?.type === "sightseeing" ? plan.transferOnDay : undefined;
+  if (!transfer) return day;
+
+  const legs = getEffectiveLegs(trip);
+  const fromLeg = legs.find((l) => l.id === transfer.fromLegId);
+  const toLeg = legs.find((l) => l.id === transfer.toLegId);
+  if (!fromLeg || !toLeg) return day;
+
+  const existing = day.stops.find((s) => s.stopType === "transfer");
+  const fresh = { ...buildTransferStop(trip, transfer, fromLeg, toLeg), id: existing?.id ?? randomUUID() };
+  const rest = day.stops.filter((s) => s.stopType !== "transfer");
+  return { ...day, transferLabel: fresh.placeName, stops: [fresh, ...rest] };
 }
 
 /** Day bounds (start/end minutes) for a leg's date, including the shortened start when the day
@@ -541,12 +582,13 @@ export function walkDay(sequence: ItineraryStop[], ctx: DayContext, opts: WalkOp
 
 /** Re-times a stored day in its current order. Non-strict by default: user edits never lose stops. */
 export function retimeDay(day: ItineraryDay, env: EngineEnv, opts: { strict?: boolean } = {}): WalkResult & { day: ItineraryDay } {
-  if (day.dayType === "transfer" || day.dayType === "free") {
-    return { day, stops: day.stops, dropped: [] };
+  const current = refreshTransferStop(day, env.trip);
+  if (current.dayType === "transfer" || current.dayType === "free") {
+    return { day: current, stops: current.stops, dropped: [] };
   }
-  const ctx = contextForDay(env, day);
-  const result = walkDay(day.stops, ctx, { strict: opts.strict ?? false, autoMeals: false });
-  return { ...result, day: { ...day, stops: result.stops } };
+  const ctx = contextForDay(env, current);
+  const result = walkDay(current.stops, ctx, { strict: opts.strict ?? false, autoMeals: false });
+  return { ...result, day: { ...current, stops: result.stops } };
 }
 
 // ---------------------------------------------------------------------------------------------

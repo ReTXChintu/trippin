@@ -1,6 +1,7 @@
 import type { ITripDocument } from "@/models/Trip";
 import type { Trip } from "@/modules/trips/types/trip.types";
 import type { TripLeg, TripLegTransfer } from "@/modules/trips/types/trip-leg.types";
+import { defaultCurrencyFor } from "@/utils/currency";
 
 type TripDocLike = Pick<
   ITripDocument,
@@ -26,6 +27,10 @@ type TripDocLike = Pick<
   | "transportationMode"
   | "travelStyle"
   | "budgetLevel"
+  | "currency"
+  | "budgetAmount"
+  | "bookings"
+  | "checklist"
   | "interests"
   | "mustVisitPlaces"
   | "excludedPlaces"
@@ -158,6 +163,34 @@ export function toTripDTO(doc: TripDocLike): Trip {
     transportationMode: doc.transportationMode,
     travelStyle: doc.travelStyle,
     budgetLevel: doc.budgetLevel,
+    currency: doc.currency || defaultCurrencyFor(doc.destinationCountry),
+    budgetAmount: doc.budgetAmount,
+    bookings: (doc.bookings ?? []).map((b) => ({
+      id: b.id,
+      type: b.type,
+      title: b.title,
+      provider: b.provider,
+      confirmationNumber: b.confirmationNumber,
+      startDate: b.startDate,
+      startTime: b.startTime,
+      endDate: b.endDate,
+      endTime: b.endTime,
+      fromPlace: b.fromPlace,
+      toPlace: b.toPlace,
+      transferId: b.transferId,
+      cost: b.cost,
+      currency: b.currency,
+      url: b.url,
+      notes: b.notes,
+    })),
+    checklist: (doc.checklist ?? []).map((c) => ({
+      id: c.id,
+      text: c.text,
+      category: c.category,
+      done: Boolean(c.done),
+      dueDate: c.dueDate,
+      assigneeId: c.assigneeId,
+    })),
     interests: toStringArray(doc.interests),
     mustVisitPlaces: toStringArray(doc.mustVisitPlaces),
     excludedPlaces: toStringArray(doc.excludedPlaces),

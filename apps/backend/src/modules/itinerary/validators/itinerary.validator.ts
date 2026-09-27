@@ -86,6 +86,7 @@ const itineraryStopSchema = z.object({
   openingHoursToday: z.string().optional(),
   travelSource: z.enum(["route", "estimate"]).optional(),
   travelDistanceKm: z.number().optional(),
+  cost: z.number().optional(),
 });
 
 const itineraryDaySchema = z.object({
@@ -146,6 +147,8 @@ export const updateStopSchema = z.object({
   /** null clears a previously fixed time. */
   fixedStartTime: timeStringSchema.nullable().optional(),
   notes: z.string().max(1000).optional(),
+  /** null clears the cost. */
+  cost: z.number().min(0).max(10_000_000).nullable().optional(),
 });
 
 export const removeStopSchema = z.object({

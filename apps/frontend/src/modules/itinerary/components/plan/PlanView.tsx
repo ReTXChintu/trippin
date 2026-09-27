@@ -47,7 +47,9 @@ import {
   useSetStopLock,
   useSummarizeItinerary,
   useUndoItinerary,
+  useAddStop,
 } from "@/modules/itinerary/hooks/useItinerary";
+import { useWeatherQuery } from "@/modules/trips/hooks/useTrips";
 import { ItineraryExportMenu, ItineraryPrintContent } from "@/modules/itinerary/components/ItineraryExportMenu";
 import { MapView } from "@/modules/itinerary/components/MapView";
 import { PlaceDetailModal } from "@/modules/places/components/PlaceDetailModal";
@@ -64,7 +66,7 @@ import { AddStopModal } from "./AddStopModal";
 import { MealPickerDrawer } from "./MealPickerDrawer";
 import { PlanProvider, type PlanActions } from "./PlanContext";
 
-export type TripTab = "plan" | "places" | "stays" | "food" | "guide";
+export type TripTab = "plan" | "places" | "stays" | "food" | "bookings" | "budget" | "checklist" | "guide";
 
 interface PlanViewProps {
   trip: Trip;
@@ -166,6 +168,9 @@ export function PlanView({ trip, hasMapsKey, cityId, onCityChange, onGoTo }: Pla
   const reorder = useReorderItineraryStops(trip.id);
   const movePlaceToDay = useMovePlaceToDay(trip.id);
   const summarize = useSummarizeItinerary(trip.id);
+  const addStop = useAddStop(trip.id);
+  const { data: weatherData } = useWeatherQuery(trip.id);
+  const weatherByDate = new Map((weatherData?.days ?? []).map((w) => [w.date, w]));
 
   const legs = useMemo(() => getEffectiveLegs(trip), [trip]);
   const dayPlans = useMemo(() => buildTripDayPlans(trip), [trip]);
@@ -253,6 +258,23 @@ export function PlanView({ trip, hasMapsKey, cityId, onCityChange, onGoTo }: Pla
         stop.id,
       ),
     reorder: (day, stopIds) => void run(() => reorder.mutateAsync({ dayNumber: day.dayNumber, stopIds })),
+    addBookingToDay: (booking, day) => {
+      const toMin = (t?: string) => (t ? Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5)) : undefined);
+      const start = toMin(booking.startTime);
+      const end = booking.endDate && booking.endDate !== booking.startDate ? undefined : toMin(booking.endTime);
+      const duration = start !== undefined && end !== undefined && end > start ? end - start : 90;
+      void run(
+        () =>
+          addStop.mutateAsync({
+            dayNumber: day.dayNumber,
+            name: booking.title,
+            fixedStartTime: booking.startTime,
+            durationMinutes: Math.max(10, Math.min(duration, 720)),
+            notes: booking.confirmationNumber ? `Conf. ${booking.confirmationNumber}` : undefined,
+          }),
+        `${booking.title} added at ${booking.startTime}`,
+      );
+    },
     moveTargets: (day) =>
       (itinerary?.days ?? [])
         .filter((d) => d.dayNumber !== day.dayNumber && d.dayType !== "transfer")
@@ -484,6 +506,8 @@ export function PlanView({ trip, hasMapsKey, cityId, onCityChange, onGoTo }: Pla
                         else dayRefs.current.delete(day.dayNumber);
                       }}
                       day={day}
+                      weather={weatherByDate.get(day.date)}
+                      bookings={trip.bookings.filter((b) => b.startDate === day.date && !b.transferId)}
                       startStay={stay ? { name: stay.name, coordinates: stay.coordinates } : undefined}
                       isSelected={day.dayNumber === selectedDay?.dayNumber}
                       onSelect={() => selectDay(day.dayNumber)}
@@ -579,7 +603,7 @@ export function PlanView({ trip, hasMapsKey, cityId, onCityChange, onGoTo }: Pla
         {itinerary && <ItineraryPrintContent trip={trip} itinerary={itinerary} />}
       </Stack>
 
-      <EditStopModal tripId={trip.id} target={editTarget} onClose={() => setEditTarget(null)} />
+      <EditStopModal tripId={trip.id} currency={trip.currency} target={editTarget} onClose={() => setEditTarget(null)} />
       <MealPickerDrawer
         tripId={trip.id}
         target={mealTarget}

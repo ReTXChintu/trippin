@@ -15,6 +15,8 @@ import {
   syncTripDatesFromLegs,
 } from "@/modules/trips/utils/trip-leg.utils";
 import { syncLegacyHotelFields } from "@/modules/trips/utils/stay.utils";
+import { defaultCurrencyFor } from "@/utils/currency";
+import { deleteExpensesForTrip } from "@/modules/trips/services/trip-budget.service";
 
 export type ActionResult<T = void> =
   | { success: true; data?: T; message?: string }
@@ -53,6 +55,8 @@ function toTripPayload(data: ReturnType<typeof createTripSchema.parse>) {
     transportationMode: data.transportationMode,
     travelStyle: data.travelStyle,
     budgetLevel: data.budgetLevel,
+    currency: data.currency ?? defaultCurrencyFor(data.destinationCountry),
+    budgetAmount: data.budgetAmount,
     interests: data.interests,
     mustVisitPlaces: data.mustVisitPlaces,
     excludedPlaces: data.excludedPlaces,
@@ -110,6 +114,7 @@ export async function deleteTrip(tripId: string, userId: string): Promise<Action
   if (!deleted) return { success: false, error: "Trip not found" };
 
   await ItineraryRepository.deleteByTripId(tripId);
+  await deleteExpensesForTrip(tripId);
 
   return { success: true, message: "Trip deleted" };
 }

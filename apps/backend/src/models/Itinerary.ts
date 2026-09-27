@@ -32,6 +32,7 @@ export interface IItineraryStop {
   openingHoursToday?: string;
   travelSource?: "route" | "estimate";
   travelDistanceKm?: number;
+  cost?: number;
 }
 
 export interface IItineraryDay {
@@ -129,6 +130,7 @@ const ItineraryStopSchema = new Schema<IItineraryStop>(
     openingHoursToday: { type: String },
     travelSource: { type: String, enum: ["route", "estimate"] },
     travelDistanceKm: { type: Number },
+    cost: { type: Number, min: 0 },
   },
   { _id: false },
 );

@@ -115,13 +115,14 @@ async function retimeWithRoutes(
   days: ItineraryDay[],
   opts: { dayNumbers?: Set<number>; strict?: boolean } = {},
 ): Promise<{ days: ItineraryDay[]; dropped: ItineraryStop[] }> {
-  const targets = days.filter((d) => isSchedulable(d) && (!opts.dayNumbers || opts.dayNumbers.has(d.dayNumber)));
+  // Travel days are included too: their transfer stop is rebuilt (e.g. from a linked booking).
+  const targets = days.filter((d) => !opts.dayNumbers || opts.dayNumbers.has(d.dayNumber));
   if (targets.length === 0) return { days, dropped: [] };
 
   let routedEnv: EngineEnv = env;
   if (env.googleMapsKey) {
     try {
-      const measured = await measureDayHops(env.trip, targets, env.googleMapsKey);
+      const measured = await measureDayHops(env.trip, targets.filter(isSchedulable), env.googleMapsKey);
       if (measured.size > 0) routedEnv = { ...env, travel: travelLookupWithRoutes(env.travel, measured) };
     } catch {
       // Best-effort: estimates are still a usable schedule.
@@ -468,7 +469,7 @@ export async function updateStop(
   const parsed = updateStopSchema.safeParse(input);
   if (!parsed.success) return invalid(parsed.error.issues);
 
-  const { tripId, dayNumber, stopId, durationMinutes, fixedStartTime, notes } = parsed.data;
+  const { tripId, dayNumber, stopId, durationMinutes, fixedStartTime, notes, cost } = parsed.data;
   const loaded = await loadTripAndItinerary(userId, tripId);
   if ("error" in loaded) return { success: false, error: loaded.error };
   const { trip, itinerary: existing } = loaded;
@@ -486,6 +487,7 @@ export async function updateStop(
     visitDurationMinutes: durationMinutes ?? stop.visitDurationMinutes,
     fixedStartTime: fixedStartTime === null ? undefined : (fixedStartTime ?? stop.fixedStartTime),
     notes: notes !== undefined ? notes.trim() || undefined : stop.notes,
+    cost: cost === null ? undefined : (cost ?? stop.cost),
   };
   const nextDay = { ...day, stops: day.stops.map((s) => (s.id === stopId ? updated : s)) };
 

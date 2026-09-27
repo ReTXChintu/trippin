@@ -39,6 +39,8 @@ export interface ItineraryStop {
   travelSource?: TravelSource;
   /** Distance of the hop that arrives at this stop. */
   travelDistanceKm?: number;
+  /** Expected cost (tickets, meal) in the trip currency — feeds the budget. */
+  cost?: number;
 }
 
 export type ItineraryDayType = "sightseeing" | "transfer" | "free";

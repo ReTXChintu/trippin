@@ -1,4 +1,10 @@
 import mongoose, { Schema, type Document, type Model } from "mongoose";
+import {
+  BOOKING_TYPES,
+  CHECKLIST_CATEGORIES,
+  type ChecklistItem,
+  type TripBooking,
+} from "@/modules/trips/types/trip-extras.types";
 import type {
   TransportationMode,
   TravelStyle,
@@ -115,6 +121,10 @@ export interface ITripDocument extends Document {
   transportationMode: TransportationMode;
   travelStyle: TravelStyle;
   budgetLevel?: "budget" | "moderate" | "luxury";
+  currency?: string;
+  budgetAmount?: number;
+  bookings?: TripBooking[];
+  checklist?: ChecklistItem[];
   interests: string[];
   mustVisitPlaces: string[];
   excludedPlaces: string[];
@@ -240,6 +250,40 @@ const TripLegTransferSchema = new Schema<ITripLegTransfer>(
   { _id: false },
 );
 
+const TripBookingSchema = new Schema<TripBooking>(
+  {
+    id: { type: String, required: true },
+    type: { type: String, enum: BOOKING_TYPES, required: true },
+    title: { type: String, required: true, trim: true },
+    provider: { type: String, trim: true },
+    confirmationNumber: { type: String, trim: true },
+    startDate: { type: String, required: true },
+    startTime: { type: String },
+    endDate: { type: String },
+    endTime: { type: String },
+    fromPlace: { type: String, trim: true },
+    toPlace: { type: String, trim: true },
+    transferId: { type: String },
+    cost: { type: Number },
+    currency: { type: String },
+    url: { type: String, trim: true },
+    notes: { type: String },
+  },
+  { _id: false },
+);
+
+const ChecklistItemSchema = new Schema<ChecklistItem>(
+  {
+    id: { type: String, required: true },
+    text: { type: String, required: true, trim: true },
+    category: { type: String, enum: CHECKLIST_CATEGORIES, required: true },
+    done: { type: Boolean, default: false },
+    dueDate: { type: String },
+    assigneeId: { type: String },
+  },
+  { _id: false },
+);
+
 const TripSchema = new Schema<ITripDocument>(
   {
     userId: { type: Schema.Types.ObjectId, ref: "User", required: true, index: true },
@@ -274,6 +318,10 @@ const TripSchema = new Schema<ITripDocument>(
       type: String,
       enum: ["budget", "moderate", "luxury"],
     },
+    currency: { type: String, trim: true, uppercase: true },
+    budgetAmount: { type: Number, min: 0 },
+    bookings: { type: [TripBookingSchema], default: [] },
+    checklist: { type: [ChecklistItemSchema], default: [] },
     interests: { type: [String], default: [] },
     mustVisitPlaces: { type: [String], default: [] },
     excludedPlaces: { type: [String], default: [] },

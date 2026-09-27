@@ -49,6 +49,7 @@ function toStopDTO(stop: IItineraryStop): ItineraryStop {
     openingHoursToday: stop.openingHoursToday,
     travelSource: stop.travelSource,
     travelDistanceKm: stop.travelDistanceKm,
+    cost: stop.cost,
   };
 }
 
@@ -159,6 +160,7 @@ export function toPlainItineraryDays(days: ItineraryDay[]): ItineraryDay[] {
       openingHoursToday: stop.openingHoursToday,
       travelSource: stop.travelSource,
       travelDistanceKm: stop.travelDistanceKm,
+      cost: stop.cost,
     })),
   }));
 }

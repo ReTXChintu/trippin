@@ -148,6 +148,7 @@ export async function act(req: Request, res: Response) {
           durationMinutes: body.durationMinutes,
           fixedStartTime: body.fixedStartTime,
           notes: body.notes,
+          cost: body.cost,
         }),
       );
     case "removeStop":

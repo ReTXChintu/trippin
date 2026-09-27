@@ -176,6 +176,8 @@ export interface UpdateStopParams {
   /** null clears a fixed time */
   fixedStartTime?: string | null;
   notes?: string;
+  /** null clears the cost */
+  cost?: number | null;
 }
 
 export async function updateStop(tripId: string, params: UpdateStopParams): Promise<{ itinerary: Itinerary }> {

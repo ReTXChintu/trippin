@@ -28,11 +28,12 @@ const DURATIONS = [15, 20, 30, 45, 60, 75, 90, 120, 150, 180, 240, 300, 360];
 
 interface EditStopModalProps {
   tripId: string;
+  currency: string;
   target: { stop: ItineraryStop; day: ItineraryDay } | null;
   onClose: () => void;
 }
 
-export function EditStopModal({ tripId, target, onClose }: EditStopModalProps) {
+export function EditStopModal({ tripId, currency, target, onClose }: EditStopModalProps) {
   const toast = useToast();
   const updateStop = useUpdateStop(tripId);
   const stop = target?.stop;
@@ -41,6 +42,7 @@ export function EditStopModal({ tripId, target, onClose }: EditStopModalProps) {
   const [isFixed, setIsFixed] = useState(false);
   const [fixedTime, setFixedTime] = useState("10:00");
   const [notes, setNotes] = useState("");
+  const [cost, setCost] = useState("");
 
   useEffect(() => {
     if (!stop) return;
@@ -48,6 +50,7 @@ export function EditStopModal({ tripId, target, onClose }: EditStopModalProps) {
     setIsFixed(Boolean(stop.fixedStartTime));
     setFixedTime(stop.fixedStartTime ?? stop.arrivalTime);
     setNotes(stop.notes ?? "");
+    setCost(stop.cost !== undefined ? String(stop.cost) : "");
   }, [stop]);
 
   const durationOptions = DURATIONS.includes(duration) ? DURATIONS : [...DURATIONS, duration].sort((a, b) => a - b);
@@ -61,6 +64,7 @@ export function EditStopModal({ tripId, target, onClose }: EditStopModalProps) {
         durationMinutes: duration,
         fixedStartTime: isFixed ? fixedTime : null,
         notes,
+        cost: cost.trim() === "" ? null : Math.max(Number(cost), 0),
       });
       toast({ title: "Saved — the day was re-timed", status: "success", duration: 2500 });
       onClose();
@@ -101,6 +105,11 @@ export function EditStopModal({ tripId, target, onClose }: EditStopModalProps) {
               <FormHelperText fontSize="xs">
                 For tickets, tours, shows and table reservations — the rest of the day is planned around it.
               </FormHelperText>
+            </FormControl>
+
+            <FormControl>
+              <FormLabel fontSize="sm">Expected cost ({currency})</FormLabel>
+              <Input size="sm" type="number" min={0} value={cost} onChange={(e) => setCost(e.target.value)} placeholder="Tickets, meal — counts toward the budget" />
             </FormControl>
 
             <FormControl>

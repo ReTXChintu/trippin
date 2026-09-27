@@ -132,6 +132,11 @@ const tripBaseSchema = z.object({
   transportationMode: z.enum(transportationModes),
   travelStyle: z.enum(travelStyles),
   budgetLevel: z.enum(budgetLevels).optional(),
+  currency: z.string().optional(),
+  budgetAmount: z.preprocess(
+    (v) => (v === "" || v === null || (typeof v === "number" && Number.isNaN(v)) ? undefined : Number(v)),
+    z.number().nonnegative("Budget can't be negative").optional(),
+  ),
   interests: z.array(z.string()),
   mustVisitPlaces: z.array(z.string()),
   excludedPlaces: z.array(z.string()),

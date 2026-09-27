@@ -139,6 +139,16 @@ const tripBaseSchema = z.object({
   transportationMode: z.enum(transportationModes),
   travelStyle: z.enum(travelStyles),
   budgetLevel: z.enum(budgetLevels).optional(),
+  currency: z
+    .string()
+    .trim()
+    .regex(/^[A-Za-z]{3}$/, "Currency must be a 3-letter code like INR or USD")
+    .transform((c) => c.toUpperCase())
+    .optional(),
+  budgetAmount: z.preprocess(
+    (v) => (v === "" || v === null ? undefined : typeof v === "string" ? Number(v) : v),
+    z.number().nonnegative().optional(),
+  ),
   interests: z.array(z.string()),
   mustVisitPlaces: z.array(z.string()),
   excludedPlaces: z.array(z.string()),

@@ -4,6 +4,7 @@ import * as trips from "@/modules/trips/controllers/trips.controller";
 import * as members from "@/modules/trips/controllers/trip-members.controller";
 import * as places from "@/modules/trips/controllers/trip-places.controller";
 import * as stays from "@/modules/trips/controllers/trip-stays.controller";
+import * as logistics from "@/modules/trips/controllers/trip-logistics.controller";
 import {
   get as getItinerary,
   act as actItinerary,
@@ -47,5 +48,21 @@ router.get("/:id/itinerary", getItinerary);
 router.post("/:id/itinerary", actItinerary);
 router.get("/:id/itinerary/routes", getItineraryRoutes);
 router.get("/:id/itinerary/meal-suggestions", getMealSuggestions);
+
+router.post("/:id/bookings", logistics.createBooking);
+router.put("/:id/bookings/:bookingId", logistics.editBooking);
+router.delete("/:id/bookings/:bookingId", logistics.deleteBooking);
+
+router.get("/:id/checklist/suggestions", logistics.checklistSuggestions);
+router.post("/:id/checklist", logistics.createChecklistItems);
+router.patch("/:id/checklist/:itemId", logistics.editChecklistItem);
+router.delete("/:id/checklist/:itemId", logistics.deleteChecklistItem);
+
+router.get("/:id/budget", logistics.budget);
+router.post("/:id/expenses", logistics.createExpense);
+router.put("/:id/expenses/:expenseId", logistics.editExpense);
+router.delete("/:id/expenses/:expenseId", logistics.deleteExpense);
+
+router.get("/:id/weather", logistics.weather);
 
 export default router;

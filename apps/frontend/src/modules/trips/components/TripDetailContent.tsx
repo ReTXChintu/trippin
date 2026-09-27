@@ -14,10 +14,11 @@ import {
   Tabs,
   Text,
   useColorModeValue,
+  useDisclosure,
 } from "@chakra-ui/react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
-import { FiBookOpen, FiCalendar, FiMapPin } from "react-icons/fi";
-import { MdHotel, MdRestaurant } from "react-icons/md";
+import { FiBookOpen, FiCalendar, FiCheckSquare, FiDollarSign, FiMapPin } from "react-icons/fi";
+import { MdConfirmationNumber, MdHotel, MdRestaurant } from "react-icons/md";
 import type { IconType } from "react-icons";
 import { LoadingState } from "@/components/ui/LoadingState";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -31,6 +32,9 @@ import { StaysView } from "@/modules/trips/components/stays/StaysView";
 import { TripPlacesPanel } from "@/modules/places/components/TripPlacesPanel";
 import { PlanView, type TripTab } from "@/modules/itinerary/components/plan/PlanView";
 import { FoodView } from "@/modules/itinerary/components/FoodView";
+import { BookingsView } from "@/modules/trips/components/bookings/BookingsView";
+import { BudgetView } from "@/modules/trips/components/budget/BudgetView";
+import { ChecklistView } from "@/modules/trips/components/ChecklistView";
 import { getEffectiveLegs } from "@/modules/trips/utils/trip-leg.utils";
 import { getUncoveredNights } from "@/modules/trips/utils/stay.utils";
 
@@ -39,6 +43,9 @@ const TABS: { key: TripTab; label: string; icon: IconType }[] = [
   { key: "places", label: "Places", icon: FiMapPin },
   { key: "stays", label: "Stays", icon: MdHotel },
   { key: "food", label: "Food", icon: MdRestaurant },
+  { key: "bookings", label: "Bookings", icon: MdConfirmationNumber },
+  { key: "budget", label: "Budget", icon: FiDollarSign },
+  { key: "checklist", label: "Checklist", icon: FiCheckSquare },
   { key: "guide", label: "Guide", icon: FiBookOpen },
 ];
 
@@ -48,6 +55,7 @@ export function TripDetailContent() {
   const [params, setParams] = useSearchParams();
   const { data: trip, isLoading } = useTripQuery(id);
   const tabBorder = useColorModeValue("gray.200", "gray.700");
+  const settings = useDisclosure();
 
   if (isLoading) return <LoadingState />;
   if (!trip) return <EmptyState title="Trip not found" />;
@@ -99,7 +107,13 @@ export function TripDetailContent() {
         </Alert>
       )}
 
-      <TripHeader trip={trip} currentUserId={currentUserId} isOwner={isOwner} onCityAdded={(legId) => go("places", legId)} />
+      <TripHeader
+        trip={trip}
+        currentUserId={currentUserId}
+        isOwner={isOwner}
+        onCityAdded={(legId) => go("places", legId)}
+        settings={settings}
+      />
 
       <Tabs
         index={TABS.findIndex((t) => t.key === tab)}
@@ -120,6 +134,11 @@ export function TripDetailContent() {
                   </Text>
                 )}
                 {t.key === "stays" && missingNights > 0 && <Circle size="7px" bg="orange.400" />}
+                {t.key === "checklist" && trip.checklist.length > 0 && (
+                  <Text as="span" fontSize="xs" color="gray.500" fontWeight="normal">
+                    {trip.checklist.filter((c) => c.done).length}/{trip.checklist.length}
+                  </Text>
+                )}
               </HStack>
             </Tab>
           ))}
@@ -153,6 +172,15 @@ export function TripDetailContent() {
           </TabPanel>
           <TabPanel px={0} pt={6}>
             <FoodView trip={trip} cityId={focusedCityId} onCityChange={setCity} onGoToGuide={() => go("guide")} />
+          </TabPanel>
+          <TabPanel px={0} pt={6}>
+            <BookingsView trip={trip} />
+          </TabPanel>
+          <TabPanel px={0} pt={6}>
+            <BudgetView trip={trip} currentUserId={currentUserId} onOpenSettings={settings.onOpen} />
+          </TabPanel>
+          <TabPanel px={0} pt={6}>
+            <ChecklistView trip={trip} />
           </TabPanel>
           <TabPanel px={0} pt={6}>
             <Stack spacing={5}>
