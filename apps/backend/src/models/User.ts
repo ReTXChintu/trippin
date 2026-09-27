@@ -1,5 +1,6 @@
 import mongoose, { Schema, type Document, type Model } from "mongoose";
 import type { UserPreferences } from "@/types";
+import { AI_PROVIDERS, type AiProviderName } from "@/constants/ai";
 
 export interface IUserDocument extends Document {
   name: string;
@@ -11,6 +12,12 @@ export interface IUserDocument extends Document {
   googleMapsApiKeyEncrypted?: string;
   openaiApiKeyLast4?: string;
   googleMapsApiKeyLast4?: string;
+  geminiApiKeyEncrypted?: string;
+  geminiApiKeyLast4?: string;
+  /** Preferred AI provider; unset = whichever key is configured. */
+  aiProvider?: AiProviderName;
+  openaiModel?: string;
+  geminiModel?: string;
   resetPasswordToken?: string;
   resetPasswordExpires?: Date;
   createdAt: Date;
@@ -38,6 +45,11 @@ const UserSchema = new Schema<IUserDocument>(
     googleMapsApiKeyEncrypted: { type: String },
     openaiApiKeyLast4: { type: String },
     googleMapsApiKeyLast4: { type: String },
+    geminiApiKeyEncrypted: { type: String },
+    geminiApiKeyLast4: { type: String },
+    aiProvider: { type: String, enum: AI_PROVIDERS },
+    openaiModel: { type: String, trim: true },
+    geminiModel: { type: String, trim: true },
     resetPasswordToken: { type: String },
     resetPasswordExpires: { type: Date },
   },

@@ -47,8 +47,10 @@ export const profileSchema = z.object({
 
 export const apiKeysSchema = z.object({
   openaiApiKey: z.string().optional(),
+  geminiApiKey: z.string().optional(),
   googleMapsApiKey: z.string().optional(),
   clearOpenai: z.boolean().optional(),
+  clearGemini: z.boolean().optional(),
   clearGoogleMaps: z.boolean().optional(),
 });
 

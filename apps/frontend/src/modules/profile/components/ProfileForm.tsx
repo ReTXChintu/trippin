@@ -27,6 +27,7 @@ import {
   type ApiKeysInput,
   type ProfileInput,
 } from "@/modules/auth/validators/auth.validator";
+import { AiSettingsCard } from "@/modules/profile/components/AiSettingsCard";
 
 export function ProfileForm() {
   const toast = useToast();
@@ -57,8 +58,10 @@ export function ProfileForm() {
     resolver: zodResolver(apiKeysSchema),
     defaultValues: {
       openaiApiKey: "",
+      geminiApiKey: "",
       googleMapsApiKey: "",
       clearOpenai: false,
+      clearGemini: false,
       clearGoogleMaps: false,
     },
   });
@@ -83,7 +86,14 @@ export function ProfileForm() {
   const onKeysSubmit = async (data: ApiKeysInput) => {
     try {
       await updateApiKeys.mutateAsync(data);
-      resetKeys({ openaiApiKey: "", googleMapsApiKey: "", clearOpenai: false, clearGoogleMaps: false });
+      resetKeys({
+        openaiApiKey: "",
+        geminiApiKey: "",
+        googleMapsApiKey: "",
+        clearOpenai: false,
+        clearGemini: false,
+        clearGoogleMaps: false,
+      });
       toast({ title: "API keys updated", status: "success", duration: 3000 });
     } catch (err) {
       toast({ title: getApiErrorMessage(err), status: "error", duration: 4000 });
@@ -94,6 +104,15 @@ export function ProfileForm() {
     try {
       await updateApiKeys.mutateAsync({ clearOpenai: true });
       toast({ title: "OpenAI key removed", status: "success", duration: 3000 });
+    } catch (err) {
+      toast({ title: getApiErrorMessage(err), status: "error", duration: 4000 });
+    }
+  };
+
+  const handleClearGemini = async () => {
+    try {
+      await updateApiKeys.mutateAsync({ clearGemini: true });
+      toast({ title: "Gemini key removed", status: "success", duration: 3000 });
     } catch (err) {
       toast({ title: getApiErrorMessage(err), status: "error", duration: 4000 });
     }
@@ -113,7 +132,7 @@ export function ProfileForm() {
   }
 
   return (
-    <VStack spacing={6} align="stretch" maxW="lg">
+    <VStack spacing={6} align="stretch" maxW="2xl">
       <Box p={6} bg={bg} borderWidth="1px" borderColor={borderColor} borderRadius="xl">
         <VStack spacing={6} align="stretch">
           <Box>
@@ -157,6 +176,8 @@ export function ProfileForm() {
         </VStack>
       </Box>
 
+      <AiSettingsCard profile={profile} />
+
       <Box p={6} bg={bg} borderWidth="1px" borderColor={borderColor} borderRadius="xl">
         <VStack spacing={4} align="stretch">
           <Box>
@@ -185,7 +206,7 @@ export function ProfileForm() {
                   {...registerKeys("openaiApiKey")}
                 />
                 <FormHelperText>
-                  Used for AI summaries, optimization, and travel guides.{" "}
+                  One of OpenAI or Gemini powers AI guides, summaries and plan comparison — choose which above.{" "}
                   <Link href="https://platform.openai.com/api-keys" isExternal color="brand.500">
                     Get an OpenAI key
                   </Link>
@@ -201,6 +222,42 @@ export function ProfileForm() {
                     onClick={handleClearOpenai}
                   >
                     Remove OpenAI key
+                  </Button>
+                )}
+              </FormControl>
+
+              <Divider />
+
+              <FormControl isInvalid={!!keyErrors.geminiApiKey}>
+                <FormLabel>Google Gemini API Key</FormLabel>
+                {profile.hasGeminiKey && (
+                  <Text fontSize="sm" color="green.500" mb={1}>
+                    Configured ···{profile.geminiApiKeyLast4}
+                  </Text>
+                )}
+                <Input
+                  type="password"
+                  placeholder={profile.hasGeminiKey ? "Enter new key to replace" : "AIza..."}
+                  autoComplete="off"
+                  {...registerKeys("geminiApiKey")}
+                />
+                <FormHelperText>
+                  An alternative to OpenAI with a generous free tier.{" "}
+                  <Link href="https://aistudio.google.com/app/apikey" isExternal color="brand.500">
+                    Get a Gemini key
+                  </Link>
+                </FormHelperText>
+                {profile.hasGeminiKey && (
+                  <Button
+                    mt={2}
+                    size="sm"
+                    variant="ghost"
+                    colorScheme="red"
+                    type="button"
+                    isLoading={updateApiKeys.isPending}
+                    onClick={handleClearGemini}
+                  >
+                    Remove Gemini key
                   </Button>
                 )}
               </FormControl>

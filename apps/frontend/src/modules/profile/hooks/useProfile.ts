@@ -34,3 +34,22 @@ export function useUpdateApiKeys() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["profile"] }),
   });
 }
+
+export function useUpdateAiSettings() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: profileApi.updateAiSettings,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["profile"] }),
+  });
+}
+
+/** Models the saved key can use (live from the provider, recommended first). */
+export function useAiModelsQuery(provider: profileApi.AiProviderName, enabled: boolean) {
+  return useQuery({
+    queryKey: ["profile", "ai-models", provider],
+    queryFn: () => profileApi.listAiModels(provider),
+    enabled,
+    staleTime: 1000 * 60 * 30,
+    retry: false,
+  });
+}

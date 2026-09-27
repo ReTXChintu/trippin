@@ -3,6 +3,7 @@ import {
   assertGoogleMapsKey,
   getOwnerApiKeysForTripDto,
   getUserApiKeys,
+  resolveAiConfig,
 } from "@/lib/services/trip-api-keys.service";
 import { getAIProvider } from "@/lib/ai";
 import { PlacesService } from "@/modules/places/services/places.service";
@@ -366,9 +367,10 @@ export async function discoverPlacesForTrip(
 
       let aiMatchedPlaceIds: string[] = [];
       let aiSuggestedPlaceNames: string[] = [];
-      if (ownerKeys.openai) {
+      const aiConfig = resolveAiConfig(ownerKeys);
+      if (aiConfig) {
         try {
-          const suggestedNames = await getAIProvider(ownerKeys.openai).suggestPlaces({
+          const suggestedNames = await getAIProvider(aiConfig).suggestPlaces({
             city: leg.baseCity,
             state: leg.state ?? trip.destinationState,
             country: leg.country,

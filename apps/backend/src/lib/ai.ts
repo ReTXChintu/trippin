@@ -1,6 +1,6 @@
-import type { AIProvider } from "@/modules/ai/types/ai-provider.types";
-import { OpenAIProvider } from "@/modules/ai/services/openai.provider";
+import type { AIProvider, AiConfig } from "@/modules/ai/types/ai-provider.types";
+import { LlmAIProvider } from "@/modules/ai/services/llm.provider";
 
-export function getAIProvider(apiKey: string): AIProvider {
-  return new OpenAIProvider(apiKey);
+export function getAIProvider(config: AiConfig): AIProvider {
+  return new LlmAIProvider(config);
 }

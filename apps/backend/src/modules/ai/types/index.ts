@@ -1,2 +1,3 @@
 export type { AIProvider, ParsedPromptResult } from "./ai-provider.types";
-export { OpenAIProvider } from "../services/openai.provider";
+export type { AiConfig } from "./ai-provider.types";
+export { LlmAIProvider } from "../services/llm.provider";

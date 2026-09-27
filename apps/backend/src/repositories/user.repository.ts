@@ -13,8 +13,16 @@ export interface CreateUserInput {
 export interface UpdateApiKeysInput {
   openaiApiKeyEncrypted?: string;
   googleMapsApiKeyEncrypted?: string;
+  geminiApiKeyEncrypted?: string;
   openaiApiKeyLast4?: string;
   googleMapsApiKeyLast4?: string;
+  geminiApiKeyLast4?: string;
+}
+
+export interface UpdateAiSettingsInput {
+  aiProvider?: IUserDocument["aiProvider"];
+  openaiModel?: string;
+  geminiModel?: string;
 }
 
 export class UserRepository {
@@ -46,30 +54,31 @@ export class UserRepository {
     data: UpdateApiKeysInput,
   ): Promise<IUserDocument | null> {
     await connectDB();
-    const update: Record<string, string | undefined> = {};
-    if (data.openaiApiKeyEncrypted !== undefined) {
-      update.openaiApiKeyEncrypted = data.openaiApiKeyEncrypted;
-    }
-    if (data.googleMapsApiKeyEncrypted !== undefined) {
-      update.googleMapsApiKeyEncrypted = data.googleMapsApiKeyEncrypted;
-    }
-    if (data.openaiApiKeyLast4 !== undefined) {
-      update.openaiApiKeyLast4 = data.openaiApiKeyLast4;
-    }
-    if (data.googleMapsApiKeyLast4 !== undefined) {
-      update.googleMapsApiKeyLast4 = data.googleMapsApiKeyLast4;
-    }
+    const update = Object.fromEntries(Object.entries(data).filter(([, value]) => value !== undefined));
     return User.findByIdAndUpdate(id, update, { new: true });
+  }
+
+  static async updateAiSettings(id: string, data: UpdateAiSettingsInput): Promise<IUserDocument | null> {
+    await connectDB();
+    const update = Object.fromEntries(Object.entries(data).filter(([, value]) => value !== undefined));
+    return User.findByIdAndUpdate(id, update, { new: true });
+  }
+
+  static async clearGeminiKey(id: string): Promise<IUserDocument | null> {
+    await connectDB();
+    return User.findByIdAndUpdate(
+      id,
+      { $unset: { geminiApiKeyEncrypted: "", geminiApiKeyLast4: "" } },
+      { new: true },
+    );
   }
 
   static async clearOpenAiKey(id: string): Promise<IUserDocument | null> {
     await connectDB();
     return User.findByIdAndUpdate(
       id,
-      {
-        openaiApiKeyEncrypted: undefined,
-        openaiApiKeyLast4: undefined,
-      },
+      // $unset, not `field: undefined` — Mongoose drops undefined values, making that a no-op.
+      { $unset: { openaiApiKeyEncrypted: "", openaiApiKeyLast4: "" } },
       { new: true },
     );
   }
@@ -78,10 +87,7 @@ export class UserRepository {
     await connectDB();
     return User.findByIdAndUpdate(
       id,
-      {
-        googleMapsApiKeyEncrypted: undefined,
-        googleMapsApiKeyLast4: undefined,
-      },
+      { $unset: { googleMapsApiKeyEncrypted: "", googleMapsApiKeyLast4: "" } },
       { new: true },
     );
   }
@@ -114,11 +120,8 @@ export class UserRepository {
     await connectDB();
     return User.findByIdAndUpdate(
       id,
-      {
-        passwordHash,
-        resetPasswordToken: undefined,
-        resetPasswordExpires: undefined,
-      },
+      // The reset token must stop working once used.
+      { $set: { passwordHash }, $unset: { resetPasswordToken: "", resetPasswordExpires: "" } },
       { new: true },
     );
   }

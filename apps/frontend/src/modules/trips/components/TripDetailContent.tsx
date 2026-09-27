@@ -71,29 +71,29 @@ export function TripDetailContent() {
   const setCity = (legId: string | null) => go(tab, legId);
 
   const missingGoogleKey = trip.ownerApiKeys && !trip.ownerApiKeys.hasGoogleMapsKey;
-  const missingOpenAiKey = trip.ownerApiKeys && !trip.ownerApiKeys.hasOpenaiKey;
+  const missingAiKey = trip.ownerApiKeys && !trip.ownerApiKeys.hasAiKey;
   const selectedCount = legs.reduce((sum, l) => sum + l.selectedPlaceIds.length, 0);
   const missingNights = legs.reduce((sum, l) => sum + getUncoveredNights(l).length, 0);
   const focusedLeg = legs.find((l) => l.id === focusedCityId);
 
   return (
     <Stack spacing={6} maxW="1600px" mx="auto">
-      {(missingGoogleKey || missingOpenAiKey) && (
+      {(missingGoogleKey || missingAiKey) && (
         <Alert status="warning" borderRadius="md" fontSize="sm" py={2}>
           <AlertIcon />
           <AlertDescription>
             {isOwner ? (
               <>
                 Add your {missingGoogleKey ? "Google Maps" : ""}
-                {missingGoogleKey && missingOpenAiKey ? " and " : ""}
-                {missingOpenAiKey ? "OpenAI" : ""} key in{" "}
+                {missingGoogleKey && missingAiKey ? " and " : ""}
+                {missingAiKey ? "OpenAI or Gemini" : ""} key in{" "}
                 <Link to="/profile" style={{ textDecoration: "underline" }}>
                   Profile
                 </Link>{" "}
                 to unlock {missingGoogleKey ? "place search, hotels, restaurants and real travel times" : "AI features"}.
               </>
             ) : (
-              <>The trip owner needs to add {missingGoogleKey ? "a Google Maps" : "an OpenAI"} key before those features work.</>
+              <>The trip owner needs to add {missingGoogleKey ? "a Google Maps" : "an OpenAI or Gemini"} key before those features work.</>
             )}
           </AlertDescription>
         </Alert>

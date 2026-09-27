@@ -1,9 +1,10 @@
 import { getAIProvider } from "@/lib/ai";
+import type { AiConfig } from "@/modules/ai/types/ai-provider.types";
 import {
   ApiKeyError,
   assertGoogleMapsKey,
-  assertOpenAiKey,
   getOwnerApiKeysForTripDto,
+  requireAiConfig,
 } from "@/lib/services/trip-api-keys.service";
 import { PlacesService } from "@/modules/places/services/places.service";
 import {
@@ -672,9 +673,9 @@ export async function generateItinerarySummary(
 
   try {
     const ownerKeys = await getOwnerApiKeysForTripDto(trip);
-    assertOpenAiKey(ownerKeys, "trip");
+    const aiConfig = requireAiConfig(ownerKeys, "trip");
 
-    const summary = await getAIProvider(ownerKeys.openai).generateSummary({ trip, days: existing.days });
+    const summary = await getAIProvider(aiConfig).generateSummary({ trip, days: existing.days });
 
     const itinerary = await ItineraryRepository.updateSummary(tripId, trip.userId, summary);
     if (!itinerary) return { success: false, error: "Failed to save summary" };
@@ -742,7 +743,7 @@ async function buildAiCandidateForScope(
   trip: Trip,
   leg: TripLeg | undefined,
   legId: string | undefined,
-  openaiKey: string,
+  aiConfig: AiConfig,
 ): Promise<{ days: ItineraryDay[]; optionalPlaces: OptionalItineraryPlace[] }> {
   const dayPlans = legId ? buildTripDayPlans(trip) : null;
   const placeIds = leg ? leg.selectedPlaceIds : getAggregatedSelectedPlaceIds(trip);
@@ -755,7 +756,7 @@ async function buildAiCandidateForScope(
     dailyEndTime: minutesToTime(d.dayEndMin),
   }));
 
-  const ai = getAIProvider(openaiKey);
+  const ai = getAIProvider(aiConfig);
   const candidate = await ai.generateAiItineraryCandidate({ trip, leg, places, eligibleDates: eligibleDatesForAi });
 
   const assignment: AiPlaceAssignment = {
@@ -819,7 +820,7 @@ export async function generateAiCandidate(
 
   try {
     const ownerKeys = await getOwnerApiKeysForTripDto(trip);
-    assertOpenAiKey(ownerKeys, "trip");
+    const aiConfig = requireAiConfig(ownerKeys, "trip");
 
     const dayPlans = legId ? buildTripDayPlans(trip) : null;
     const currentDays =
@@ -836,7 +837,7 @@ export async function generateAiCandidate(
       trip,
       leg,
       legId,
-      ownerKeys.openai,
+      aiConfig,
     );
 
     const generatedAt = new Date().toISOString();
@@ -1018,7 +1019,7 @@ export async function generateLegGuide(
 
   try {
     const ownerKeys = await getOwnerApiKeysForTripDto(trip);
-    assertOpenAiKey(ownerKeys, "trip");
+    const aiConfig = requireAiConfig(ownerKeys, "trip");
 
     const poolIds = [...leg.discoveryPoolIds, ...leg.foodPoolIds, ...leg.marketPoolIds];
     const places = await PlacesService.getCachedPlaces([...new Set(poolIds)]);
@@ -1026,7 +1027,7 @@ export async function generateLegGuide(
     const foodPlaces = places.filter((p) => leg.foodPoolIds.includes(p.googlePlaceId ?? ""));
     const marketPlaces = places.filter((p) => leg.marketPoolIds.includes(p.googlePlaceId ?? ""));
 
-    const ai = getAIProvider(ownerKeys.openai);
+    const ai = getAIProvider(aiConfig);
     const brief = await ai.generateLegBrief({ trip, leg, places: legPlaces, foodPlaces, marketPlaces });
 
     const updatedLegs = trip.legs.map((l) => (l.id === legId ? { ...l, destinationBrief: brief } : l));

@@ -4,6 +4,14 @@ import type { Place, RankPlacesParams } from "@/modules/places/types/place.types
 import type { LegDestinationBrief } from "@/modules/trips/types/trip-enrichment.types";
 import type { TripDraft, Trip } from "@/modules/trips/types/trip.types";
 import type { TripLeg } from "@/modules/trips/types/trip-leg.types";
+import type { AiProviderName } from "@/constants/ai";
+
+/** Which provider, key and model an AI call runs with (resolved from the trip owner's profile). */
+export interface AiConfig {
+  provider: AiProviderName;
+  apiKey: string;
+  model: string;
+}
 
 export interface ParsedPromptResult {
   draft: TripDraft;
@@ -73,7 +81,7 @@ export interface AIProvider {
   suggestPlaces(params: SuggestPlacesParams): Promise<string[]>;
   /** Proposes a complete alternative day-by-day place assignment (which places, which day, what
    * order) plus per-day dress-code suggestions and per-stop visit notes. No rule-based fallback —
-   * this is only ever called once an OpenAI key has been confirmed present by the caller; returns
+   * this is only ever called once an AI key has been confirmed present by the caller; returns
    * an empty result on any failure so a comparison request degrades to "AI itinerary is empty"
    * rather than throwing. The engine (not the AI) is responsible for turning this into real
    * scheduled stops with trustworthy times/distances. */

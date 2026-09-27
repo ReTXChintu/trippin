@@ -1,3 +1,4 @@
+import { AI_MODEL_ID_PATTERN } from "@/constants/ai";
 import { z } from "zod";
 
 export const loginSchema = z.object({
@@ -47,10 +48,22 @@ export const profileSchema = z.object({
 
 export const apiKeysSchema = z.object({
   openaiApiKey: z.string().optional(),
+  geminiApiKey: z.string().optional(),
   googleMapsApiKey: z.string().optional(),
   clearOpenai: z.boolean().optional(),
+  clearGemini: z.boolean().optional(),
   clearGoogleMaps: z.boolean().optional(),
 });
+
+const aiModelIdSchema = z.string().trim().regex(AI_MODEL_ID_PATTERN, "Invalid model name");
+
+export const aiSettingsSchema = z.object({
+  aiProvider: z.enum(["openai", "gemini"]).optional(),
+  openaiModel: aiModelIdSchema.optional(),
+  geminiModel: aiModelIdSchema.optional(),
+});
+
+export const aiModelsQuerySchema = z.object({ provider: z.enum(["openai", "gemini"]) });
 
 export type LoginInput = z.infer<typeof loginSchema>;
 export type RegisterInput = z.infer<typeof registerSchema>;
@@ -58,3 +71,4 @@ export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
 export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
 export type ProfileInput = z.infer<typeof profileSchema>;
 export type ApiKeysInput = z.infer<typeof apiKeysSchema>;
+export type AiSettingsInput = z.infer<typeof aiSettingsSchema>;

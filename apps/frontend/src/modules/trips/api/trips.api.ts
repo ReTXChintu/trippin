@@ -9,7 +9,7 @@ export async function listTrips(status?: TripStatus): Promise<Trip[]> {
   return res.data.data.trips;
 }
 
-export async function getTrip(id: string): Promise<Trip & { ownerApiKeys: { hasOpenaiKey: boolean; hasGoogleMapsKey: boolean } }> {
+export async function getTrip(id: string): Promise<Trip & { ownerApiKeys: { hasOpenaiKey: boolean; hasAiKey: boolean; hasGoogleMapsKey: boolean } }> {
   const res = await api.get(`/trips/${id}`);
   return res.data.data.trip;
 }
