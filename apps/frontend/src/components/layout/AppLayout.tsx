@@ -8,6 +8,7 @@ import {
 } from "@chakra-ui/react";
 import { Navbar } from "./Navbar";
 import { Sidebar } from "./Sidebar";
+import { OfflineBanner } from "./OfflineBanner";
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -18,6 +19,7 @@ export function AppLayout({ children }: AppLayoutProps) {
 
   return (
     <Flex direction="column" minH="100vh">
+      <OfflineBanner />
       <Navbar onToggleSidebar={onOpen} />
 
       <Flex flex={1}>

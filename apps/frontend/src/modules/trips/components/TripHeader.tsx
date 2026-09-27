@@ -27,7 +27,7 @@ import {
 } from "@chakra-ui/react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { FiArrowLeft, FiArrowRight, FiCalendar, FiPlus, FiSliders } from "react-icons/fi";
+import { FiArrowLeft, FiArrowRight, FiCalendar, FiPlus, FiSliders, FiSun } from "react-icons/fi";
 import { differenceInCalendarDays, parseISO } from "date-fns";
 import { AddLegModal } from "@/modules/trips/components/AddLegModal";
 import { LegOverviewPanel } from "@/modules/trips/components/LegOverviewPanel";
@@ -70,6 +70,9 @@ export function TripHeader({ trip, currentUserId, isOwner, onCityAdded, settings
     }
   })();
   const ModeIcon = transportIcon(trip.transportationMode);
+  const now = new Date();
+  const todayLocal = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+  const isTripToday = todayLocal >= trip.startDate.slice(0, 10) && todayLocal <= trip.endDate.slice(0, 10);
 
   return (
     <Box>
@@ -103,6 +106,11 @@ export function TripHeader({ trip, currentUserId, isOwner, onCityAdded, settings
         </Box>
 
         <HStack spacing={2}>
+          {isTripToday && (
+            <Button as={Link} to={`/trips/${trip.id}/today`} size="sm" colorScheme="brand" leftIcon={<FiSun />}>
+              Today
+            </Button>
+          )}
           <Button size="sm" variant="outline" leftIcon={<FiSliders />} onClick={settings.onOpen}>
             Trip settings
           </Button>

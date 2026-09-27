@@ -215,3 +215,20 @@ export function useUpdateMealSlot(tripId: string) {
     onSuccess: invalidate,
   });
 }
+
+export function useSetStopStatus(tripId: string) {
+  const setItinerary = useSetItinerary(tripId);
+  return useMutation({
+    mutationFn: (params: { dayNumber: number; stopId: string; status: "done" | "skipped" | null }) =>
+      itineraryApi.setStopStatus(tripId, params),
+    onSuccess: (data) => setItinerary(data.itinerary),
+  });
+}
+
+export function useReplanFromNow(tripId: string) {
+  const setItinerary = useSetItinerary(tripId);
+  return useMutation({
+    mutationFn: (params: { dayNumber: number; time: string }) => itineraryApi.replanFromNow(tripId, params),
+    onSuccess: (data) => setItinerary(data.itinerary),
+  });
+}

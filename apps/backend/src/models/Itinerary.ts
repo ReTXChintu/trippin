@@ -33,6 +33,7 @@ export interface IItineraryStop {
   travelSource?: "route" | "estimate";
   travelDistanceKm?: number;
   cost?: number;
+  status?: "done" | "skipped";
 }
 
 export interface IItineraryDay {
@@ -131,6 +132,7 @@ const ItineraryStopSchema = new Schema<IItineraryStop>(
     travelSource: { type: String, enum: ["route", "estimate"] },
     travelDistanceKm: { type: Number },
     cost: { type: Number, min: 0 },
+    status: { type: String, enum: ["done", "skipped"] },
   },
   { _id: false },
 );

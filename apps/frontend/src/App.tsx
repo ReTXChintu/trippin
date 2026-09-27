@@ -17,6 +17,7 @@ import { TripDetailPage } from "@/pages/TripDetailPage";
 import { ItineraryPage } from "@/pages/ItineraryPage";
 import { ItineraryComparePage } from "@/pages/ItineraryComparePage";
 import { SharePage } from "@/pages/SharePage";
+import { TodayPage } from "@/pages/TodayPage";
 
 function App() {
   return (
@@ -42,6 +43,7 @@ function App() {
               <Route path="/trips/new" element={<NewTripPage />} />
               <Route path="/trips/:id" element={<TripDetailPage />} />
               <Route path="/trips/:id/itinerary" element={<ItineraryPage />} />
+              <Route path="/trips/:id/today" element={<TodayPage />} />
               <Route path="/trips/:id/itinerary/compare" element={<ItineraryComparePage />} />
             </Route>
           </Route>

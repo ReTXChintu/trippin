@@ -117,7 +117,7 @@ export function formatItineraryAsText(trip: Trip, itinerary: Itinerary): string 
   return lines.join("\n");
 }
 
-export function getItineraryExportFilename(trip: Trip, extension: "md" | "txt"): string {
+export function getItineraryExportFilename(trip: Trip, extension: "md" | "txt" | "ics"): string {
   const slug = trip.title
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")

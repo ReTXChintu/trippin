@@ -38,7 +38,11 @@ export interface ItineraryStop {
   travelDistanceKm?: number;
   /** Expected cost in the trip currency. */
   cost?: number;
+  /** Set while travelling. */
+  status?: StopStatus;
 }
+
+export type StopStatus = "done" | "skipped";
 
 export type ItineraryDayType = "sightseeing" | "transfer" | "free";
 

@@ -42,6 +42,8 @@ import {
   moveStopSchema,
   removeStopSchema,
   reorderStopsSchema,
+  replanFromNowSchema,
+  setStopStatusSchema,
   setStopLockSchema,
   tripIdSchema,
   updateMealSlotSchema,
@@ -1056,4 +1058,69 @@ export async function retimeLegDaysAfterTripChange(trip: Trip, legId: string, la
   const env = await buildEnv(trip, placeIdsInDays(existing.days));
   const { days } = await retimeWithRoutes(env, existing.days, { dayNumbers: legDayNumbers });
   await commit(trip, existing, { days }, label);
+}
+
+/** Mark a stop done / skipped (or back to planned). Skipping pulls the rest of the day earlier. */
+export async function setStopStatus(
+  userId: string,
+  input: unknown,
+): Promise<ItineraryActionResult<{ itinerary: Itinerary }>> {
+  const parsed = setStopStatusSchema.safeParse(input);
+  if (!parsed.success) return invalid(parsed.error.issues);
+
+  const { tripId, dayNumber, stopId, status } = parsed.data;
+  const loaded = await loadTripAndItinerary(userId, tripId);
+  if ("error" in loaded) return { success: false, error: loaded.error };
+  const { trip, itinerary: existing } = loaded;
+  if (!existing) return { success: false, error: "Itinerary not found" };
+
+  const day = existing.days.find((d) => d.dayNumber === dayNumber);
+  const stop = day?.stops.find((s) => s.id === stopId);
+  if (!day || !stop) return { success: false, error: "Stop not found" };
+  if (stop.stopType === "transfer" || stop.stopType === "return") {
+    return { success: false, error: "Travel and return-to-stay stops can't be marked" };
+  }
+
+  const nextDay = { ...day, stops: day.stops.map((s) => (s.id === stopId ? { ...s, status: status ?? undefined } : s)) };
+  const label = status === "done" ? `Done: ${stop.placeName}` : status === "skipped" ? `Skip ${stop.placeName}` : `Unmark ${stop.placeName}`;
+  const itinerary = await applyDayEdit(trip, existing, [nextDay], label);
+  return { success: true, data: { itinerary } };
+}
+
+/** "Running late": keep what's done, re-plan the rest of the day starting at `time`. */
+export async function replanFromNow(
+  userId: string,
+  input: unknown,
+): Promise<ItineraryActionResult<{ itinerary: Itinerary }>> {
+  const parsed = replanFromNowSchema.safeParse(input);
+  if (!parsed.success) return invalid(parsed.error.issues);
+
+  const { tripId, dayNumber, time } = parsed.data;
+  const loaded = await loadTripAndItinerary(userId, tripId);
+  if ("error" in loaded) return { success: false, error: loaded.error };
+  const { trip, itinerary: existing } = loaded;
+  if (!existing) return { success: false, error: "Itinerary not found" };
+
+  const day = existing.days.find((d) => d.dayNumber === dayNumber);
+  if (!day) return { success: false, error: "Day not found" };
+
+  const env = await buildEnv(trip, placeIdsInDays([day]));
+  let routedEnv: EngineEnv = env;
+  if (env.googleMapsKey) {
+    try {
+      const measured = await measureDayHops(trip, [day], env.googleMapsKey);
+      if (measured.size > 0) routedEnv = { ...env, travel: travelLookupWithRoutes(env.travel, measured) };
+    } catch {
+      // estimates are fine
+    }
+  }
+
+  const { day: replanned } = retimeDay(day, routedEnv, { fromMinutes: parseTimeToMinutes(time) });
+  const itinerary = await commit(
+    trip,
+    existing,
+    { days: existing.days.map((d) => (d.dayNumber === dayNumber ? replanned : d)) },
+    `Re-plan ${dayLabel(day)} from ${time}`,
+  );
+  return { success: true, data: { itinerary }, message: `Re-planned from ${time}` };
 }

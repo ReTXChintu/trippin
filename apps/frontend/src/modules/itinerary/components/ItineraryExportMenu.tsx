@@ -6,7 +6,8 @@ import {
   MenuList,
   useToast,
 } from "@chakra-ui/react";
-import { FiChevronDown, FiCopy, FiDownload, FiPrinter } from "react-icons/fi";
+import { formatItineraryAsIcs } from "@/modules/itinerary/services/itinerary-ics.service";
+import { FiCalendar, FiChevronDown, FiCopy, FiDownload, FiPrinter } from "react-icons/fi";
 import type { Itinerary } from "@/modules/itinerary/types";
 import type { Trip } from "@/modules/trips/types/trip.types";
 import {
@@ -60,6 +61,11 @@ export function ItineraryExportMenu({
     toast({ title: "Markdown file downloaded", status: "success", duration: 3000 });
   };
 
+  const handleDownloadIcs = () => {
+    downloadFile(getItineraryExportFilename(trip, "ics"), formatItineraryAsIcs(trip, itinerary), "text/calendar;charset=utf-8");
+    toast({ title: "Calendar file downloaded", description: "Open it to add every stop to your calendar.", status: "success", duration: 3000 });
+  };
+
   const handlePrint = () => {
     if (!document.getElementById(printTargetId)) {
       toast({ title: "Nothing to print", status: "warning" });
@@ -74,6 +80,9 @@ export function ItineraryExportMenu({
         Export
       </MenuButton>
       <MenuList>
+        <MenuItem icon={<FiCalendar />} onClick={handleDownloadIcs}>
+          Add to calendar (.ics)
+        </MenuItem>
         <MenuItem icon={<FiCopy />} onClick={handleCopyMarkdown}>
           Copy as Markdown
         </MenuItem>

@@ -21,7 +21,9 @@ import {
 } from "@chakra-ui/react";
 import {
   FiAlertTriangle,
+  FiCheck,
   FiClock,
+  FiSkipForward,
   FiEdit2,
   FiInfo,
   FiLock,
@@ -176,6 +178,7 @@ export function StopRow({ stop, day, visitNumber, draggable }: StopRowProps) {
         flex={1}
         minW={0}
         p={3}
+        opacity={stop.status ? 0.6 : 1}
         bg={isStructural ? subtleBg : cardBg}
         borderWidth="1px"
         borderColor={isHighlighted ? highlightBorder : border}
@@ -203,9 +206,15 @@ export function StopRow({ stop, day, visitNumber, draggable }: StopRowProps) {
                   _hover={canOpenDetails ? { textDecoration: "underline" } : undefined}
                   onClick={canOpenDetails ? () => plan.openDetails(stop, day) : undefined}
                   noOfLines={1}
+                  textDecoration={stop.status === "skipped" ? "line-through" : undefined}
                 >
                   {stop.placeName}
                 </Text>
+              )}
+              {stop.status && (
+                <Badge colorScheme={stop.status === "done" ? "green" : "gray"} fontSize="2xs">
+                  {stop.status === "done" ? "Done" : "Skipped"}
+                </Badge>
               )}
               {stop.locked && (
                 <Tooltip label="Locked — regenerating keeps it on this day" hasArrow>
@@ -309,8 +318,19 @@ export function StopRow({ stop, day, visitNumber, draggable }: StopRowProps) {
                     </MenuItem>
                   )}
                   <MenuItem icon={<FiEdit2 />} onClick={() => plan.openEdit(stop, day)}>
-                    Time, duration & notes
+                    Time, duration, cost & notes
                   </MenuItem>
+                  {stop.status !== "done" && (
+                    <MenuItem icon={<FiCheck />} onClick={() => plan.setStatus(stop, day, "done")}>
+                      Mark done
+                    </MenuItem>
+                  )}
+                  {stop.status !== "skipped" && (
+                    <MenuItem icon={<FiSkipForward />} onClick={() => plan.setStatus(stop, day, "skipped")}>
+                      Skip — re-time the rest
+                    </MenuItem>
+                  )}
+                  {stop.status && <MenuItem onClick={() => plan.setStatus(stop, day, null)}>Back to planned</MenuItem>}
                   {moveTargets.length > 0 && (
                     <>
                       <MenuDivider />

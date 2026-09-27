@@ -22,7 +22,8 @@ import {
   useColorModeValue,
 } from "@chakra-ui/react";
 import { forwardRef } from "react";
-import { FiAlertTriangle, FiExternalLink, FiMap, FiPlus } from "react-icons/fi";
+import { FiAlertTriangle, FiExternalLink, FiMap, FiPlus, FiSmartphone } from "react-icons/fi";
+import { Link as RouterLink } from "react-router-dom";
 import { MdHotel } from "react-icons/md";
 import type { ItineraryDay } from "@/modules/itinerary/types";
 import type { DayWeather, TripBooking } from "@/modules/trips/types/trip-extras.types";
@@ -170,6 +171,18 @@ export const DayCard = forwardRef<HTMLDivElement, DayCardProps>(function DayCard
               onClick={onSelect}
             />
           </Tooltip>
+          {!plan.readOnly && (
+            <Tooltip label="Day view for your phone — follow the day as you go" hasArrow>
+              <IconButton
+                as={RouterLink}
+                to={`/trips/${plan.trip.id}/today?day=${day.dayNumber}`}
+                aria-label="Open day view"
+                icon={<FiSmartphone />}
+                size="sm"
+                variant="ghost"
+              />
+            </Tooltip>
+          )}
           {mapsUrl && (
             <Tooltip label="Open the whole day in Google Maps" hasArrow>
               <IconButton

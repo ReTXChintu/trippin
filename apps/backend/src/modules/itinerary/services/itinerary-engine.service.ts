@@ -581,14 +581,49 @@ export function walkDay(sequence: ItineraryStop[], ctx: DayContext, opts: WalkOp
 }
 
 /** Re-times a stored day in its current order. Non-strict by default: user edits never lose stops. */
-export function retimeDay(day: ItineraryDay, env: EngineEnv, opts: { strict?: boolean } = {}): WalkResult & { day: ItineraryDay } {
+export function retimeDay(
+  day: ItineraryDay,
+  env: EngineEnv,
+  opts: { strict?: boolean; /** "Running late": re-plan what's left starting now (minutes). */ fromMinutes?: number } = {},
+): WalkResult & { day: ItineraryDay } {
   const current = refreshTransferStop(day, env.trip);
   if (current.dayType === "transfer" || current.dayType === "free") {
     return { day: current, stops: current.stops, dropped: [] };
   }
   const ctx = contextForDay(env, current);
-  const result = walkDay(current.stops, ctx, { strict: opts.strict ?? false, autoMeals: false });
-  return { ...result, day: { ...current, stops: result.stops } };
+
+  // Stops already done or skipped keep their times; the rest re-plan from where the last one left
+  // off (or from `fromMinutes` when the traveller says they're running late).
+  // Frozen: anything marked, anything earlier in the day than the last marked stop (it's behind you),
+  // and — when re-planning from now — meal slots whose window has already passed.
+  const lastMarkedIndex = current.stops.reduce((max, s, i) => (s.status ? i : max), -1);
+  const frozen = current.stops.filter(
+    (s, i) =>
+      s.stopType !== "transfer" &&
+      s.stopType !== "return" &&
+      (Boolean(s.status) ||
+        i < lastMarkedIndex ||
+        (opts.fromMinutes !== undefined && isFloatingMeal(s) && MEAL_RULES[s.mealType ?? "lunch"].latestStartMin < opts.fromMinutes)),
+  );
+  if (frozen.length === 0 && opts.fromMinutes === undefined) {
+    const result = walkDay(current.stops, ctx, { strict: opts.strict ?? false, autoMeals: false });
+    return { ...result, day: { ...current, stops: result.stops } };
+  }
+
+  // Resume from the end of the last finished stop (skipped ones free their time), at its location.
+  const lastDone = [...frozen].reverse().find((s) => s.status === "done");
+  const start = opts.fromMinutes ?? (lastDone ? parseTimeToMinutes(lastDone.departureTime) : ctx.bounds.dayStartMin);
+  const resumeCtx: DayContext = {
+    ...ctx,
+    bounds: { ...ctx.bounds, dayStartMin: start },
+    startPoint: lastDone?.coordinates ?? ctx.startPoint,
+  };
+
+  const remaining = current.stops.filter((s) => !frozen.includes(s) && s.stopType !== "transfer");
+  const walked = walkDay(remaining, resumeCtx, { strict: opts.strict ?? false, autoMeals: false });
+  const leading = current.stops.filter((s) => s.stopType === "transfer");
+  const stops = [...leading, ...frozen, ...walked.stops].map((s, i) => ({ ...s, sequence: i + 1 }));
+  return { stops, dropped: walked.dropped, day: { ...current, stops } };
 }
 
 // ---------------------------------------------------------------------------------------------

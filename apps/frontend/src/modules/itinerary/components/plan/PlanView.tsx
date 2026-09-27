@@ -49,6 +49,7 @@ import {
   useSummarizeItinerary,
   useUndoItinerary,
   useAddStop,
+  useSetStopStatus,
 } from "@/modules/itinerary/hooks/useItinerary";
 import { useWeatherQuery } from "@/modules/trips/hooks/useTrips";
 import { ItineraryExportMenu, ItineraryPrintContent } from "@/modules/itinerary/components/ItineraryExportMenu";
@@ -172,6 +173,7 @@ export function PlanView({ trip, hasMapsKey, cityId, onCityChange, onGoTo }: Pla
   const movePlaceToDay = useMovePlaceToDay(trip.id);
   const summarize = useSummarizeItinerary(trip.id);
   const addStop = useAddStop(trip.id);
+  const setStopStatus = useSetStopStatus(trip.id);
   const { data: weatherData } = useWeatherQuery(trip.id);
   const weatherByDate = new Map((weatherData?.days ?? []).map((w) => [w.date, w]));
 
@@ -262,6 +264,12 @@ export function PlanView({ trip, hasMapsKey, cityId, onCityChange, onGoTo }: Pla
         stop.id,
       ),
     reorder: (day, stopIds) => void run(() => reorder.mutateAsync({ dayNumber: day.dayNumber, stopIds })),
+    setStatus: (stop, day, status) =>
+      void run(
+        () => setStopStatus.mutateAsync({ dayNumber: day.dayNumber, stopId: stop.id, status }),
+        status === "done" ? "Marked done" : status === "skipped" ? "Skipped — later stops moved up" : undefined,
+        stop.id,
+      ),
     addBookingToDay: (booking, day) => {
       const toMin = (t?: string) => (t ? Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5)) : undefined);
       const start = toMin(booking.startTime);

@@ -41,7 +41,11 @@ export interface ItineraryStop {
   travelDistanceKm?: number;
   /** Expected cost (tickets, meal) in the trip currency — feeds the budget. */
   cost?: number;
+  /** Set while travelling: finished or skipped stops keep their times; the rest re-plan around them. */
+  status?: StopStatus;
 }
+
+export type StopStatus = "done" | "skipped";
 
 export type ItineraryDayType = "sightseeing" | "transfer" | "free";
 

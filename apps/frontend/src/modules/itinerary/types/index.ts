@@ -6,6 +6,7 @@ export type {
   ItineraryStopType,
   MealType,
   TravelSource,
+  StopStatus,
   OptionalItineraryPlace,
   AiItineraryCandidate,
   GenerateItineraryInput,

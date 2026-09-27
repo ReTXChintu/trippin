@@ -87,6 +87,7 @@ const itineraryStopSchema = z.object({
   travelSource: z.enum(["route", "estimate"]).optional(),
   travelDistanceKm: z.number().optional(),
   cost: z.number().optional(),
+  status: z.enum(["done", "skipped"]).optional(),
 });
 
 const itineraryDaySchema = z.object({
@@ -161,4 +162,19 @@ export const mealSuggestionsSchema = z.object({
   tripId: z.string().min(1),
   dayNumber: z.coerce.number().int().min(1),
   stopId: z.string().min(1),
+});
+
+export const setStopStatusSchema = z.object({
+  tripId: z.string().min(1),
+  dayNumber: z.number().int().min(1),
+  stopId: z.string().min(1),
+  /** null = back to planned */
+  status: z.enum(["done", "skipped"]).nullable(),
+});
+
+export const replanFromNowSchema = z.object({
+  tripId: z.string().min(1),
+  dayNumber: z.number().int().min(1),
+  /** HH:mm — the traveller's current local time at the destination. */
+  time: timeStringSchema,
 });

@@ -20,6 +20,8 @@ import {
   updateStop,
   removeStop,
   undoItineraryChange,
+  setStopStatus,
+  replanFromNow,
 } from "@/modules/itinerary/services/itinerary.service";
 import { getMealSuggestions } from "@/modules/itinerary/services/itinerary-meals.service";
 
@@ -153,6 +155,13 @@ export async function act(req: Request, res: Response) {
       );
     case "removeStop":
       return sendResult(res, await removeStop(userId, { tripId, dayNumber: body.dayNumber, stopId: body.stopId }));
+    case "setStatus":
+      return sendResult(
+        res,
+        await setStopStatus(userId, { tripId, dayNumber: body.dayNumber, stopId: body.stopId, status: body.status ?? null }),
+      );
+    case "replanFromNow":
+      return sendResult(res, await replanFromNow(userId, { tripId, dayNumber: body.dayNumber, time: body.time }));
     case "undo":
       return sendResult(res, await undoItineraryChange(userId, { tripId }));
     default:

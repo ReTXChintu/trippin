@@ -45,6 +45,8 @@ export function useLogout() {
     onSettled: () => {
       clearAuth();
       queryClient.clear();
+      // Drop the offline copy of this user's trips (see public/sw.js).
+      navigator.serviceWorker?.controller?.postMessage("clear-user-data");
     },
   });
 }

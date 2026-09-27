@@ -229,3 +229,16 @@ export async function getMealSuggestions(
   const res = await api.get(`/trips/${tripId}/itinerary/meal-suggestions`, { params });
   return res.data.data;
 }
+
+export async function setStopStatus(
+  tripId: string,
+  params: { dayNumber: number; stopId: string; status: "done" | "skipped" | null },
+): Promise<{ itinerary: Itinerary }> {
+  const res = await api.post(`/trips/${tripId}/itinerary`, { action: "setStatus", ...params });
+  return res.data.data;
+}
+
+export async function replanFromNow(tripId: string, params: { dayNumber: number; time: string }): Promise<{ itinerary: Itinerary }> {
+  const res = await api.post(`/trips/${tripId}/itinerary`, { action: "replanFromNow", ...params });
+  return res.data.data;
+}
