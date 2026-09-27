@@ -19,11 +19,19 @@ export interface IItineraryStop {
   travelDurationMinutes: number;
   coordinates?: { lat: number; lng: number };
   category?: string;
-  stopType?: "sight" | "transfer" | "food" | "market";
+  stopType?: "sight" | "transfer" | "food" | "market" | "meal" | "return" | "activity";
   legId?: string;
   notes?: string;
   visitIntel?: IVisitIntel;
   aiNotes?: string;
+  mealType?: "breakfast" | "lunch" | "tiffin" | "dinner";
+  locked?: boolean;
+  userAdded?: boolean;
+  fixedStartTime?: string;
+  warnings?: string[];
+  openingHoursToday?: string;
+  travelSource?: "route" | "estimate";
+  travelDistanceKm?: number;
 }
 
 export interface IItineraryDay {
@@ -34,12 +42,39 @@ export interface IItineraryDay {
   legName?: string;
   dayType?: "sightseeing" | "transfer" | "free";
   transferLabel?: string;
+  dressCode?: string;
+}
+
+export interface IOptionalItineraryPlace {
+  placeId: string;
+  placeName: string;
+  category?: string;
+  coordinates?: { lat: number; lng: number };
+  legId?: string;
+  reason: string;
+}
+
+export interface IAiItineraryCandidate {
+  legId?: string;
+  days: IItineraryDay[];
+  optionalPlaces: IOptionalItineraryPlace[];
+  generatedAt: Date;
+}
+
+export interface IItinerarySnapshot {
+  label: string;
+  days: IItineraryDay[];
+  optionalPlaces: IOptionalItineraryPlace[];
+  createdAt: Date;
 }
 
 export interface IItineraryDocument extends Document {
   tripId: mongoose.Types.ObjectId;
   userId: mongoose.Types.ObjectId;
   days: IItineraryDay[];
+  optionalPlaces: IOptionalItineraryPlace[];
+  aiCandidates: IAiItineraryCandidate[];
+  history: IItinerarySnapshot[];
   summary?: string;
   summaryGeneratedAt?: Date;
   generatedAt: Date;
@@ -69,7 +104,10 @@ const VisitIntelSchema = new Schema<IVisitIntel>(
 const ItineraryStopSchema = new Schema<IItineraryStop>(
   {
     id: { type: String, required: true },
-    placeId: { type: String, required: true },
+    // Not required: meal-slot placeholders and "return to hotel" stops legitimately have no
+    // underlying Place record and use "" here by design (see buildMealSlotStops/
+    // buildReturnToHotelStop in itinerary-engine.service.ts).
+    placeId: { type: String, default: "" },
     placeName: { type: String, required: true },
     sequence: { type: Number, required: true },
     arrivalTime: { type: String, required: true },
@@ -78,11 +116,19 @@ const ItineraryStopSchema = new Schema<IItineraryStop>(
     travelDurationMinutes: { type: Number, required: true },
     coordinates: { type: CoordinatesSchema },
     category: { type: String },
-    stopType: { type: String, enum: ["sight", "transfer", "food", "market"] },
+    stopType: { type: String, enum: ["sight", "transfer", "food", "market", "meal", "return", "activity"] },
     legId: { type: String },
     notes: { type: String },
     visitIntel: { type: VisitIntelSchema },
     aiNotes: { type: String },
+    mealType: { type: String, enum: ["breakfast", "lunch", "tiffin", "dinner"] },
+    locked: { type: Boolean },
+    userAdded: { type: Boolean },
+    fixedStartTime: { type: String },
+    warnings: { type: [String], default: undefined },
+    openingHoursToday: { type: String },
+    travelSource: { type: String, enum: ["route", "estimate"] },
+    travelDistanceKm: { type: Number },
   },
   { _id: false },
 );
@@ -96,6 +142,39 @@ const ItineraryDaySchema = new Schema<IItineraryDay>(
     legName: { type: String },
     dayType: { type: String, enum: ["sightseeing", "transfer", "free"] },
     transferLabel: { type: String },
+    dressCode: { type: String },
+  },
+  { _id: false },
+);
+
+const OptionalItineraryPlaceSchema = new Schema<IOptionalItineraryPlace>(
+  {
+    placeId: { type: String, required: true },
+    placeName: { type: String, required: true },
+    category: { type: String },
+    coordinates: { type: CoordinatesSchema },
+    legId: { type: String },
+    reason: { type: String, required: true },
+  },
+  { _id: false },
+);
+
+const AiItineraryCandidateSchema = new Schema<IAiItineraryCandidate>(
+  {
+    legId: { type: String },
+    days: { type: [ItineraryDaySchema], default: [] },
+    optionalPlaces: { type: [OptionalItineraryPlaceSchema], default: [] },
+    generatedAt: { type: Date, default: Date.now },
+  },
+  { _id: false },
+);
+
+const ItinerarySnapshotSchema = new Schema<IItinerarySnapshot>(
+  {
+    label: { type: String, required: true },
+    days: { type: [ItineraryDaySchema], default: [] },
+    optionalPlaces: { type: [OptionalItineraryPlaceSchema], default: [] },
+    createdAt: { type: Date, default: Date.now },
   },
   { _id: false },
 );
@@ -111,6 +190,9 @@ const ItinerarySchema = new Schema<IItineraryDocument>(
     },
     userId: { type: Schema.Types.ObjectId, ref: "User", required: true, index: true },
     days: { type: [ItineraryDaySchema], default: [] },
+    optionalPlaces: { type: [OptionalItineraryPlaceSchema], default: [] },
+    aiCandidates: { type: [AiItineraryCandidateSchema], default: [] },
+    history: { type: [ItinerarySnapshotSchema], default: [] },
     summary: { type: String },
     summaryGeneratedAt: { type: Date },
     generatedAt: { type: Date, default: Date.now },

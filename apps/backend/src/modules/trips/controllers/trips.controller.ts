@@ -15,6 +15,7 @@ import {
   generateTripFromPrompt,
   getTrips,
   getTripById,
+  removeLegFromTrip,
 } from "@/modules/trips/services/trip.service";
 
 async function enrichTripWithOwnerKeys(trip: Trip) {
@@ -60,6 +61,14 @@ export async function remove(req: Request, res: Response) {
     return sendError(res, result.error, result.error.includes("owner") ? 403 : 404);
   }
   return sendOk(res, { message: result.message });
+}
+
+export async function removeLeg(req: Request, res: Response) {
+  const result = await removeLegFromTrip(req.params.id, req.user!.sub, req.params.legId);
+  if (!result.success) {
+    return sendError(res, result.error, result.error.includes("not found") ? 404 : 400);
+  }
+  return sendOk(res, result.data);
 }
 
 export async function archive(req: Request, res: Response) {

@@ -50,9 +50,9 @@ function clampFrameHeight(
 
 function swapPhotoMaxHeight(url: string, maxHeightPx: number): string {
   try {
-    const parsed = new URL(url, "http://local");
+    const parsed = new URL(url, window.location.origin);
     parsed.searchParams.set("maxHeightPx", String(maxHeightPx));
-    return `${parsed.pathname}${parsed.search}`;
+    return parsed.toString();
   } catch {
     return url;
   }

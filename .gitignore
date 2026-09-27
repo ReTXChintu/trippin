@@ -13,7 +13,7 @@ apps/mobile-app/.flutter-plugins-dependencies
 apps/mobile-app/android/local.properties
 apps/mobile-app/ios/Flutter/Generated.xcconfig
 
-# Env files
+# Env files (single .env at the repo root)
 .env
 .env.local
 apps/*/.env
@@ -31,3 +31,4 @@ apps/*/.env.local
 # TS build info
 node_modules/.tmp/
 *.tsbuildinfo
+.env.dummy.txt

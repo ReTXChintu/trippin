@@ -1,4 +1,10 @@
-import type { Place, PlaceDetail, PlaceSearchResult } from "@/modules/places/types/place.types";
+import type {
+  OpeningPeriod,
+  Place,
+  PlaceDetail,
+  PlaceReview,
+  PlaceSearchResult,
+} from "@/modules/places/types/place.types";
 import { HOTEL_TYPES } from "@/constants/google-places";
 
 interface GoogleDisplayName {
@@ -11,8 +17,23 @@ interface GoogleLocation {
   longitude?: number;
 }
 
+interface GooglePeriodPoint {
+  day?: number;
+  hour?: number;
+  minute?: number;
+}
+
 interface GoogleOpeningHours {
   weekdayDescriptions?: string[];
+  periods?: Array<{ open?: GooglePeriodPoint; close?: GooglePeriodPoint }>;
+}
+
+interface GoogleReview {
+  rating?: number;
+  text?: { text?: string };
+  originalText?: { text?: string };
+  relativePublishTimeDescription?: string;
+  authorAttribution?: { displayName?: string };
 }
 
 interface GooglePlaceRaw {
@@ -32,6 +53,8 @@ interface GooglePlaceRaw {
   priceRange?: { startPrice?: { units?: string }; endPrice?: { units?: string } };
   websiteUri?: string;
   googleMapsUri?: string;
+  reviews?: GoogleReview[];
+  generativeSummary?: { overview?: { text?: string } };
 }
 
 export function normalizePlaceId(id: string): string {
@@ -41,6 +64,43 @@ export function normalizePlaceId(id: string): string {
 export function toPlaceIdPath(id: string): string {
   const normalized = normalizePlaceId(id);
   return `places/${normalized}`;
+}
+
+function mapPeriodPoint(point?: GooglePeriodPoint) {
+  if (point?.day == null) return undefined;
+  return { day: point.day, hour: point.hour ?? 0, minute: point.minute ?? 0 };
+}
+
+export function mapOpeningPeriods(hours?: GoogleOpeningHours): OpeningPeriod[] | undefined {
+  if (!hours?.periods?.length) return undefined;
+  const periods: OpeningPeriod[] = [];
+  for (const period of hours.periods) {
+    const open = mapPeriodPoint(period.open);
+    if (!open) continue;
+    const close = mapPeriodPoint(period.close);
+    periods.push(close ? { open, close } : { open });
+  }
+  return periods.length > 0 ? periods : undefined;
+}
+
+const MAX_REVIEWS = 5;
+const MAX_REVIEW_CHARS = 600;
+
+function mapReviews(reviews?: GoogleReview[]): PlaceReview[] | undefined {
+  const mapped = (reviews ?? [])
+    .map((r): PlaceReview | null => {
+      const text = (r.text?.text ?? r.originalText?.text ?? "").trim();
+      if (!text) return null;
+      return {
+        rating: r.rating,
+        text: text.length > MAX_REVIEW_CHARS ? `${text.slice(0, MAX_REVIEW_CHARS).trimEnd()}…` : text,
+        authorName: r.authorAttribution?.displayName,
+        relativeTime: r.relativePublishTimeDescription,
+      };
+    })
+    .filter((r): r is PlaceReview => r !== null)
+    .slice(0, MAX_REVIEWS);
+  return mapped.length > 0 ? mapped : undefined;
 }
 
 function mapTypeToCategory(types: string[] = [], primaryType?: string): string {
@@ -111,9 +171,14 @@ export function mapSearchResultToPlace(
     city: context.city ?? "",
     state: context.state,
     country: context.country ?? "India",
-    category: types.includes("lodging") ? "Hotel" : mapTypeToCategory(types),
+    category: types.includes("lodging") ? "Hotel" : mapTypeToCategory(types, result.primaryType),
+    subCategory: result.primaryType,
     coordinates: result.coordinates,
     rating: result.rating,
+    userRatingCount: result.userRatingCount,
+    priceLevel: result.priceLevel,
+    openingPeriods: result.openingPeriods,
+    weekdayDescriptions: result.weekdayDescriptions,
     source: "google",
     formattedAddress: result.address,
     tags: types.slice(0, 5),
@@ -135,7 +200,13 @@ export function mapGoogleToSearchResult(raw: GooglePlaceRaw): PlaceSearchResult 
         ? { lat: raw.location.latitude, lng: raw.location.longitude }
         : undefined,
     rating: raw.rating,
+    userRatingCount: raw.userRatingCount,
+    priceLevel: formatPriceLevel(raw.priceLevel),
     types: raw.types,
+    primaryType: raw.primaryType,
+    openingPeriods: mapOpeningPeriods(raw.regularOpeningHours),
+    weekdayDescriptions: raw.regularOpeningHours?.weekdayDescriptions,
+    photoName: raw.photos?.[0]?.name,
   };
 }
 
@@ -164,9 +235,13 @@ export function mapGoogleToPlace(
     averageVisitDurationMinutes: isHotel ? undefined : 90,
     openingTime,
     closingTime,
+    openingPeriods: mapOpeningPeriods(raw.regularOpeningHours),
+    weekdayDescriptions: raw.regularOpeningHours?.weekdayDescriptions,
     description: raw.editorialSummary?.text,
     tags: types.slice(0, 5),
     rating: raw.rating,
+    userRatingCount: raw.userRatingCount,
+    priceLevel: formatPriceLevel(raw.priceLevel),
     source: "google",
     formattedAddress: raw.formattedAddress,
   };
@@ -200,6 +275,8 @@ export function mapGoogleToPlaceDetail(
     googleSearchUrl,
     weekdayDescriptions: raw.regularOpeningHours?.weekdayDescriptions,
     entryFee: formatPriceLevel(raw.priceLevel) ?? formatPriceRange(raw.priceRange),
+    reviews: mapReviews(raw.reviews),
+    reviewSummary: raw.generativeSummary?.overview?.text ?? raw.editorialSummary?.text,
   };
 }
 

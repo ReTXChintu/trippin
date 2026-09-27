@@ -1,7 +1,12 @@
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:itinerary_planner/features/itinerary/export_service.dart';
+import 'package:itinerary_planner/features/itinerary/offline/offline_bundle_cache.dart';
+import 'package:itinerary_planner/features/itinerary/offline/offline_map_service.dart';
+import 'package:itinerary_planner/features/itinerary/offline/polyline_utils.dart';
+import 'package:itinerary_planner/features/trips/models/route_models.dart';
 import 'package:itinerary_planner/features/trips/models/trip_models.dart';
 import 'package:itinerary_planner/features/trips/trips_repository.dart';
 import 'package:itinerary_planner/shared/widgets/common_widgets.dart';
@@ -20,7 +25,11 @@ class _ItineraryScreenState extends ConsumerState<ItineraryScreen> with SingleTi
   late TabController _tabController;
   Trip? _trip;
   Itinerary? _itinerary;
+  List<DayRoute> _routes = [];
   bool _loading = true;
+  bool _offline = false;
+  bool _downloading = false;
+  double _downloadProgress = 0;
   String? _error;
 
   @override
@@ -41,20 +50,77 @@ class _ItineraryScreenState extends ConsumerState<ItineraryScreen> with SingleTi
       _loading = true;
       _error = null;
     });
+    final connectivity = await Connectivity().checkConnectivity();
+    final offline = connectivity.every((r) => r == ConnectivityResult.none);
     try {
-      final repo = ref.read(tripsRepositoryProvider);
-      final trip = await repo.getTrip(widget.tripId);
-      final itinerary = await repo.getItinerary(widget.tripId);
-      if (mounted) {
-        setState(() {
-          _trip = trip;
-          _itinerary = itinerary;
-        });
+      if (offline) {
+        final bundle = await ref.read(offlineBundleCacheProvider).read(widget.tripId);
+        if (bundle == null) {
+          throw Exception('No offline copy of this trip is saved yet');
+        }
+        if (mounted) {
+          setState(() {
+            _trip = bundle.trip;
+            _itinerary = bundle.itinerary;
+            _routes = bundle.routes;
+            _offline = true;
+          });
+        }
+      } else {
+        final repo = ref.read(tripsRepositoryProvider);
+        final trip = await repo.getTrip(widget.tripId);
+        final itinerary = await repo.getItinerary(widget.tripId);
+        List<DayRoute> routes = [];
+        try {
+          routes = await repo.getItineraryRoutes(widget.tripId);
+        } catch (_) {
+          // Real routing is best-effort — fall back to straight lines silently.
+        }
+        if (mounted) {
+          setState(() {
+            _trip = trip;
+            _itinerary = itinerary;
+            _routes = routes;
+            _offline = false;
+          });
+        }
       }
     } catch (e) {
       if (mounted) setState(() => _error = e.toString());
     } finally {
       if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _downloadForOffline() async {
+    if (_itinerary == null || _trip == null) return;
+    setState(() {
+      _downloading = true;
+      _downloadProgress = 0;
+    });
+    try {
+      final bundle = await ref.read(offlineBundleCacheProvider).download(widget.tripId);
+      final routePoints = <LatLng>[];
+      for (final route in bundle.routes) {
+        routePoints.addAll(decodePolyline(route.overviewPolyline));
+      }
+      if (routePoints.isEmpty) {
+        routePoints.addAll(_mapPoints(bundle.itinerary.days.expand((d) => d.stops).toList()));
+      }
+      if (routePoints.isNotEmpty) {
+        await for (final progress in ref.read(offlineMapServiceProvider).downloadRegion(routePoints)) {
+          if (mounted) setState(() => _downloadProgress = progress);
+        }
+      }
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Trip saved for offline use')),
+        );
+      }
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+    } finally {
+      if (mounted) setState(() => _downloading = false);
     }
   }
 
@@ -136,7 +202,7 @@ class _ItineraryScreenState extends ConsumerState<ItineraryScreen> with SingleTi
               )
             : null,
         actions: [
-          if (hasStops && _trip != null)
+          if (hasStops && _trip != null && !_offline)
             IconButton(
               icon: const Icon(Icons.ios_share),
               onPressed: () => ItineraryExportService.share(_trip!, _itinerary!),
@@ -150,6 +216,29 @@ class _ItineraryScreenState extends ConsumerState<ItineraryScreen> with SingleTi
               : Column(
                   children: [
                     if (_loading) const LinearProgressIndicator(),
+                    if (_offline)
+                      Container(
+                        width: double.infinity,
+                        color: Colors.amber.shade100,
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        child: const Text(
+                          'Offline — showing your last downloaded copy of this trip',
+                          style: TextStyle(fontSize: 12),
+                        ),
+                      ),
+                    if (_downloading)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            LinearProgressIndicator(value: _downloadProgress > 0 ? _downloadProgress : null),
+                            const SizedBox(height: 4),
+                            Text('Downloading for offline use… ${(_downloadProgress * 100).round()}%',
+                                style: const TextStyle(fontSize: 12)),
+                          ],
+                        ),
+                      ),
                     Padding(
                       padding: const EdgeInsets.all(8),
                       child: Wrap(
@@ -157,32 +246,40 @@ class _ItineraryScreenState extends ConsumerState<ItineraryScreen> with SingleTi
                         runSpacing: 4,
                         children: [
                           FilledButton(
-                            onPressed: _loading ? null : () => _action(() => repo.generateItinerary(widget.tripId), 'Generate'),
+                            onPressed: _loading || _offline
+                                ? null
+                                : () => _action(() => repo.generateItinerary(widget.tripId), 'Generate'),
                             child: const Text('Generate'),
                           ),
                           OutlinedButton(
-                            onPressed: !hasStops || _loading
+                            onPressed: !hasStops || _loading || _offline
                                 ? null
                                 : () => _action(() => repo.summarizeItinerary(widget.tripId), 'Summarize'),
                             child: const Text('Summarize'),
                           ),
                           OutlinedButton(
-                            onPressed: !hasStops || _loading
+                            onPressed: !hasStops || _loading || _offline
                                 ? null
                                 : () => _action(() => repo.optimizeItinerary(widget.tripId), 'Optimize'),
                             child: const Text('Optimize'),
                           ),
                           OutlinedButton(
-                            onPressed: !hasStops || _loading
+                            onPressed: !hasStops || _loading || _offline
                                 ? null
                                 : () => _action(() => repo.enrichItinerary(widget.tripId), 'Enrich'),
                             child: const Text('Enrich'),
                           ),
-                          if (hasStops && _trip != null)
+                          if (hasStops && _trip != null && !_offline)
                             OutlinedButton.icon(
                               onPressed: () => ItineraryExportService.share(_trip!, _itinerary!),
                               icon: const Icon(Icons.share, size: 18),
                               label: const Text('Export'),
+                            ),
+                          if (hasStops && _trip != null && !_offline)
+                            OutlinedButton.icon(
+                              onPressed: _downloading ? null : _downloadForOffline,
+                              icon: const Icon(Icons.download_for_offline_outlined, size: 18),
+                              label: const Text('Download for offline'),
                             ),
                         ],
                       ),
@@ -202,6 +299,7 @@ class _ItineraryScreenState extends ConsumerState<ItineraryScreen> with SingleTi
                             _ScheduleTab(
                               days: days,
                               mapPoints: allPoints,
+                              routes: _routes,
                               onReorder: _reorder,
                             ),
                             _StopListTab(stops: _foodStops(), emptyMessage: 'No food or shopping stops'),
@@ -215,52 +313,70 @@ class _ItineraryScreenState extends ConsumerState<ItineraryScreen> with SingleTi
   }
 }
 
-class _ScheduleTab extends StatelessWidget {
+class _ScheduleTab extends ConsumerWidget {
   const _ScheduleTab({
     required this.days,
     required this.mapPoints,
+    required this.routes,
     required this.onReorder,
   });
 
   final List<ItineraryDay> days;
   final List<LatLng> mapPoints;
+  final List<DayRoute> routes;
   final void Function(ItineraryDay day, int oldIndex, int newIndex) onReorder;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final sortedRoutes = [...routes]..sort((a, b) => a.dayNumber.compareTo(b.dayNumber));
+    final routePoints = sortedRoutes.expand((r) => decodePolyline(r.overviewPolyline)).toList();
+    final isRealRoute = routePoints.length >= 2;
+    final linePoints = isRealRoute ? routePoints : mapPoints;
+
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
         if (mapPoints.length >= 2)
           SizedBox(
             height: 220,
-            child: FlutterMap(
-              options: MapOptions(initialCenter: mapPoints.first, initialZoom: 12),
-              children: [
-                TileLayer(
-                  urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                  userAgentPackageName: 'com.itineraryplanner.app',
-                ),
-                PolylineLayer(
-                  polylines: [
-                    Polyline(points: mapPoints, strokeWidth: 3, color: Colors.teal),
-                  ],
-                ),
-                MarkerLayer(
-                  markers: [
-                    for (var i = 0; i < mapPoints.length; i++)
-                      Marker(
-                        point: mapPoints[i],
-                        width: 28,
-                        height: 28,
-                        child: CircleAvatar(
-                          radius: 12,
-                          child: Text('${i + 1}', style: const TextStyle(fontSize: 10)),
+            child: FutureBuilder<TileProvider>(
+              future: ref.read(offlineMapServiceProvider).tileProvider(),
+              builder: (context, snapshot) {
+                return FlutterMap(
+                  options: MapOptions(initialCenter: mapPoints.first, initialZoom: 12),
+                  children: [
+                    snapshot.hasData
+                        ? OfflineMapService.buildTileLayer(snapshot.data!)
+                        : TileLayer(
+                            urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                            userAgentPackageName: 'com.itineraryplanner.app',
+                          ),
+                    PolylineLayer(
+                      polylines: [
+                        Polyline(
+                          points: linePoints,
+                          strokeWidth: 3,
+                          color: isRealRoute ? Colors.teal : Colors.teal.withOpacity(0.5),
                         ),
-                      ),
+                      ],
+                    ),
+                    MarkerLayer(
+                      markers: [
+                        for (var i = 0; i < mapPoints.length; i++)
+                          Marker(
+                            point: mapPoints[i],
+                            width: 28,
+                            height: 28,
+                            child: CircleAvatar(
+                              radius: 12,
+                              child: Text('${i + 1}', style: const TextStyle(fontSize: 10)),
+                            ),
+                          ),
+                      ],
+                    ),
                   ],
-                ),
-              ],
+                );
+              },
             ),
           ),
         const SizedBox(height: 16),

@@ -28,6 +28,24 @@ const optionalClockTimeSchema = z.preprocess(
   clockTimeSchema,
 );
 
+export const tripStaySchema = z.object({
+  id: z.string().min(1),
+  name: z.string().min(1),
+  address: z.string().optional(),
+  coordinates: coordinatesSchema.optional(),
+  googlePlaceId: z.string().optional(),
+  checkInDate: z.string().min(1),
+  checkOutDate: z.string().min(1),
+  checkInTime: z.string().optional(),
+  checkOutTime: z.string().optional(),
+  confirmationNumber: z.string().optional(),
+  pricePerNight: z.number().optional(),
+  currency: z.string().optional(),
+  bookingUrl: z.string().optional(),
+  notes: z.string().optional(),
+  rating: z.number().optional(),
+});
+
 export const tripLegSchema = z.object({
   id: z.string().min(1),
   name: z.string().min(1, "Leg name is required"),
@@ -42,10 +60,14 @@ export const tripLegSchema = z.object({
   hotelName: z.string().optional(),
   hotelAddress: z.string().optional(),
   hotelCoordinates: coordinatesSchema.optional(),
+  stays: z.array(tripStaySchema).default([]),
   order: z.number().int().min(0),
   discoveryPoolIds: z.array(z.string()).default([]),
   foodPoolIds: z.array(z.string()).default([]),
   marketPoolIds: z.array(z.string()).default([]),
+  selectedPlaceIds: z.array(z.string()).default([]),
+  aiMatchedPlaceIds: z.array(z.string()).default([]),
+  aiSuggestedPlaceNames: z.array(z.string()).default([]),
   destinationBrief: z
     .object({
       specialties: z.array(z.string()),
@@ -57,6 +79,7 @@ export const tripLegSchema = z.object({
           whatToBuy: z.array(z.string()),
         }),
       ),
+      festivals: z.array(z.string()).default([]),
       generalTips: z.array(z.string()),
       generatedAt: z.string().optional(),
     })

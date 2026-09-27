@@ -409,6 +409,12 @@ class VisitIntel {
       summary: json['summary'] as String?,
     );
   }
+
+  Map<String, dynamic> toJson() => {
+        'hypeLevel': hypeLevel,
+        'bestTimeToVisit': bestTimeToVisit,
+        'summary': summary,
+      };
 }
 
 class ItineraryDay {
@@ -426,6 +432,12 @@ class ItineraryDay {
       date: json['date'] as String?,
     );
   }
+
+  Map<String, dynamic> toJson() => {
+        'dayNumber': dayNumber,
+        'stops': stops.map((s) => s.toJson()).toList(),
+        'date': date,
+      };
 }
 
 class ItineraryStop {
@@ -475,6 +487,19 @@ class ItineraryStop {
       travelMinutesFromPrevious: json['travelMinutesFromPrevious'] as int?,
     );
   }
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'name': name,
+        'startTime': startTime,
+        'endTime': endTime,
+        'coordinates': coordinates != null ? {'lat': coordinates!['lat'], 'lng': coordinates!['lng']} : null,
+        'category': category,
+        'stopType': stopType,
+        'aiNotes': aiNotes,
+        'visitIntel': visitIntel?.toJson(),
+        'travelMinutesFromPrevious': travelMinutesFromPrevious,
+      };
 }
 
 class Itinerary {
@@ -487,6 +512,11 @@ class Itinerary {
         .toList();
     return Itinerary(days: days, summary: json['summary'] as String?);
   }
+
+  Map<String, dynamic> toJson() => {
+        'days': days.map((d) => d.toJson()).toList(),
+        'summary': summary,
+      };
 }
 
 class AppNotification {

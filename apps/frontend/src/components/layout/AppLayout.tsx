@@ -39,7 +39,9 @@ export function AppLayout({ children }: AppLayoutProps) {
           </DrawerContent>
         </Drawer>
 
-        <Box flex={1} p={{ base: 4, md: 6, lg: 8 }} overflow="auto">
+        {/* overflow-x "clip" (not "auto") so the content box isn't a scroll container — that would
+            silently break position: sticky for anything inside pages. */}
+        <Box flex={1} minW={0} p={{ base: 4, md: 6, lg: 8 }} overflowX="clip">
           {children}
         </Box>
       </Flex>

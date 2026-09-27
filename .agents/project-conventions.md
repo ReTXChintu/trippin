@@ -18,7 +18,7 @@ Quick lookup for project-specific patterns, tools, and commands.
 - `apps/frontend/package.json` - Dependencies, scripts
 - `apps/frontend/tsconfig.app.json` - TypeScript configuration (`@/*` path alias)
 - `apps/frontend/vite.config.ts` - Vite config
-- `apps/frontend/.env.example` - Env vars (`VITE_API_BASE_URL`, etc.)
+- `.env.example` (repo root) - Env vars (`VITE_API_BASE_URL`, etc.); read via `envDir` in `vite.config.ts`
 
 ### Project Structure
 
@@ -63,7 +63,7 @@ apps/frontend/src/
 
 - `apps/backend/package.json` - Dependencies, scripts
 - `apps/backend/tsconfig.json` - TypeScript configuration (`@/*` path alias)
-- `apps/backend/.env.example` - Env vars (`MONGODB_URI`, `JWT_SECRET`, `FRONTEND_URL`, etc.)
+- `.env.example` (repo root) - Env vars (`MONGODB_URI`, `JWT_SECRET`, `FRONTEND_URL`, etc.); loaded by `src/lib/load-env.ts`
 
 ### Project Structure
 

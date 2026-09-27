@@ -4,10 +4,18 @@ import {
   getOwnerApiKeysForTripDto,
   getUserApiKeys,
 } from "@/lib/services/trip-api-keys.service";
+import { getAIProvider } from "@/lib/ai";
 import { PlacesService } from "@/modules/places/services/places.service";
+import { matchAiSuggestionsToPlaces } from "@/modules/places/utils/place-name-match.utils";
 import { TripRepository } from "@/repositories/trip.repository";
 import { PlaceCacheRepository } from "@/repositories/place-cache.repository";
-import { getAggregatedDiscoveryPoolIds, getEffectiveLegs } from "@/modules/trips/utils/trip-leg.utils";
+import {
+  getAggregatedDiscoveryPoolIds,
+  getAggregatedFoodPoolIds,
+  getAggregatedLocalFood,
+  getAggregatedMarketPoolIds,
+  getEffectiveLegs,
+} from "@/modules/trips/utils/trip-leg.utils";
 import type { TripLeg } from "@/modules/trips/types/trip-leg.types";
 import {
   bulkAddPlacesSchema,
@@ -58,6 +66,51 @@ function tripContext(trip: NonNullable<Awaited<ReturnType<typeof TripRepository.
   };
 }
 
+function legContext(leg: Pick<TripLeg, "baseCity" | "state" | "country">, trip: Trip) {
+  return {
+    city: leg.baseCity,
+    state: leg.state ?? trip.destinationState,
+    country: leg.country,
+  };
+}
+
+function findLeg(trip: Trip, legId: string): TripLeg | undefined {
+  return trip.legs.find((l) => l.id === legId);
+}
+
+async function persistLegSelectedPlaceIds(
+  trip: Trip,
+  userId: string,
+  legId: string,
+  selectedPlaceIds: string[],
+): Promise<void> {
+  const updatedLegs = trip.legs.map((l) => (l.id === legId ? { ...l, selectedPlaceIds } : l));
+  await TripRepository.update(trip.id, userId, { legs: updatedLegs });
+}
+
+/** Also folds the placeId into the leg's discoveryPoolIds so search-added places are browsable
+ * in the Discover pool, not just selectable from My Places. */
+async function persistLegSelectedAndPoolPlaceIds(
+  trip: Trip,
+  userId: string,
+  legId: string,
+  selectedPlaceIds: string[],
+  placeId: string,
+): Promise<void> {
+  const updatedLegs = trip.legs.map((l) =>
+    l.id === legId
+      ? {
+          ...l,
+          selectedPlaceIds,
+          discoveryPoolIds: l.discoveryPoolIds.includes(placeId)
+            ? l.discoveryPoolIds
+            : [...l.discoveryPoolIds, placeId],
+        }
+      : l,
+  );
+  await TripRepository.update(trip.id, userId, { legs: updatedLegs });
+}
+
 function actionError<T = void>(err: unknown, fallback: string): PlacesActionResult<T> {
   if (err instanceof ApiKeyError) {
     return { success: false, error: err.message };
@@ -87,16 +140,14 @@ async function discoverAuxiliaryPools(
     googleMapsApiKey,
   };
 
-  const [food, markets, rentals] = await Promise.all([
+  const [food, markets] = await Promise.all([
     PlacesService.discoverFoodPlaces(baseParams),
     PlacesService.discoverMarketPlaces(baseParams),
-    PlacesService.discoverVehicleRentalsNearStay(baseParams),
   ]);
 
   return {
     foodPoolIds: food.map((p) => p.googlePlaceId).filter((id): id is string => !!id),
     marketPoolIds: markets.map((p) => p.googlePlaceId).filter((id): id is string => !!id),
-    vehicleRentalSuggestions: rentals,
   };
 }
 
@@ -267,19 +318,16 @@ export async function discoverPlacesForTrip(
 
   try {
     const legs = getEffectiveLegs(trip);
-    const isMultiLeg = trip.legs.length > 0;
 
     if (!forceRefresh) {
-      const hasCachedPool = isMultiLeg
-        ? legs.some((leg) => leg.discoveryPoolIds.length > 0)
-        : (trip.discoveryPoolIds?.length ?? 0) > 0;
+      const hasCachedPool = legs.some((leg) => leg.discoveryPoolIds.length > 0);
 
       if (hasCachedPool) {
-        const poolIds = isMultiLeg ? getAggregatedDiscoveryPoolIds(trip) : (trip.discoveryPoolIds ?? []);
+        const poolIds = getAggregatedDiscoveryPoolIds(trip);
         const places = await PlacesService.getCachedPlaces(poolIds);
         return {
           success: true,
-          data: { places, legs: isMultiLeg ? legs : undefined },
+          data: { places, legs },
           message: `Loaded ${places.length} cached places`,
         };
       }
@@ -291,95 +339,124 @@ export async function discoverPlacesForTrip(
     const rateLimit = await enforceRateLimit(userId);
     if (rateLimit) return rateLimit;
 
-    if (isMultiLeg) {
-      const legsToDiscover = targetLegId ? legs.filter((leg) => leg.id === targetLegId) : legs;
+    const legsToDiscover = targetLegId ? legs.filter((leg) => leg.id === targetLegId) : legs;
 
-      if (targetLegId && legsToDiscover.length === 0) {
-        return { success: false, error: "Trip leg not found" };
-      }
+    if (targetLegId && legsToDiscover.length === 0) {
+      return { success: false, error: "Trip leg not found" };
+    }
 
-      const updatedLegs = [...trip.legs];
+    const updatedLegs = [...trip.legs];
 
-      for (const leg of legsToDiscover) {
-        const places = await PlacesService.discoverPlacesForTrip({
-          city: leg.baseCity,
-          state: leg.state ?? trip.destinationState,
-          country: leg.country,
-          searchAreas: leg.dayTripAreas,
-          interests: trip.interests,
-          travelStyle: trip.travelStyle,
-          mustVisitPlaces: trip.mustVisitPlaces,
-          excludedPlaces: trip.excludedPlaces,
-          hotelCoordinates: leg.hotelCoordinates ?? trip.hotelCoordinates,
-          limit: Math.ceil(MAX_DISCOVERY_POOL_SIZE / Math.max(legs.length, 1)),
-          googleMapsApiKey: ownerKeys.googleMaps,
-        });
+    for (const leg of legsToDiscover) {
+      const places = await PlacesService.discoverPlacesForTrip({
+        city: leg.baseCity,
+        state: leg.state ?? trip.destinationState,
+        country: leg.country,
+        searchAreas: leg.dayTripAreas,
+        interests: trip.interests,
+        travelStyle: trip.travelStyle,
+        mustVisitPlaces: trip.mustVisitPlaces,
+        excludedPlaces: trip.excludedPlaces,
+        hotelCoordinates: leg.hotelCoordinates ?? trip.hotelCoordinates,
+        limit: Math.ceil(MAX_DISCOVERY_POOL_SIZE / Math.max(legs.length, 1)),
+        googleMapsApiKey: ownerKeys.googleMaps,
+      });
 
-        const auxiliary = await discoverAuxiliaryPools(trip, leg, ownerKeys.googleMaps);
+      const auxiliary = await discoverAuxiliaryPools(trip, leg, ownerKeys.googleMaps);
 
-        const placeIds = places.map((p) => p.googlePlaceId).filter((id): id is string => !!id);
-        const idx = updatedLegs.findIndex((l) => l.id === leg.id);
-        if (idx >= 0) {
-          updatedLegs[idx] = {
-            ...updatedLegs[idx],
-            discoveryPoolIds: placeIds,
-            foodPoolIds: auxiliary.foodPoolIds,
-            marketPoolIds: auxiliary.marketPoolIds,
-            vehicleRentalSuggestions: auxiliary.vehicleRentalSuggestions,
-          };
+      let aiMatchedPlaceIds: string[] = [];
+      let aiSuggestedPlaceNames: string[] = [];
+      if (ownerKeys.openai) {
+        try {
+          const suggestedNames = await getAIProvider(ownerKeys.openai).suggestPlaces({
+            city: leg.baseCity,
+            state: leg.state ?? trip.destinationState,
+            country: leg.country,
+            interests: trip.interests,
+            travelStyle: trip.travelStyle,
+          });
+          const matched = matchAiSuggestionsToPlaces(suggestedNames, places);
+          aiMatchedPlaceIds = matched.matchedIds;
+          aiSuggestedPlaceNames = matched.unmatchedNames;
+        } catch {
+          // Best-effort — AI suggestions never block discovery.
         }
       }
 
-      const allIds = updatedLegs.flatMap((leg) => leg.discoveryPoolIds);
-      await TripRepository.update(tripId, userId, {
-        legs: updatedLegs,
-        discoveryPoolIds: allIds,
-      });
-
-      const places = await PlacesService.getCachedPlaces(allIds);
-      return {
-        success: true,
-        data: { places, legs: updatedLegs },
-        message: `Discovered ${places.length} places across ${legsToDiscover.length} leg(s)`,
-      };
+      const placeIds = places.map((p) => p.googlePlaceId).filter((id): id is string => !!id);
+      const idx = updatedLegs.findIndex((l) => l.id === leg.id);
+      if (idx >= 0) {
+        updatedLegs[idx] = {
+          ...updatedLegs[idx],
+          discoveryPoolIds: placeIds,
+          foodPoolIds: auxiliary.foodPoolIds,
+          marketPoolIds: auxiliary.marketPoolIds,
+          aiMatchedPlaceIds,
+          aiSuggestedPlaceNames,
+        };
+      }
     }
 
-    const places = await PlacesService.discoverPlacesForTrip({
-      city: trip.destinationCity,
-      state: trip.destinationState,
-      country: trip.destinationCountry,
+    const allIds = updatedLegs.flatMap((leg) => leg.discoveryPoolIds);
+    await TripRepository.update(tripId, userId, {
+      legs: updatedLegs,
+      discoveryPoolIds: allIds,
+    });
+
+    const places = await PlacesService.getCachedPlaces(allIds);
+    return {
+      success: true,
+      data: { places, legs: updatedLegs },
+      message: `Discovered ${places.length} places across ${legsToDiscover.length} leg(s)`,
+    };
+  } catch (err) {
+    return actionError(err, "Discovery failed");
+  }
+}
+
+export async function discoverVehicleRentalsForLeg(
+  userId: string,
+  input: { tripId: string; legId: string },
+): Promise<PlacesActionResult<{ vehicleRentalSuggestions: TripLeg["vehicleRentalSuggestions"] }>> {
+  const { tripId, legId } = input;
+  const trip = await TripRepository.findByIdForUser(tripId, userId);
+  if (!trip) return { success: false, error: "Trip not found" };
+
+  const leg = findLeg(trip, legId);
+  if (!leg) return { success: false, error: "Trip leg not found" };
+
+  if (!leg.hotelCoordinates) {
+    return { success: false, error: "Add a hotel/stay for this leg first" };
+  }
+
+  try {
+    const ownerKeys = await getOwnerApiKeysForTripDto(trip);
+    assertGoogleMapsKey(ownerKeys, "trip");
+
+    const rateLimit = await enforceRateLimit(userId);
+    if (rateLimit) return rateLimit;
+
+    const vehicleRentalSuggestions = await PlacesService.discoverVehicleRentalsNearStay({
+      city: leg.baseCity,
+      state: leg.state ?? trip.destinationState,
+      country: leg.country,
+      searchAreas: leg.dayTripAreas,
       interests: trip.interests,
       travelStyle: trip.travelStyle,
-      mustVisitPlaces: trip.mustVisitPlaces,
-      excludedPlaces: trip.excludedPlaces,
-      hotelCoordinates: trip.hotelCoordinates,
+      hotelCoordinates: leg.hotelCoordinates,
       googleMapsApiKey: ownerKeys.googleMaps,
     });
 
-    const auxiliary = await discoverAuxiliaryPools(
-      trip,
-      {
-        baseCity: trip.destinationCity,
-        state: trip.destinationState,
-        country: trip.destinationCountry,
-        dayTripAreas: [],
-        hotelCoordinates: trip.hotelCoordinates,
-      },
-      ownerKeys.googleMaps,
-    );
+    const updatedLegs = trip.legs.map((l) => (l.id === legId ? { ...l, vehicleRentalSuggestions } : l));
+    await TripRepository.update(tripId, userId, { legs: updatedLegs });
 
-    const placeIds = places.map((p) => p.googlePlaceId).filter((id): id is string => !!id);
-
-    await TripRepository.update(tripId, userId, {
-      discoveryPoolIds: placeIds,
-      foodPoolIds: auxiliary.foodPoolIds,
-      marketPoolIds: auxiliary.marketPoolIds,
-      vehicleRentalSuggestions: auxiliary.vehicleRentalSuggestions,
-    });
-
-    return { success: true, data: { places }, message: `Discovered ${places.length} places` };
+    return {
+      success: true,
+      data: { vehicleRentalSuggestions },
+      message: `Found ${vehicleRentalSuggestions.length} rental option(s)`,
+    };
   } catch (err) {
-    return actionError(err, "Discovery failed");
+    return actionError(err, "Vehicle rental search failed");
   }
 }
 
@@ -395,14 +472,34 @@ export async function getTripDiscoveryPool(
   return { success: true, data: { places } };
 }
 
+export async function getTripEatShopPool(
+  userId: string,
+  tripId: string,
+): Promise<PlacesActionResult<{ foodPlaces: Place[]; marketPlaces: Place[]; localFood: string[] }>> {
+  const trip = await TripRepository.findByIdForUser(tripId, userId);
+  if (!trip) return { success: false, error: "Trip not found" };
+
+  const [foodPlaces, marketPlaces] = await Promise.all([
+    PlacesService.getCachedPlaces(getAggregatedFoodPoolIds(trip)),
+    PlacesService.getCachedPlaces(getAggregatedMarketPoolIds(trip)),
+  ]);
+  const localFood = getAggregatedLocalFood(trip);
+
+  return { success: true, data: { foodPlaces, marketPlaces, localFood } };
+}
+
 export async function getTripSelectedPlaces(
   userId: string,
   tripId: string,
+  legId: string,
 ): Promise<PlacesActionResult<{ places: Place[] }>> {
   const trip = await TripRepository.findByIdForUser(tripId, userId);
   if (!trip) return { success: false, error: "Trip not found" };
 
-  const places = await PlacesService.getCachedPlaces(trip.selectedPlaceIds ?? []);
+  const leg = findLeg(trip, legId);
+  if (!leg) return { success: false, error: "Trip leg not found" };
+
+  const places = await PlacesService.getCachedPlaces(leg.selectedPlaceIds);
   return { success: true, data: { places } };
 }
 
@@ -415,25 +512,28 @@ export async function addPlaceToTrip(
     return { success: false, error: parsed.error.issues[0]?.message ?? "Invalid input" };
   }
 
-  const { tripId, placeId } = parsed.data;
+  const { tripId, legId, placeId } = parsed.data;
   const trip = await TripRepository.findByIdForUser(tripId, userId);
   if (!trip) return { success: false, error: "Trip not found" };
 
-  if (trip.selectedPlaceIds.includes(placeId)) {
-    const places = await PlacesService.getCachedPlaces(trip.selectedPlaceIds);
+  const leg = findLeg(trip, legId);
+  if (!leg) return { success: false, error: "Trip leg not found" };
+
+  if (leg.selectedPlaceIds.includes(placeId)) {
+    const places = await PlacesService.getCachedPlaces(leg.selectedPlaceIds);
     return { success: true, data: { places }, message: "Place already in trip" };
   }
 
   try {
     const ownerKeys = await getOwnerApiKeysForTripDto(trip);
     assertGoogleMapsKey(ownerKeys, "trip");
-    await PlacesService.getPlaceDetails(placeId, ownerKeys.googleMaps, tripContext(trip));
+    await PlacesService.getPlaceDetails(placeId, ownerKeys.googleMaps, legContext(leg, trip));
   } catch (err) {
     return actionError(err, "Failed to add place");
   }
 
-  const updatedIds = [...trip.selectedPlaceIds, placeId];
-  await TripRepository.update(tripId, userId, { selectedPlaceIds: updatedIds });
+  const updatedIds = [...leg.selectedPlaceIds, placeId];
+  await persistLegSelectedPlaceIds(trip, userId, legId, updatedIds);
 
   const places = await PlacesService.getCachedPlaces(updatedIds);
   return { success: true, data: { places }, message: "Place added to trip" };
@@ -448,12 +548,15 @@ export async function removePlaceFromTrip(
     return { success: false, error: parsed.error.issues[0]?.message ?? "Invalid input" };
   }
 
-  const { tripId, placeId } = parsed.data;
+  const { tripId, legId, placeId } = parsed.data;
   const trip = await TripRepository.findByIdForUser(tripId, userId);
   if (!trip) return { success: false, error: "Trip not found" };
 
-  const updatedIds = trip.selectedPlaceIds.filter((id) => id !== placeId);
-  await TripRepository.update(tripId, userId, { selectedPlaceIds: updatedIds });
+  const leg = findLeg(trip, legId);
+  if (!leg) return { success: false, error: "Trip leg not found" };
+
+  const updatedIds = leg.selectedPlaceIds.filter((id) => id !== placeId);
+  await persistLegSelectedPlaceIds(trip, userId, legId, updatedIds);
 
   const places = await PlacesService.getCachedPlaces(updatedIds);
   return { success: true, data: { places }, message: "Place removed from trip" };
@@ -468,12 +571,15 @@ export async function bulkAddPlacesToTrip(
     return { success: false, error: parsed.error.issues[0]?.message ?? "Invalid input" };
   }
 
-  const { tripId, placeIds } = parsed.data;
+  const { tripId, legId, placeIds } = parsed.data;
   const trip = await TripRepository.findByIdForUser(tripId, userId);
   if (!trip) return { success: false, error: "Trip not found" };
 
-  const ctx = tripContext(trip);
-  const merged = new Set(trip.selectedPlaceIds);
+  const leg = findLeg(trip, legId);
+  if (!leg) return { success: false, error: "Trip leg not found" };
+
+  const ctx = legContext(leg, trip);
+  const merged = new Set(leg.selectedPlaceIds);
 
   try {
     const ownerKeys = await getOwnerApiKeysForTripDto(trip);
@@ -490,7 +596,7 @@ export async function bulkAddPlacesToTrip(
   }
 
   const updatedIds = Array.from(merged);
-  await TripRepository.update(tripId, userId, { selectedPlaceIds: updatedIds });
+  await persistLegSelectedPlaceIds(trip, userId, legId, updatedIds);
 
   const places = await PlacesService.getCachedPlaces(updatedIds);
   return { success: true, data: { places }, message: `Added ${placeIds.length} place(s) to trip` };
@@ -505,13 +611,16 @@ export async function bulkRemovePlacesFromTrip(
     return { success: false, error: parsed.error.issues[0]?.message ?? "Invalid input" };
   }
 
-  const { tripId, placeIds } = parsed.data;
+  const { tripId, legId, placeIds } = parsed.data;
   const trip = await TripRepository.findByIdForUser(tripId, userId);
   if (!trip) return { success: false, error: "Trip not found" };
 
+  const leg = findLeg(trip, legId);
+  if (!leg) return { success: false, error: "Trip leg not found" };
+
   const removeSet = new Set(placeIds);
-  const updatedIds = trip.selectedPlaceIds.filter((id) => !removeSet.has(id));
-  await TripRepository.update(tripId, userId, { selectedPlaceIds: updatedIds });
+  const updatedIds = leg.selectedPlaceIds.filter((id) => !removeSet.has(id));
+  await persistLegSelectedPlaceIds(trip, userId, legId, updatedIds);
 
   const places = await PlacesService.getCachedPlaces(updatedIds);
   return { success: true, data: { places }, message: `Removed ${placeIds.length} place(s) from trip` };
@@ -526,20 +635,23 @@ export async function addPlaceFromSearch(
     return { success: false, error: parsed.error.issues[0]?.message ?? "Invalid input" };
   }
 
-  const { tripId, placeId } = parsed.data;
+  const { tripId, legId, placeId } = parsed.data;
   const trip = await TripRepository.findByIdForUser(tripId, userId);
   if (!trip) return { success: false, error: "Trip not found" };
+
+  const leg = findLeg(trip, legId);
+  if (!leg) return { success: false, error: "Trip leg not found" };
 
   try {
     const ownerKeys = await getOwnerApiKeysForTripDto(trip);
     assertGoogleMapsKey(ownerKeys, "trip");
-    const place = await PlacesService.getPlaceDetails(placeId, ownerKeys.googleMaps, tripContext(trip));
+    const place = await PlacesService.getPlaceDetails(placeId, ownerKeys.googleMaps, legContext(leg, trip));
 
-    const merged = new Set(trip.selectedPlaceIds);
+    const merged = new Set(leg.selectedPlaceIds);
     merged.add(placeId);
 
     const updatedIds = Array.from(merged);
-    await TripRepository.update(tripId, userId, { selectedPlaceIds: updatedIds });
+    await persistLegSelectedAndPoolPlaceIds(trip, userId, legId, updatedIds, placeId);
 
     const places = await PlacesService.getCachedPlaces(updatedIds);
     return { success: true, data: { places, place }, message: "Place added to trip" };

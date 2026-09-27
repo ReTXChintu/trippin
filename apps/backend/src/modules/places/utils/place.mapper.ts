@@ -16,6 +16,13 @@ export function toPlainPlace(place: Place): Place {
     averageVisitDurationMinutes: place.averageVisitDurationMinutes,
     openingTime: place.openingTime,
     closingTime: place.closingTime,
+    openingPeriods: place.openingPeriods
+      ? place.openingPeriods.map((p) => ({
+          open: { day: p.open.day, hour: p.open.hour, minute: p.open.minute },
+          ...(p.close ? { close: { day: p.close.day, hour: p.close.hour, minute: p.close.minute } } : {}),
+        }))
+      : undefined,
+    weekdayDescriptions: place.weekdayDescriptions ? [...place.weekdayDescriptions] : undefined,
     weeklyClosedDays: place.weeklyClosedDays ? [...place.weeklyClosedDays] : undefined,
     description: place.description,
     tags: place.tags ? [...place.tags] : undefined,
@@ -35,9 +42,6 @@ export function toPlainPlace(place: Place): Place {
 export function toPlainPlaceDetail(detail: PlaceDetail): PlaceDetail {
   return {
     ...toPlainPlace(detail),
-    weekdayDescriptions: detail.weekdayDescriptions
-      ? [...detail.weekdayDescriptions]
-      : undefined,
     priceRange: detail.priceRange,
     websiteUri: detail.websiteUri,
     googleMapsUri: detail.googleMapsUri,
@@ -45,6 +49,16 @@ export function toPlainPlaceDetail(detail: PlaceDetail): PlaceDetail {
     googleSearchUrl: detail.googleSearchUrl,
     photoNames: detail.photoNames ? [...detail.photoNames] : undefined,
     photoUrls: detail.photoUrls ? [...detail.photoUrls] : undefined,
+    reviews: detail.reviews
+      ? detail.reviews.map((r) => ({
+          rating: r.rating,
+          text: r.text,
+          authorName: r.authorName,
+          relativeTime: r.relativeTime,
+        }))
+      : undefined,
+    reviewSummary: detail.reviewSummary,
+    richVersion: detail.richVersion,
   };
 }
 

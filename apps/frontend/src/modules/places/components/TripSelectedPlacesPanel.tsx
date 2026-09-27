@@ -23,22 +23,23 @@ import { getApiErrorMessage } from "@/lib/api";
 import { PlaceSearchInput } from "@/modules/places/components/PlaceSearchInput";
 import type { Place } from "@/modules/places/types/place.types";
 import type { Trip } from "@/modules/trips/types/trip.types";
+import type { TripLeg } from "@/modules/trips/types/trip-leg.types";
 
 interface TripSelectedPlacesPanelProps {
   trip: Trip;
+  leg: TripLeg;
   selectedPlaces: Place[];
   onSelectedChange: (places: Place[]) => void;
 }
 
-export function TripSelectedPlacesPanel({ trip, selectedPlaces, onSelectedChange }: TripSelectedPlacesPanelProps) {
+export function TripSelectedPlacesPanel({ trip, leg, selectedPlaces, onSelectedChange }: TripSelectedPlacesPanelProps) {
   const toast = useToast();
   const [checkedIds, setCheckedIds] = useState<Set<string>>(new Set());
-  const addFromSearch = useAddPlaceFromSearch(trip.id);
-  const removePlace = useRemovePlaceFromTrip(trip.id);
-  const bulkRemove = useBulkRemovePlacesFromTrip(trip.id);
+  const addFromSearch = useAddPlaceFromSearch(trip.id, leg.id);
+  const removePlace = useRemovePlaceFromTrip(trip.id, leg.id);
+  const bulkRemove = useBulkRemovePlacesFromTrip(trip.id, leg.id);
   const [removingId, setRemovingId] = useState<string | null>(null);
 
-  const bg = useColorModeValue("white", "gray.800");
   const borderColor = useColorModeValue("gray.200", "gray.700");
 
   const placeIds = useMemo(
@@ -105,17 +106,12 @@ export function TripSelectedPlacesPanel({ trip, selectedPlaces, onSelectedChange
   };
 
   return (
-    <Box p={5} bg={bg} borderWidth="1px" borderColor={borderColor} borderRadius="xl">
+    <Box>
       <Flex justify="space-between" align="center" mb={4} flexWrap="wrap" gap={2}>
-        <Box>
-          <Text fontWeight="semibold" fontSize="sm">
-            Places in my trip ({selectedPlaces.length})
-          </Text>
-          <Text fontSize="xs" color="gray.500">
-            Set preferred arrival & departure times per place. Enable &quot;Plan by place best times&quot; in
-            trip settings to ignore fixed daily start.
-          </Text>
-        </Box>
+        <Text fontSize="xs" color="gray.500">
+          Set preferred arrival & departure times per place. Enable &quot;Plan by place best times&quot; in trip
+          settings to ignore fixed daily start.
+        </Text>
         {checkedIds.size > 0 && (
           <Button
             size="sm"
@@ -135,8 +131,8 @@ export function TripSelectedPlacesPanel({ trip, selectedPlaces, onSelectedChange
           label="Add a place"
           placeholder="Search Google Places..."
           mode="place"
-          city={trip.destinationCity}
-          country={trip.destinationCountry}
+          city={leg.baseCity || trip.destinationCity}
+          country={leg.country || trip.destinationCountry}
           onSelect={handleAddFromSearch}
         />
       </Box>

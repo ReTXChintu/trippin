@@ -5,10 +5,15 @@ export const PLACES_SEARCH_FIELD_MASK = [
   "places.formattedAddress",
   "places.location",
   "places.rating",
+  "places.userRatingCount",
+  "places.priceLevel",
   "places.types",
   "places.primaryType",
   "places.regularOpeningHours",
 ].join(",");
+
+/** Nearby restaurant / hotel searches also want one photo reference per result for cards. */
+export const PLACES_NEARBY_FIELD_MASK = [PLACES_SEARCH_FIELD_MASK, "places.photos"].join(",");
 
 export const PLACE_DETAILS_FIELD_MASK = [
   "id",
@@ -16,6 +21,8 @@ export const PLACE_DETAILS_FIELD_MASK = [
   "formattedAddress",
   "location",
   "rating",
+  "userRatingCount",
+  "priceLevel",
   "types",
   "primaryType",
   "regularOpeningHours",
@@ -31,8 +38,12 @@ export const AUTocomplete_FIELD_MASK = [
 
 export const PLACES_API_BASE = "https://places.googleapis.com/v1";
 export const GEOCODING_API_BASE = "https://maps.googleapis.com/maps/api/geocode/json";
+export const DIRECTIONS_API_BASE = "https://maps.googleapis.com/maps/api/directions/json";
 
 export const PLACE_CACHE_TTL_DAYS = 30;
+/** Roads change rarely and this app plans ahead rather than routing live traffic, so route
+ * geometry/distance can be cached far longer than place details. */
+export const ROUTE_CACHE_TTL_DAYS = 30;
 export const SEARCH_MIN_QUERY_LENGTH = 3;
 export const SEARCH_DEBOUNCE_MS = 400;
 export const MAX_SEARCH_RESULTS = 20;
@@ -58,6 +69,9 @@ export const PLACE_DETAILS_RICH_FIELD_MASK = [
   "priceRange",
   "websiteUri",
   "googleMapsUri",
+  "editorialSummary",
+  "reviews",
+  "generativeSummary",
 ].join(",");
 
 export const HOTEL_TYPES = ["lodging", "hotel", "guest_house"];
@@ -79,6 +93,13 @@ export const VEHICLE_RENTAL_SEARCH_QUERIES = [
   "two wheeler rental",
   "motorcycle rental",
 ] as const;
+
+/** Restaurants suggested for a meal slot: searched within this radius of where you'll be. */
+export const MEAL_SUGGESTION_RADIUS_METERS = 1500;
+export const MAX_MEAL_SUGGESTIONS = 12;
+export const RESTAURANT_TYPES = ["restaurant", "cafe", "bakery", "meal_takeaway"];
+
+export const MAX_HOTEL_SEARCH_RESULTS = 20;
 
 export const MAX_FOOD_POOL_SIZE = 20;
 export const MAX_MARKET_POOL_SIZE = 15;

@@ -3,6 +3,11 @@ export type {
   ItineraryDay,
   ItineraryStop,
   ItineraryStopType,
+  ItinerarySnapshot,
+  MealType,
+  TravelSource,
+  OptionalItineraryPlace,
+  AiItineraryCandidate,
   GenerateItineraryInput,
   UpdateItineraryStopsInput,
 } from "./itinerary.types";

@@ -5,6 +5,24 @@ export interface Coordinates {
   lng: number;
 }
 
+export interface OpeningPeriodPoint {
+  day: number;
+  hour: number;
+  minute: number;
+}
+
+export interface OpeningPeriod {
+  open: OpeningPeriodPoint;
+  close?: OpeningPeriodPoint;
+}
+
+export interface PlaceReview {
+  rating?: number;
+  text: string;
+  authorName?: string;
+  relativeTime?: string;
+}
+
 export interface Place {
   googlePlaceId?: string;
   name: string;
@@ -17,6 +35,9 @@ export interface Place {
   averageVisitDurationMinutes?: number;
   openingTime?: string;
   closingTime?: string;
+  openingPeriods?: OpeningPeriod[];
+  /** Google's weekly hours text, Monday first. */
+  weekdayDescriptions?: string[];
   weeklyClosedDays?: string[];
   description?: string;
   tags?: string[];
@@ -33,8 +54,9 @@ export interface Place {
 }
 
 export interface PlaceDetail extends Place {
-  weekdayDescriptions?: string[];
   priceRange?: string;
+  reviews?: PlaceReview[];
+  reviewSummary?: string;
   websiteUri?: string;
   googleMapsUri?: string;
   googleMapsUrl?: string;

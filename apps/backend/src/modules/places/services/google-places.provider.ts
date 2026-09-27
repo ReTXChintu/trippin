@@ -6,6 +6,7 @@ import {
   PLACE_DETAILS_FIELD_MASK,
   PLACE_DETAILS_RICH_FIELD_MASK,
   PLACES_API_BASE,
+  PLACES_NEARBY_FIELD_MASK,
   PLACES_SEARCH_FIELD_MASK,
   SEARCH_MIN_QUERY_LENGTH,
 } from "@/constants/google-places";
@@ -14,6 +15,7 @@ import type {
   Place,
   PlaceDetail,
   PlaceSearchResult,
+  SearchNearbyOptions,
   SearchPlacesOptions,
   SearchPlacesPageResult,
 } from "@/modules/places/types/place.types";
@@ -25,7 +27,7 @@ import {
   mapGoogleToSearchResult,
   toPlaceIdPath,
 } from "@/modules/places/utils/google-places.mapper";
-import { buildPlacePhotoProxyUrls } from "@/modules/places/utils/photo.utils";
+import { buildPlacePhotoProxyUrls, RICH_DETAIL_VERSION } from "@/modules/places/utils/photo.utils";
 
 export class GooglePlacesProvider implements PlacesProvider {
   private apiKey: string;
@@ -134,7 +136,29 @@ export class GooglePlacesProvider implements PlacesProvider {
         includedType: "lodging",
         locationBias: this.locationBias(options.location),
       },
-      PLACES_SEARCH_FIELD_MASK,
+      PLACES_NEARBY_FIELD_MASK,
+    );
+
+    return (data.places ?? [])
+      .map((p) => mapGoogleToSearchResult(p as Parameters<typeof mapGoogleToSearchResult>[0]))
+      .filter((p): p is PlaceSearchResult => p !== null);
+  }
+
+  async searchNearby(options: SearchNearbyOptions): Promise<PlaceSearchResult[]> {
+    const data = await this.postJson<{ places?: unknown[] }>(
+      `${PLACES_API_BASE}/places:searchNearby`,
+      {
+        includedTypes: options.includedTypes,
+        maxResultCount: Math.min(options.limit ?? MAX_SEARCH_RESULTS, MAX_SEARCH_RESULTS),
+        rankPreference: "POPULARITY",
+        locationRestriction: {
+          circle: {
+            center: { latitude: options.location.lat, longitude: options.location.lng },
+            radius: options.radiusMeters,
+          },
+        },
+      },
+      PLACES_NEARBY_FIELD_MASK,
     );
 
     return (data.places ?? [])
@@ -201,7 +225,7 @@ export class GooglePlacesProvider implements PlacesProvider {
       PLACE_DETAILS_RICH_FIELD_MASK,
     );
 
-    const detail = mapGoogleToPlaceDetail(raw, {});
+    const detail: PlaceDetail = { ...mapGoogleToPlaceDetail(raw, {}), richVersion: RICH_DETAIL_VERSION };
     const photoNames = (raw.photos ?? [])
       .map((p) => p.name)
       .filter((n): n is string => !!n)

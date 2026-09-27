@@ -57,6 +57,18 @@ export function useDeleteTrip() {
   });
 }
 
+export function useDeleteTripLeg(tripId: string) {
+  const invalidate = useInvalidateTrips();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (legId: string) => tripsApi.deleteTripLeg(tripId, legId),
+    onSuccess: () => {
+      invalidate(tripId);
+      queryClient.invalidateQueries({ queryKey: ["itinerary", tripId] });
+    },
+  });
+}
+
 export function useArchiveTrip() {
   const invalidate = useInvalidateTrips();
   return useMutation({
@@ -126,5 +138,35 @@ export function useLeaveTrip() {
   return useMutation({
     mutationFn: (tripId: string) => tripsApi.leaveTrip(tripId),
     onSuccess: () => invalidate(),
+  });
+}
+
+export function useUpdateLegStays(tripId: string) {
+  const invalidate = useInvalidateTrips();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ legId, stays }: { legId: string; stays: import("@/modules/trips/types/trip-leg.types").TripStay[] }) =>
+      tripsApi.updateLegStays(tripId, legId, stays),
+    onSuccess: () => {
+      invalidate(tripId);
+      // Stay changes re-time that city's days server-side.
+      queryClient.invalidateQueries({ queryKey: ["itinerary", tripId] });
+      queryClient.invalidateQueries({ queryKey: ["itinerary-route", tripId] });
+    },
+  });
+}
+
+export function useHotelSearch(tripId: string) {
+  return useMutation({
+    mutationFn: ({
+      legId,
+      ...params
+    }: {
+      legId: string;
+      query?: string;
+      checkInDate?: string;
+      checkOutDate?: string;
+      adults?: number;
+    }) => tripsApi.searchHotelsForLeg(tripId, legId, params),
   });
 }

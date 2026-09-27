@@ -29,13 +29,11 @@ type TripDocLike = Pick<
   | "interests"
   | "mustVisitPlaces"
   | "excludedPlaces"
-  | "discoveredPlaceIds"
   | "discoveryPoolIds"
   | "foodPoolIds"
   | "marketPoolIds"
   | "destinationBrief"
   | "vehicleRentalSuggestions"
-  | "selectedPlaceIds"
   | "notes"
   | "status"
   | "isPublic"
@@ -70,10 +68,30 @@ function toTripLeg(leg: NonNullable<ITripDocument["legs"]>[number]): TripLeg {
     hotelName: leg.hotelName,
     hotelAddress: leg.hotelAddress,
     hotelCoordinates: toPlainCoordinates(leg.hotelCoordinates),
+    stays: (leg.stays ?? []).map((stay) => ({
+      id: stay.id,
+      name: stay.name,
+      address: stay.address,
+      coordinates: toPlainCoordinates(stay.coordinates),
+      googlePlaceId: stay.googlePlaceId,
+      checkInDate: stay.checkInDate,
+      checkOutDate: stay.checkOutDate,
+      checkInTime: stay.checkInTime,
+      checkOutTime: stay.checkOutTime,
+      confirmationNumber: stay.confirmationNumber,
+      pricePerNight: stay.pricePerNight,
+      currency: stay.currency,
+      bookingUrl: stay.bookingUrl,
+      notes: stay.notes,
+      rating: stay.rating,
+    })),
     order: leg.order,
     discoveryPoolIds: toStringArray(leg.discoveryPoolIds),
     foodPoolIds: toStringArray(leg.foodPoolIds),
     marketPoolIds: toStringArray(leg.marketPoolIds),
+    selectedPlaceIds: toStringArray(leg.selectedPlaceIds),
+    aiMatchedPlaceIds: toStringArray(leg.aiMatchedPlaceIds),
+    aiSuggestedPlaceNames: toStringArray(leg.aiSuggestedPlaceNames),
     destinationBrief: leg.destinationBrief
       ? {
           specialties: toStringArray(leg.destinationBrief.specialties),
@@ -83,6 +101,7 @@ function toTripLeg(leg: NonNullable<ITripDocument["legs"]>[number]): TripLeg {
             name: m.name,
             whatToBuy: toStringArray(m.whatToBuy),
           })),
+          festivals: toStringArray(leg.destinationBrief.festivals),
           generalTips: toStringArray(leg.destinationBrief.generalTips),
           generatedAt: leg.destinationBrief.generatedAt,
         }
@@ -154,6 +173,7 @@ export function toTripDTO(doc: TripDocLike): Trip {
             name: m.name,
             whatToBuy: toStringArray(m.whatToBuy),
           })),
+          festivals: toStringArray(doc.destinationBrief.festivals),
           generalTips: toStringArray(doc.destinationBrief.generalTips),
           generatedAt: doc.destinationBrief.generatedAt,
         }
@@ -170,11 +190,6 @@ export function toTripDTO(doc: TripDocLike): Trip {
       distanceKm: r.distanceKm,
       vehicleTypes: toStringArray(r.vehicleTypes),
     })),
-    selectedPlaceIds: toStringArray(
-      doc.selectedPlaceIds?.length
-        ? doc.selectedPlaceIds
-        : doc.discoveredPlaceIds,
-    ),
     notes: doc.notes,
     status: doc.status,
     isPublic: doc.isPublic,

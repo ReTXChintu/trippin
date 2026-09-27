@@ -11,7 +11,7 @@ export function NewTripPageContent() {
         Set up your destination, dates, and preferences
       </Text>
 
-      <TripForm mode="create" />
+      <TripForm />
     </Box>
   );
 }

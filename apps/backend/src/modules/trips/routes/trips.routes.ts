@@ -3,7 +3,13 @@ import { authMiddleware } from "@/middleware/auth.middleware";
 import * as trips from "@/modules/trips/controllers/trips.controller";
 import * as members from "@/modules/trips/controllers/trip-members.controller";
 import * as places from "@/modules/trips/controllers/trip-places.controller";
-import { get as getItinerary, act as actItinerary } from "@/modules/itinerary/controllers/itinerary.controller";
+import * as stays from "@/modules/trips/controllers/trip-stays.controller";
+import {
+  get as getItinerary,
+  act as actItinerary,
+  getRoutes as getItineraryRoutes,
+  mealSuggestions as getMealSuggestions,
+} from "@/modules/itinerary/controllers/itinerary.controller";
 
 const router = Router();
 
@@ -16,6 +22,9 @@ router.post("/generate-from-prompt", trips.generateFromPrompt);
 router.get("/:id", trips.getById);
 router.patch("/:id", trips.update);
 router.delete("/:id", trips.remove);
+router.delete("/:id/legs/:legId", trips.removeLeg);
+router.put("/:id/legs/:legId/stays", stays.updateStays);
+router.post("/:id/legs/:legId/hotels/search", stays.searchHotels);
 
 router.post("/:id/archive", trips.archive);
 router.post("/:id/duplicate", trips.duplicate);
@@ -32,8 +41,11 @@ router.post("/:id/places", places.add);
 router.delete("/:id/places", places.remove);
 router.post("/:id/places/discover", places.discover);
 router.post("/:id/places/from-search", places.addFromSearch);
+router.post("/:id/places/vehicle-rentals", places.discoverVehicleRentals);
 
 router.get("/:id/itinerary", getItinerary);
 router.post("/:id/itinerary", actItinerary);
+router.get("/:id/itinerary/routes", getItineraryRoutes);
+router.get("/:id/itinerary/meal-suggestions", getMealSuggestions);
 
 export default router;

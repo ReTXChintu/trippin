@@ -30,9 +30,12 @@ interface PlaceDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
   trip: Trip;
+  legId: string;
   placeId: string | null;
   isSelected: boolean;
   onSelectedChange: (selectedIds: string[]) => void;
+  /** Hide the add/remove-from-trip button (e.g. when opened from the day plan). */
+  hideTripToggle?: boolean;
 }
 
 function buildGoogleMapsUrl(detail: PlaceDetail, placeId: string | null): string {
@@ -57,16 +60,18 @@ export function PlaceDetailModal({
   isOpen,
   onClose,
   trip,
+  legId,
   placeId,
   isSelected,
   onSelectedChange,
+  hideTripToggle = false,
 }: PlaceDetailModalProps) {
   const tripId = trip.id;
   const toast = useToast();
   const [detail, setDetail] = useState<PlaceDetail | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const addPlace = useAddPlaceToTrip(tripId);
-  const removePlace = useRemovePlaceFromTrip(tripId);
+  const addPlace = useAddPlaceToTrip(tripId, legId);
+  const removePlace = useRemovePlaceFromTrip(tripId, legId);
 
   const borderColor = useColorModeValue("gray.200", "gray.700");
   const muted = useColorModeValue("gray.500", "gray.400");
@@ -224,10 +229,37 @@ export function PlaceDetailModal({
                 </Text>
               </Box>
 
-              {detail.description && (
+              {(detail.reviewSummary || detail.description) && (
                 <Text fontSize="sm" lineHeight="tall">
-                  {detail.description}
+                  {detail.reviewSummary ?? detail.description}
                 </Text>
+              )}
+
+              {(detail.reviews?.length ?? 0) > 0 && (
+                <Box>
+                  <Text fontSize="sm" fontWeight="medium" mb={2}>
+                    What visitors say
+                  </Text>
+                  <Stack spacing={3}>
+                    {detail.reviews!.map((review, i) => (
+                      <Box key={i} p={3} borderWidth="1px" borderColor={borderColor} borderRadius="md">
+                        <HStack justify="space-between" mb={1} fontSize="xs" color={muted}>
+                          <Text fontWeight="semibold">{review.authorName ?? "Google user"}</Text>
+                          <Text>
+                            {review.rating !== undefined ? `${"★".repeat(Math.round(review.rating))} · ` : ""}
+                            {review.relativeTime}
+                          </Text>
+                        </HStack>
+                        <Text fontSize="sm" noOfLines={5}>
+                          {review.text}
+                        </Text>
+                      </Box>
+                    ))}
+                  </Stack>
+                  <Text fontSize="2xs" color={muted} mt={2}>
+                    Reviews from Google
+                  </Text>
+                </Box>
               )}
 
               {detail.websiteUri && (
@@ -246,7 +278,7 @@ export function PlaceDetailModal({
           <Button variant="ghost" mr={3} onClick={onClose}>
             Close
           </Button>
-          {placeId && (
+          {placeId && !hideTripToggle && (
             <Button
               colorScheme={isSelected ? "red" : "brand"}
               leftIcon={isSelected ? <FiMinus /> : <FiPlus />}

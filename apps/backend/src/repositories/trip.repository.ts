@@ -46,7 +46,6 @@ export type UpdateTripData = Partial<Omit<CreateTripData, "userId">> & {
   marketPoolIds?: string[];
   destinationBrief?: TripLeg["destinationBrief"];
   vehicleRentalSuggestions?: VehicleRentalSuggestion[];
-  selectedPlaceIds?: string[];
   legs?: TripLeg[];
   transfers?: TripLegTransfer[];
   memberIds?: string[];

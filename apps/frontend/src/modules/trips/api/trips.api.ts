@@ -1,6 +1,7 @@
 import { api } from "@/lib/api";
 import type { Trip, TripStats } from "@/modules/trips/types/trip.types";
 import type { TripMember } from "@/modules/trips/types/trip-member.types";
+import type { TripStay } from "@/modules/trips/types/trip-leg.types";
 import type { TripStatus } from "@/types";
 
 export async function listTrips(status?: TripStatus): Promise<Trip[]> {
@@ -25,6 +26,11 @@ export async function updateTrip(id: string, body: Record<string, unknown>): Pro
 
 export async function deleteTrip(id: string): Promise<void> {
   await api.delete(`/trips/${id}`);
+}
+
+export async function deleteTripLeg(tripId: string, legId: string): Promise<{ trip: Trip }> {
+  const res = await api.delete(`/trips/${tripId}/legs/${legId}`);
+  return res.data.data;
 }
 
 export async function archiveTrip(id: string): Promise<{ trip: Trip }> {
@@ -75,4 +81,46 @@ export async function removeTripMember(tripId: string, memberUserId: string): Pr
 
 export async function leaveTrip(tripId: string): Promise<void> {
   await api.post(`/trips/${tripId}/leave`);
+}
+
+export async function updateLegStays(
+  tripId: string,
+  legId: string,
+  stays: TripStay[],
+): Promise<{ trip: Trip; uncoveredNights: string[] }> {
+  const res = await api.put(`/trips/${tripId}/legs/${legId}/stays`, { stays });
+  return res.data.data;
+}
+
+export interface HotelOption {
+  googlePlaceId: string;
+  name: string;
+  address?: string;
+  coordinates?: { lat: number; lng: number };
+  rating?: number;
+  userRatingCount?: number;
+  priceLevel?: string;
+  photoUrl?: string;
+  avgMinutesToPlaces?: number;
+  placesWithin15Min?: number;
+  locationScore?: number;
+  distanceToCenterKm?: number;
+  googleMapsUrl: string;
+  bookingUrl: string;
+}
+
+export interface HotelSearchResponse {
+  hotels: HotelOption[];
+  basis: { placesCount: number; label: string };
+  checkInDate: string;
+  checkOutDate: string;
+}
+
+export async function searchHotelsForLeg(
+  tripId: string,
+  legId: string,
+  params: { query?: string; checkInDate?: string; checkOutDate?: string; adults?: number },
+): Promise<HotelSearchResponse> {
+  const res = await api.post(`/trips/${tripId}/legs/${legId}/hotels/search`, params);
+  return res.data.data;
 }

@@ -30,13 +30,32 @@ const MODE_SPEED_KMH: Record<TransportationMode, number> = {
   "Public Transport": 20,
 };
 
+/** Average speed km/h once a hop leaves the city (highway / intercity bus or train). Walking
+ * and cycling that far isn't realistic, so those fall back to a bus-like speed. */
+const INTERCITY_SPEED_KMH: Record<TransportationMode, number> = {
+  Walking: 45,
+  Cab: 55,
+  "Self Drive": 60,
+  Bike: 45,
+  "Public Transport": 50,
+};
+
+const INTERCITY_THRESHOLD_KM = 30;
+
+/** Roads are never straight lines — scale great-circle distance to a typical road distance. */
+const ROAD_DETOUR_FACTOR = 1.3;
+
+export function estimateRoadKm(from: Coordinates, to: Coordinates): number {
+  return haversineKm(from, to) * ROAD_DETOUR_FACTOR;
+}
+
 export function estimateTravelMinutes(
   from: Coordinates,
   to: Coordinates,
   mode: TransportationMode,
 ): number {
-  const km = haversineKm(from, to);
-  const speed = MODE_SPEED_KMH[mode];
+  const km = estimateRoadKm(from, to);
+  const speed = km > INTERCITY_THRESHOLD_KM ? INTERCITY_SPEED_KMH[mode] : MODE_SPEED_KMH[mode];
   const minutes = (km / speed) * 60;
   return Math.max(5, Math.round(minutes));
 }

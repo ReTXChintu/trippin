@@ -3,6 +3,7 @@ import 'package:itinerary_planner/core/api/api_client.dart';
 import 'package:itinerary_planner/features/auth/auth_provider.dart';
 import 'package:itinerary_planner/features/auth/models/auth_models.dart';
 import 'package:itinerary_planner/features/trips/models/trip_models.dart';
+import 'package:itinerary_planner/features/trips/models/route_models.dart';
 
 class TripsRepository {
   TripsRepository(this._api);
@@ -123,6 +124,18 @@ class TripsRepository {
   Future<Itinerary> enrichItinerary(String tripId) => _itineraryAction(tripId, 'enrich');
   Future<Itinerary> reorderStops(String tripId, int dayNumber, List<String> stopIds) =>
       _itineraryAction(tripId, 'reorder', {'dayNumber': dayNumber, 'stopIds': stopIds});
+
+  /// Real, road-following routes for a trip's itinerary days (see
+  /// apps/backend/.../itinerary-routing.service.ts). Whole-trip scoped when
+  /// [legId] is omitted — the mobile itinerary model has no leg concept yet,
+  /// unlike the web app which scopes this per leg.
+  Future<List<DayRoute>> getItineraryRoutes(String tripId, {String? legId, int? dayNumber}) async {
+    final json = await _api.getJson('/trips/$tripId/itinerary/routes', query: {
+      if (legId != null) 'legId': legId,
+      if (dayNumber != null) 'dayNumber': dayNumber.toString(),
+    });
+    return _api.unwrapList(json, 'days', DayRoute.fromJson);
+  }
 
   Future<List<TripMember>> getMembers(String tripId) async {
     final json = await _api.getJson('/trips/$tripId/members');

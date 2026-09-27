@@ -19,6 +19,7 @@ import type {
   Place,
   PlaceDetail,
   PlaceSearchResult,
+  SearchNearbyOptions,
   SearchPlacesOptions,
 } from "@/modules/places/types/place.types";
 import { rankPlacesRuleBased } from "@/modules/ai/services/place-ranking.service";
@@ -59,6 +60,11 @@ export class PlacesService {
   static async searchHotels(options: SearchPlacesOptions): Promise<PlaceSearchResult[]> {
     const provider = getPlacesProvider(options.googleMapsApiKey);
     return provider.searchHotels(options);
+  }
+
+  static async searchNearby(options: SearchNearbyOptions): Promise<PlaceSearchResult[]> {
+    const provider = getPlacesProvider(options.googleMapsApiKey);
+    return provider.searchNearby(options);
   }
 
   static async autocomplete(options: SearchPlacesOptions): Promise<PlaceSearchResult[]> {

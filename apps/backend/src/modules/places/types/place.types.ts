@@ -5,6 +5,26 @@ export interface Coordinates {
   lng: number;
 }
 
+/** One side of a Google `regularOpeningHours.periods` entry. `day` is 0 = Sunday … 6 = Saturday. */
+export interface OpeningPeriodPoint {
+  day: number;
+  hour: number;
+  minute: number;
+}
+
+/** A Google opening period. A period with no `close` means "open 24 hours". */
+export interface OpeningPeriod {
+  open: OpeningPeriodPoint;
+  close?: OpeningPeriodPoint;
+}
+
+export interface PlaceReview {
+  rating?: number;
+  text: string;
+  authorName?: string;
+  relativeTime?: string;
+}
+
 export interface Place {
   googlePlaceId?: string;
   name: string;
@@ -17,6 +37,10 @@ export interface Place {
   averageVisitDurationMinutes?: number;
   openingTime?: string;
   closingTime?: string;
+  /** Structured weekly hours — the source of truth for "is it open on this date". */
+  openingPeriods?: OpeningPeriod[];
+  /** Google's human-readable weekly hours ("Monday: 9:00 AM – 5:00 PM"), Monday first. */
+  weekdayDescriptions?: string[];
   weeklyClosedDays?: string[];
   description?: string;
   tags?: string[];
@@ -33,7 +57,6 @@ export interface Place {
 }
 
 export interface PlaceDetail extends Place {
-  weekdayDescriptions?: string[];
   priceRange?: string;
   websiteUri?: string;
   googleMapsUri?: string;
@@ -42,6 +65,11 @@ export interface PlaceDetail extends Place {
   /** Stable Google photo resource names — used to rebuild proxy URLs from cache. */
   photoNames?: string[];
   photoUrls?: string[];
+  reviews?: PlaceReview[];
+  /** Bumped when the rich-detail field set grows, so older cache entries get refetched once. */
+  richVersion?: number;
+  /** Google's AI-generated summary of the place (or its editorial summary as a fallback). */
+  reviewSummary?: string;
 }
 
 export interface PlaceSearchResult {
@@ -50,7 +78,13 @@ export interface PlaceSearchResult {
   address?: string;
   coordinates?: Coordinates;
   rating?: number;
+  userRatingCount?: number;
+  priceLevel?: string;
   types?: string[];
+  primaryType?: string;
+  openingPeriods?: OpeningPeriod[];
+  weekdayDescriptions?: string[];
+  photoName?: string;
 }
 
 export interface SearchPlacesOptions {
@@ -61,6 +95,14 @@ export interface SearchPlacesOptions {
   limit?: number;
   sessionToken?: string;
   pageToken?: string;
+  googleMapsApiKey: string;
+}
+
+export interface SearchNearbyOptions {
+  location: Coordinates;
+  radiusMeters: number;
+  includedTypes: string[];
+  limit?: number;
   googleMapsApiKey: string;
 }
 

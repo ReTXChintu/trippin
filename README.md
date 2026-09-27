@@ -15,11 +15,9 @@ files/         Shared brand assets (logos, icons, brand guidelines)
 ```bash
 npm install
 
-cp apps/backend/.env.example apps/backend/.env
-# Edit apps/backend/.env: MONGODB_URI, JWT_SECRET, ENCRYPTION_SECRET, SMTP, FRONTEND_URL
-
-cp apps/frontend/.env.example apps/frontend/.env
-# Edit apps/frontend/.env: VITE_API_BASE_URL
+cp .env.example .env
+# Edit .env (single file at the repo root, read by both backend and frontend):
+# MONGODB_URI, JWT_SECRET, ENCRYPTION_SECRET, SMTP, FRONTEND_URL, VITE_API_BASE_URL
 
 npm run dev
 ```

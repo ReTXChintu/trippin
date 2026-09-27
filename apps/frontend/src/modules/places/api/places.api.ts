@@ -1,6 +1,7 @@
 import { api } from "@/lib/api";
 import type { Place, PlaceDetail, PlaceSearchResult } from "@/modules/places/types/place.types";
 import type { TripLeg } from "@/modules/trips/types/trip-leg.types";
+import type { VehicleRentalSuggestion } from "@/modules/trips/types/trip-enrichment.types";
 
 export async function searchPlaces(params: {
   query: string;
@@ -39,33 +40,60 @@ export function getPhotoUrl(photoName: string, opts?: { tripId?: string; maxHeig
 }
 
 // Trip-scoped places
-export async function getTripPlaces(tripId: string, view: "selected" | "pool" = "selected"): Promise<{ places: Place[] }> {
-  const res = await api.get(`/trips/${tripId}/places`, { params: { view } });
+export async function getTripPlaces(
+  tripId: string,
+  view: "selected" | "pool" = "selected",
+  legId?: string,
+): Promise<{ places: Place[] }> {
+  const res = await api.get(`/trips/${tripId}/places`, { params: { view, legId } });
   return res.data.data;
 }
 
-export async function addPlaceToTrip(tripId: string, placeId: string): Promise<{ places: Place[] }> {
-  const res = await api.post(`/trips/${tripId}/places`, { placeId });
+export async function getTripEatShopPool(
+  tripId: string,
+): Promise<{ foodPlaces: Place[]; marketPlaces: Place[]; localFood: string[] }> {
+  const res = await api.get(`/trips/${tripId}/places`, { params: { view: "eat-shop" } });
   return res.data.data;
 }
 
-export async function bulkAddPlacesToTrip(tripId: string, placeIds: string[]): Promise<{ places: Place[] }> {
-  const res = await api.post(`/trips/${tripId}/places`, { action: "bulkAdd", placeIds });
+export async function addPlaceToTrip(tripId: string, legId: string, placeId: string): Promise<{ places: Place[] }> {
+  const res = await api.post(`/trips/${tripId}/places`, { legId, placeId });
   return res.data.data;
 }
 
-export async function removePlaceFromTrip(tripId: string, placeId: string): Promise<{ places: Place[] }> {
-  const res = await api.delete(`/trips/${tripId}/places`, { params: { placeId } });
+export async function bulkAddPlacesToTrip(
+  tripId: string,
+  legId: string,
+  placeIds: string[],
+): Promise<{ places: Place[] }> {
+  const res = await api.post(`/trips/${tripId}/places`, { action: "bulkAdd", legId, placeIds });
   return res.data.data;
 }
 
-export async function bulkRemovePlacesFromTrip(tripId: string, placeIds: string[]): Promise<{ places: Place[] }> {
-  const res = await api.delete(`/trips/${tripId}/places`, { params: { placeIds: placeIds.join(",") } });
+export async function removePlaceFromTrip(
+  tripId: string,
+  legId: string,
+  placeId: string,
+): Promise<{ places: Place[] }> {
+  const res = await api.delete(`/trips/${tripId}/places`, { params: { legId, placeId } });
   return res.data.data;
 }
 
-export async function addPlaceFromSearch(tripId: string, placeId: string): Promise<{ places: Place[]; place: Place }> {
-  const res = await api.post(`/trips/${tripId}/places/from-search`, { placeId });
+export async function bulkRemovePlacesFromTrip(
+  tripId: string,
+  legId: string,
+  placeIds: string[],
+): Promise<{ places: Place[] }> {
+  const res = await api.delete(`/trips/${tripId}/places`, { params: { legId, placeIds: placeIds.join(",") } });
+  return res.data.data;
+}
+
+export async function addPlaceFromSearch(
+  tripId: string,
+  legId: string,
+  placeId: string,
+): Promise<{ places: Place[]; place: Place }> {
+  const res = await api.post(`/trips/${tripId}/places/from-search`, { legId, placeId });
   return res.data.data;
 }
 
@@ -74,5 +102,13 @@ export async function discoverPlacesForTrip(
   opts?: { forceRefresh?: boolean; legId?: string },
 ): Promise<{ places: Place[]; legs?: TripLeg[] }> {
   const res = await api.post(`/trips/${tripId}/places/discover`, opts ?? {});
+  return res.data.data;
+}
+
+export async function discoverVehicleRentalsForLeg(
+  tripId: string,
+  legId: string,
+): Promise<{ vehicleRentalSuggestions: VehicleRentalSuggestion[] }> {
+  const res = await api.post(`/trips/${tripId}/places/vehicle-rentals`, { legId });
   return res.data.data;
 }

@@ -1,5 +1,18 @@
-import type { IItineraryDocument, IItineraryDay, IItineraryStop } from "@/models/Itinerary";
-import type { Itinerary, ItineraryDay, ItineraryStop } from "@/modules/itinerary/types";
+import type {
+  IAiItineraryCandidate,
+  IItineraryDocument,
+  IItineraryDay,
+  IItinerarySnapshot,
+  IItineraryStop,
+  IOptionalItineraryPlace,
+} from "@/models/Itinerary";
+import type {
+  AiItineraryCandidate,
+  Itinerary,
+  ItineraryDay,
+  ItineraryStop,
+  OptionalItineraryPlace,
+} from "@/modules/itinerary/types";
 
 function toStopDTO(stop: IItineraryStop): ItineraryStop {
   return {
@@ -28,6 +41,14 @@ function toStopDTO(stop: IItineraryStop): ItineraryStop {
         }
       : undefined,
     aiNotes: stop.aiNotes,
+    mealType: stop.mealType,
+    locked: stop.locked,
+    userAdded: stop.userAdded,
+    fixedStartTime: stop.fixedStartTime,
+    warnings: stop.warnings?.length ? [...stop.warnings] : undefined,
+    openingHoursToday: stop.openingHoursToday,
+    travelSource: stop.travelSource,
+    travelDistanceKm: stop.travelDistanceKm,
   };
 }
 
@@ -40,6 +61,32 @@ function toDayDTO(day: IItineraryDay): ItineraryDay {
     legName: day.legName,
     dayType: day.dayType,
     transferLabel: day.transferLabel,
+    dressCode: day.dressCode,
+  };
+}
+
+function toOptionalPlaceDTO(place: IOptionalItineraryPlace): OptionalItineraryPlace {
+  return {
+    placeId: place.placeId,
+    placeName: place.placeName,
+    category: place.category,
+    coordinates: place.coordinates
+      ? { lat: place.coordinates.lat, lng: place.coordinates.lng }
+      : undefined,
+    legId: place.legId,
+    reason: place.reason,
+  };
+}
+
+function toAiCandidateDTO(candidate: IAiItineraryCandidate): AiItineraryCandidate {
+  return {
+    legId: candidate.legId,
+    days: candidate.days.map(toDayDTO),
+    optionalPlaces: candidate.optionalPlaces.map(toOptionalPlaceDTO),
+    generatedAt:
+      candidate.generatedAt instanceof Date
+        ? candidate.generatedAt.toISOString()
+        : String(candidate.generatedAt),
   };
 }
 
@@ -50,6 +97,8 @@ export function toItineraryDTO(doc: IItineraryDocument | Record<string, unknown>
     tripId: d.tripId.toString(),
     userId: d.userId.toString(),
     days: (d.days ?? []).map(toDayDTO),
+    optionalPlaces: (d.optionalPlaces ?? []).map(toOptionalPlaceDTO),
+    aiCandidates: (d.aiCandidates ?? []).map(toAiCandidateDTO),
     summary: d.summary,
     summaryGeneratedAt:
       d.summaryGeneratedAt instanceof Date
@@ -59,6 +108,19 @@ export function toItineraryDTO(doc: IItineraryDocument | Record<string, unknown>
           : undefined,
     generatedAt: d.generatedAt instanceof Date ? d.generatedAt.toISOString() : String(d.generatedAt),
     updatedAt: d.updatedAt instanceof Date ? d.updatedAt.toISOString() : String(d.updatedAt),
+    undoLabel: d.history?.length ? d.history[d.history.length - 1].label : undefined,
+    historyCount: d.history?.length ?? 0,
+  };
+}
+
+/** Days/optionalPlaces of a stored snapshot, in DTO form (used when restoring an undo). */
+export function snapshotToState(snapshot: IItinerarySnapshot): {
+  days: ItineraryDay[];
+  optionalPlaces: OptionalItineraryPlace[];
+} {
+  return {
+    days: (snapshot.days ?? []).map(toDayDTO),
+    optionalPlaces: (snapshot.optionalPlaces ?? []).map(toOptionalPlaceDTO),
   };
 }
 
@@ -70,6 +132,7 @@ export function toPlainItineraryDays(days: ItineraryDay[]): ItineraryDay[] {
     legName: day.legName,
     dayType: day.dayType,
     transferLabel: day.transferLabel,
+    dressCode: day.dressCode,
     stops: day.stops.map((stop) => ({
       id: stop.id,
       placeId: stop.placeId,
@@ -88,6 +151,34 @@ export function toPlainItineraryDays(days: ItineraryDay[]): ItineraryDay[] {
       notes: stop.notes,
       visitIntel: stop.visitIntel,
       aiNotes: stop.aiNotes,
+      mealType: stop.mealType,
+      locked: stop.locked || undefined,
+      userAdded: stop.userAdded || undefined,
+      fixedStartTime: stop.fixedStartTime,
+      warnings: stop.warnings?.length ? [...stop.warnings] : undefined,
+      openingHoursToday: stop.openingHoursToday,
+      travelSource: stop.travelSource,
+      travelDistanceKm: stop.travelDistanceKm,
     })),
   }));
+}
+
+export function toPlainOptionalPlaces(places: OptionalItineraryPlace[]): OptionalItineraryPlace[] {
+  return places.map((p) => ({
+    placeId: p.placeId,
+    placeName: p.placeName,
+    category: p.category,
+    coordinates: p.coordinates ? { lat: p.coordinates.lat, lng: p.coordinates.lng } : undefined,
+    legId: p.legId,
+    reason: p.reason,
+  }));
+}
+
+export function toPlainAiCandidate(candidate: AiItineraryCandidate): AiItineraryCandidate {
+  return {
+    legId: candidate.legId,
+    days: toPlainItineraryDays(candidate.days),
+    optionalPlaces: toPlainOptionalPlaces(candidate.optionalPlaces),
+    generatedAt: candidate.generatedAt,
+  };
 }

@@ -1,28 +1,20 @@
 import type { Place, RankPlacesParams } from "@/modules/places/types/place.types";
 import type {
   AIProvider,
+  AiItineraryCandidateResult,
+  GenerateAiItineraryParams,
   GenerateLegBriefParams,
   GenerateSummaryParams,
-  GenerateVisitIntelParams,
-  OptimizeItineraryParams,
   ParsedPromptResult,
+  SuggestPlacesParams,
 } from "../types/ai-provider.types";
-import {
-  buildRuleBasedLegBrief,
-  enrichStopsWithRuleBasedIntel,
-} from "@/modules/itinerary/services/itinerary-enrichment.service";
+import { buildRuleBasedLegBrief } from "@/modules/itinerary/services/itinerary-enrichment.service";
 import type { LegDestinationBrief } from "@/modules/trips/types/trip-enrichment.types";
-import type { VisitIntel } from "@/modules/itinerary/types/visit-intel.types";
 import {
   estimateVisitDuration as ruleBasedDuration,
   rankPlacesRuleBased,
 } from "./place-ranking.service";
 import { generateRuleBasedSummary } from "@/modules/itinerary/services/itinerary-summary.service";
-import {
-  applyOptimizedDayOrder,
-  optimizeItineraryRuleBased,
-  validateOptimizedOrder,
-} from "@/modules/itinerary/services/itinerary-optimization.service";
 
 export class OpenAIProvider implements AIProvider {
   private apiKey?: string;
@@ -121,76 +113,6 @@ export class OpenAIProvider implements AIProvider {
     return ruleBasedDuration(place, travelStyle);
   }
 
-  async optimizeItinerary(params: OptimizeItineraryParams) {
-    if (!this.apiKey) {
-      return optimizeItineraryRuleBased(params.trip, params.days);
-    }
-
-    try {
-      const response = await fetch("https://api.openai.com/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${this.apiKey}`,
-        },
-        body: JSON.stringify({
-          model: "gpt-4o-mini",
-          response_format: { type: "json_object" },
-          messages: [
-            {
-              role: "system",
-              content:
-                'Reorder stops within each day to minimize travel time and improve flow. Return JSON: { "days": [{ "dayNumber": 1, "stopIds": ["id1", "id2"] }] }. Include every stop ID exactly once across all days. Do not add or remove stops.',
-            },
-            {
-              role: "user",
-              content: JSON.stringify({
-                destination: params.trip.destinationCity,
-                travelStyle: params.trip.travelStyle,
-                transportationMode: params.trip.transportationMode,
-                hotel: params.trip.hotelName,
-                days: params.days.map((d) => ({
-                  dayNumber: d.dayNumber,
-                  date: d.date,
-                  stops: d.stops.map((s) => ({
-                    id: s.id,
-                    name: s.placeName,
-                    category: s.category,
-                    arrivalTime: s.arrivalTime,
-                    coordinates: s.coordinates,
-                  })),
-                })),
-              }),
-            },
-          ],
-          temperature: 0.2,
-        }),
-      });
-
-      if (!response.ok) {
-        return optimizeItineraryRuleBased(params.trip, params.days);
-      }
-
-      const data = (await response.json()) as {
-        choices?: { message?: { content?: string } }[];
-      };
-      const content = data.choices?.[0]?.message?.content;
-      if (!content) return optimizeItineraryRuleBased(params.trip, params.days);
-
-      const parsed = JSON.parse(content) as {
-        days?: { dayNumber: number; stopIds: string[] }[];
-      };
-
-      if (!parsed.days || !validateOptimizedOrder(params.days, parsed.days)) {
-        return optimizeItineraryRuleBased(params.trip, params.days);
-      }
-
-      return applyOptimizedDayOrder(params.trip, params.days, parsed.days);
-    } catch {
-      return optimizeItineraryRuleBased(params.trip, params.days);
-    }
-  }
-
   async generateSummary(params: GenerateSummaryParams): Promise<string> {
     if (!this.apiKey) {
       return generateRuleBasedSummary(params.trip, params.days);
@@ -282,7 +204,7 @@ export class OpenAIProvider implements AIProvider {
             {
               role: "system",
               content:
-                'Return JSON for a travel leg guide: { "specialties": string[], "localFood": string[], "markets": [{ "placeId": string?, "name": string, "whatToBuy": string[] }], "generalTips": string[] }. Use only real place names from input. specialties = what the region is known for. localFood = dishes to try. markets = shopping areas with what to buy.',
+                'Return JSON for a travel leg guide: { "specialties": string[], "localFood": string[], "markets": [{ "placeId": string?, "name": string, "whatToBuy": string[] }], "festivals": string[], "generalTips": string[] }. Use only real place names from input. specialties = what the region is known for. localFood = dishes to try. markets = shopping areas with what to buy. festivals = well-known local festivals/events worth timing a visit around — only include ones you are confident actually exist for this destination, otherwise return an empty array.',
             },
             {
               role: "user",
@@ -322,6 +244,7 @@ export class OpenAIProvider implements AIProvider {
         specialties: parsed.specialties ?? fallback.specialties,
         localFood: parsed.localFood ?? fallback.localFood,
         markets: parsed.markets?.length ? parsed.markets : fallback.markets,
+        festivals: parsed.festivals ?? fallback.festivals,
         generalTips: parsed.generalTips ?? fallback.generalTips,
         generatedAt: new Date().toISOString(),
       };
@@ -330,34 +253,8 @@ export class OpenAIProvider implements AIProvider {
     }
   }
 
-  async generateVisitIntel(params: GenerateVisitIntelParams): Promise<Map<string, VisitIntel>> {
-    const ruleBasedDays = enrichStopsWithRuleBasedIntel(params.days, params.placeMap);
-    const intelMap = new Map<string, VisitIntel>();
-    for (const day of ruleBasedDays) {
-      for (const stop of day.stops) {
-        if (stop.visitIntel) intelMap.set(stop.id, stop.visitIntel);
-      }
-    }
-
-    if (!this.apiKey) return intelMap;
-
-    const stopsPayload = params.days.flatMap((day) =>
-      day.stops
-        .filter((s) => s.stopType !== "transfer")
-        .map((s) => ({
-          stopId: s.id,
-          placeId: s.placeId,
-          name: s.placeName,
-          category: s.category,
-          stopType: s.stopType,
-          dayNumber: day.dayNumber,
-          arrivalTime: s.arrivalTime,
-          rating: params.placeMap.get(s.placeId)?.rating,
-          userRatingCount: params.placeMap.get(s.placeId)?.userRatingCount,
-        })),
-    );
-
-    if (stopsPayload.length === 0) return intelMap;
+  async suggestPlaces(params: SuggestPlacesParams): Promise<string[]> {
+    if (!this.apiKey) return [];
 
     try {
       const response = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -373,48 +270,102 @@ export class OpenAIProvider implements AIProvider {
             {
               role: "system",
               content:
-                'Return JSON: { "stops": [{ "stopId": string, "bestTime": string, "avoidTime": string?, "hypeLevel": "overhyped"|"worth-it"|"hidden-gem", "why": string, "tips": string[]? }] }. Give practical visit timing, crowd warnings, and hype assessment for each stop. Only use stopIds from input.',
+                'Suggest real, verifiable places worth visiting for a trip. Return JSON: { "places": string[] }. Each entry is just the place name (no descriptions), as it would appear on Google Maps. Only suggest places that genuinely exist — never invent names.',
             },
             {
               role: "user",
               content: JSON.stringify({
-                destination: params.trip.destinationCity,
-                travelStyle: params.trip.travelStyle,
-                notes: params.trip.notes,
-                stops: stopsPayload,
+                city: params.city,
+                state: params.state,
+                country: params.country,
+                interests: params.interests,
+                travelStyle: params.travelStyle,
+                limit: params.limit ?? 15,
               }),
             },
           ],
-          temperature: 0.3,
+          temperature: 0.4,
         }),
       });
 
-      if (!response.ok) return intelMap;
+      if (!response.ok) return [];
 
       const data = (await response.json()) as {
         choices?: { message?: { content?: string } }[];
       };
       const content = data.choices?.[0]?.message?.content;
-      if (!content) return intelMap;
+      if (!content) return [];
 
-      const parsed = JSON.parse(content) as {
-        stops?: Array<VisitIntel & { stopId: string }>;
-      };
-
-      for (const item of parsed.stops ?? []) {
-        if (!item.stopId) continue;
-        intelMap.set(item.stopId, {
-          bestTime: item.bestTime,
-          avoidTime: item.avoidTime,
-          hypeLevel: item.hypeLevel,
-          why: item.why,
-          tips: item.tips,
-        });
-      }
-
-      return intelMap;
+      const parsed = JSON.parse(content) as { places?: string[] };
+      return (parsed.places ?? []).filter((name): name is string => typeof name === "string" && name.trim().length > 0);
     } catch {
-      return intelMap;
+      return [];
+    }
+  }
+
+  async generateAiItineraryCandidate(params: GenerateAiItineraryParams): Promise<AiItineraryCandidateResult> {
+    const empty: AiItineraryCandidateResult = { days: [], stopNotes: [] };
+    if (!this.apiKey) return empty;
+
+    try {
+      const response = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${this.apiKey}`,
+        },
+        body: JSON.stringify({
+          model: "gpt-4o-mini",
+          response_format: { type: "json_object" },
+          messages: [
+            {
+              role: "system",
+              content:
+                'Design an alternative day-by-day sightseeing plan. Return JSON: { "days": [{ "date": "YYYY-MM-DD", "placeIds": ["id1","id2"], "dressCode": string }], "stopNotes": [{ "placeId": "id1", "bestTime": string?, "avoidTime": string?, "hypeLevel": "overhyped"|"worth-it"|"hidden-gem"?, "why": string?, "tips": string[]? }] }. ' +
+                "Only use placeIds from the input list — never invent places. Assign each place to exactly one date; it's fine to leave out places that don't fit well. Group nearby places on the same date and order placeIds within a day in a sensible visiting sequence starting near the stay, minimizing backtracking. Each date has limited daily hours (given) — favor fewer well-paced stops over overpacking a day. dressCode is a 1-2 sentence practical outfit suggestion for that day's activities/season/destination, geared toward good photos. stopNotes give practical best-time-to-visit, crowd-avoidance, and hype-level guidance per place.",
+            },
+            {
+              role: "user",
+              content: JSON.stringify({
+                destination: params.leg?.baseCity ?? params.trip.destinationCity,
+                country: params.leg?.country ?? params.trip.destinationCountry,
+                interests: params.trip.interests,
+                travelStyle: params.trip.travelStyle,
+                mustVisitPlaces: params.trip.mustVisitPlaces,
+                excludedPlaces: params.trip.excludedPlaces,
+                dates: params.eligibleDates,
+                places: params.places
+                  .filter((p) => p.googlePlaceId)
+                  .map((p) => ({
+                    id: p.googlePlaceId,
+                    name: p.name,
+                    category: p.category,
+                    rating: p.rating,
+                    userRatingCount: p.userRatingCount,
+                    coordinates: p.coordinates,
+                  })),
+              }),
+            },
+          ],
+          temperature: 0.5,
+        }),
+      });
+
+      if (!response.ok) return empty;
+
+      const data = (await response.json()) as {
+        choices?: { message?: { content?: string } }[];
+      };
+      const content = data.choices?.[0]?.message?.content;
+      if (!content) return empty;
+
+      const parsed = JSON.parse(content) as Partial<AiItineraryCandidateResult>;
+      return {
+        days: parsed.days ?? [],
+        stopNotes: parsed.stopNotes ?? [],
+      };
+    } catch {
+      return empty;
     }
   }
 }

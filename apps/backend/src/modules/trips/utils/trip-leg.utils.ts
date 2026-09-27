@@ -24,7 +24,11 @@ export function createEmptyLeg(order: number, country = "India"): TripLeg {
     discoveryPoolIds: [],
     foodPoolIds: [],
     marketPoolIds: [],
+    selectedPlaceIds: [],
+    aiMatchedPlaceIds: [],
+    aiSuggestedPlaceNames: [],
     vehicleRentalSuggestions: [],
+    stays: [],
   };
 }
 
@@ -48,10 +52,14 @@ export function getEffectiveLegs(trip: Trip): TripLeg[] {
       hotelName: trip.hotelName,
       hotelAddress: trip.hotelAddress,
       hotelCoordinates: trip.hotelCoordinates,
+      stays: [],
       order: 0,
       discoveryPoolIds: trip.discoveryPoolIds ?? [],
       foodPoolIds: trip.foodPoolIds ?? [],
       marketPoolIds: trip.marketPoolIds ?? [],
+      selectedPlaceIds: [],
+      aiMatchedPlaceIds: [],
+      aiSuggestedPlaceNames: [],
       destinationBrief: trip.destinationBrief,
       vehicleRentalSuggestions: trip.vehicleRentalSuggestions ?? [],
     },
@@ -70,6 +78,45 @@ export function getAggregatedDiscoveryPoolIds(trip: Trip): string[] {
   }
   for (const id of trip.discoveryPoolIds ?? []) ids.add(id);
   return Array.from(ids);
+}
+
+export function getAggregatedFoodPoolIds(trip: Trip): string[] {
+  const legs = getEffectiveLegs(trip);
+  const ids = new Set<string>();
+  for (const leg of legs) {
+    for (const id of leg.foodPoolIds) ids.add(id);
+  }
+  for (const id of trip.foodPoolIds ?? []) ids.add(id);
+  return Array.from(ids);
+}
+
+export function getAggregatedMarketPoolIds(trip: Trip): string[] {
+  const legs = getEffectiveLegs(trip);
+  const ids = new Set<string>();
+  for (const leg of legs) {
+    for (const id of leg.marketPoolIds) ids.add(id);
+  }
+  for (const id of trip.marketPoolIds ?? []) ids.add(id);
+  return Array.from(ids);
+}
+
+export function getAggregatedSelectedPlaceIds(trip: Trip): string[] {
+  const legs = getEffectiveLegs(trip);
+  const ids = new Set<string>();
+  for (const leg of legs) {
+    for (const id of leg.selectedPlaceIds) ids.add(id);
+  }
+  return Array.from(ids);
+}
+
+export function getAggregatedLocalFood(trip: Trip): string[] {
+  const legs = getEffectiveLegs(trip);
+  const items = new Set<string>();
+  for (const leg of legs) {
+    for (const item of leg.destinationBrief?.localFood ?? []) items.add(item);
+  }
+  for (const item of trip.destinationBrief?.localFood ?? []) items.add(item);
+  return Array.from(items);
 }
 
 export function syncTripDatesFromLegs(
@@ -175,4 +222,23 @@ export function buildPlaceLegHints(trip: Trip): Map<string, string> {
 
 export function countSightseeingDays(trip: Trip): number {
   return buildTripDayPlans(trip).filter((d) => d.plan.type === "sightseeing").length;
+}
+
+/**
+ * Whether a day (by date) "belongs" to a leg — used to merge a per-leg itinerary
+ * regeneration back into the full days array without touching other legs' days.
+ * Derived from buildTripDayPlans, not the saved itinerary's day.legId, because
+ * standalone transfer days have no legId on the stored day.
+ */
+export function isDayOwnedByLeg(
+  date: string,
+  dayPlans: { date: string; plan: TripDayPlan }[],
+  legId: string,
+): boolean {
+  const entry = dayPlans.find((d) => d.date === date);
+  if (!entry) return false;
+  const { plan } = entry;
+  if (plan.type === "sightseeing") return plan.leg.id === legId;
+  if (plan.type === "transfer") return plan.transfer.fromLegId === legId || plan.transfer.toLegId === legId;
+  return false;
 }

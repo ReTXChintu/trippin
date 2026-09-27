@@ -33,8 +33,27 @@ export interface ILegDestinationBrief {
   specialties: string[];
   localFood: string[];
   markets: ILegMarketGuide[];
+  festivals: string[];
   generalTips: string[];
   generatedAt?: string;
+}
+
+export interface ITripStay {
+  id: string;
+  name: string;
+  address?: string;
+  coordinates?: ICoordinates;
+  googlePlaceId?: string;
+  checkInDate: string;
+  checkOutDate: string;
+  checkInTime?: string;
+  checkOutTime?: string;
+  confirmationNumber?: string;
+  pricePerNight?: number;
+  currency?: string;
+  bookingUrl?: string;
+  notes?: string;
+  rating?: number;
 }
 
 export interface ITripLeg {
@@ -51,10 +70,14 @@ export interface ITripLeg {
   hotelName?: string;
   hotelAddress?: string;
   hotelCoordinates?: ICoordinates;
+  stays?: ITripStay[];
   order: number;
   discoveryPoolIds: string[];
   foodPoolIds: string[];
   marketPoolIds: string[];
+  selectedPlaceIds: string[];
+  aiMatchedPlaceIds: string[];
+  aiSuggestedPlaceNames: string[];
   destinationBrief?: ILegDestinationBrief;
   vehicleRentalSuggestions: IVehicleRentalSuggestion[];
 }
@@ -102,7 +125,6 @@ export interface ITripDocument extends Document {
   marketPoolIds?: string[];
   destinationBrief?: ILegDestinationBrief;
   vehicleRentalSuggestions?: IVehicleRentalSuggestion[];
-  selectedPlaceIds?: string[];
   notes?: string;
   status: TripStatus;
   isPublic: boolean;
@@ -149,8 +171,30 @@ const LegDestinationBriefSchema = new Schema<ILegDestinationBrief>(
     specialties: { type: [String], default: [] },
     localFood: { type: [String], default: [] },
     markets: { type: [LegMarketGuideSchema], default: [] },
+    festivals: { type: [String], default: [] },
     generalTips: { type: [String], default: [] },
     generatedAt: { type: String },
+  },
+  { _id: false },
+);
+
+const TripStaySchema = new Schema<ITripStay>(
+  {
+    id: { type: String, required: true },
+    name: { type: String, required: true, trim: true },
+    address: { type: String, trim: true },
+    coordinates: { type: CoordinatesSchema },
+    googlePlaceId: { type: String },
+    checkInDate: { type: String, required: true },
+    checkOutDate: { type: String, required: true },
+    checkInTime: { type: String, trim: true },
+    checkOutTime: { type: String, trim: true },
+    confirmationNumber: { type: String, trim: true },
+    pricePerNight: { type: Number },
+    currency: { type: String, trim: true },
+    bookingUrl: { type: String, trim: true },
+    notes: { type: String },
+    rating: { type: Number },
   },
   { _id: false },
 );
@@ -170,10 +214,14 @@ const TripLegSchema = new Schema<ITripLeg>(
     hotelName: { type: String, trim: true },
     hotelAddress: { type: String, trim: true },
     hotelCoordinates: { type: CoordinatesSchema },
+    stays: { type: [TripStaySchema], default: [] },
     order: { type: Number, required: true, default: 0 },
     discoveryPoolIds: { type: [String], default: [] },
     foodPoolIds: { type: [String], default: [] },
     marketPoolIds: { type: [String], default: [] },
+    selectedPlaceIds: { type: [String], default: [] },
+    aiMatchedPlaceIds: { type: [String], default: [] },
+    aiSuggestedPlaceNames: { type: [String], default: [] },
     destinationBrief: { type: LegDestinationBriefSchema },
     vehicleRentalSuggestions: { type: [VehicleRentalSuggestionSchema], default: [] },
   },
@@ -235,7 +283,6 @@ const TripSchema = new Schema<ITripDocument>(
     marketPoolIds: { type: [String], default: [] },
     destinationBrief: { type: LegDestinationBriefSchema },
     vehicleRentalSuggestions: { type: [VehicleRentalSuggestionSchema], default: [] },
-    selectedPlaceIds: { type: [String], default: [] },
     notes: { type: String },
     status: {
       type: String,

@@ -16,11 +16,6 @@ export interface GenerateSummaryParams {
   days: ItineraryDay[];
 }
 
-export interface OptimizeItineraryParams {
-  trip: Trip;
-  days: ItineraryDay[];
-}
-
 export interface GenerateLegBriefParams {
   trip: Trip;
   leg: TripLeg;
@@ -29,18 +24,58 @@ export interface GenerateLegBriefParams {
   marketPlaces: Place[];
 }
 
-export interface GenerateVisitIntelParams {
+export interface SuggestPlacesParams {
+  city: string;
+  state?: string;
+  country: string;
+  interests?: string[];
+  travelStyle?: string;
+  limit?: number;
+}
+
+export interface AiItineraryEligibleDate {
+  date: string;
+  dailyStartTime: string;
+  dailyEndTime: string;
+}
+
+export interface GenerateAiItineraryParams {
   trip: Trip;
-  days: ItineraryDay[];
-  placeMap: Map<string, Place>;
+  leg?: TripLeg;
+  places: Place[];
+  eligibleDates: AiItineraryEligibleDate[];
+}
+
+export interface AiItineraryDayAssignment {
+  date: string;
+  placeIds: string[];
+  dressCode?: string;
+}
+
+export interface AiItineraryStopNote extends VisitIntel {
+  placeId: string;
+}
+
+export interface AiItineraryCandidateResult {
+  days: AiItineraryDayAssignment[];
+  stopNotes: AiItineraryStopNote[];
 }
 
 export interface AIProvider {
   parseTripPrompt(prompt: string): Promise<ParsedPromptResult>;
   rankPlaces(params: RankPlacesParams): Promise<Place[]>;
   estimateVisitDuration(place: Place, travelStyle?: string): Promise<number>;
-  optimizeItinerary(params: OptimizeItineraryParams): Promise<ItineraryDay[]>;
   generateSummary(params: GenerateSummaryParams): Promise<string>;
   generateLegBrief(params: GenerateLegBriefParams): Promise<LegDestinationBrief>;
-  generateVisitIntel(params: GenerateVisitIntelParams): Promise<Map<string, VisitIntel>>;
+  /** AI-sourced place-name suggestions to layer on top of Google discovery. No rule-based
+   * fallback exists (there's no non-AI signal for "suggest new places") — returns [] without an
+   * API key or on any failure, so discovery just falls back to Google results only. */
+  suggestPlaces(params: SuggestPlacesParams): Promise<string[]>;
+  /** Proposes a complete alternative day-by-day place assignment (which places, which day, what
+   * order) plus per-day dress-code suggestions and per-stop visit notes. No rule-based fallback —
+   * this is only ever called once an OpenAI key has been confirmed present by the caller; returns
+   * an empty result on any failure so a comparison request degrades to "AI itinerary is empty"
+   * rather than throwing. The engine (not the AI) is responsible for turning this into real
+   * scheduled stops with trustworthy times/distances. */
+  generateAiItineraryCandidate(params: GenerateAiItineraryParams): Promise<AiItineraryCandidateResult>;
 }

@@ -29,6 +29,7 @@ export const discoverTripPlacesSchema = z.object({
 
 export const tripPlaceSchema = z.object({
   tripId: z.string().min(1),
+  legId: z.string().min(1),
   placeId: z.string().min(1),
 });
 
@@ -39,10 +40,12 @@ export const placeDetailSchema = z.object({
 
 export const bulkAddPlacesSchema = z.object({
   tripId: z.string().min(1),
+  legId: z.string().min(1),
   placeIds: z.array(z.string().min(1)).min(1),
 });
 
 export const bulkRemovePlacesSchema = z.object({
   tripId: z.string().min(1),
+  legId: z.string().min(1),
   placeIds: z.array(z.string().min(1)).min(1),
 });

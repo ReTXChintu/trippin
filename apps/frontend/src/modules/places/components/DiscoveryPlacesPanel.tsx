@@ -15,6 +15,7 @@ import {
 import { useMemo, useState } from "react";
 import { FiMinus, FiPlus } from "react-icons/fi";
 import {
+  useAddPlaceFromSearch,
   useAddPlaceToTrip,
   useBulkAddPlacesToTrip,
   useRemovePlaceFromTrip,
@@ -22,6 +23,7 @@ import {
 import { getApiErrorMessage } from "@/lib/api";
 import { PlaceDetailModal } from "@/modules/places/components/PlaceDetailModal";
 import { PlaceFilterBar } from "@/modules/places/components/PlaceFilterBar";
+import { PlaceSearchInput } from "@/modules/places/components/PlaceSearchInput";
 import type { Place } from "@/modules/places/types/place.types";
 import {
   DEFAULT_PLACE_FILTERS,
@@ -34,46 +36,48 @@ import type { TripLeg } from "@/modules/trips/types/trip-leg.types";
 
 interface DiscoveryPlacesPanelProps {
   trip: Trip;
+  leg: TripLeg;
   poolPlaces: Place[];
   selectedPlaceIds: Set<string>;
   onSelectedChange: (ids: string[]) => void;
-  leg?: TripLeg;
 }
 
 export function DiscoveryPlacesPanel({
   trip,
+  leg,
   poolPlaces,
   selectedPlaceIds,
   onSelectedChange,
-  leg,
 }: DiscoveryPlacesPanelProps) {
   const toast = useToast();
   const [filters, setFilters] = useState<PlaceFilterState>(DEFAULT_PLACE_FILTERS);
   const [modalPlaceId, setModalPlaceId] = useState<string | null>(null);
   const [checkedIds, setCheckedIds] = useState<Set<string>>(new Set());
-  const addPlace = useAddPlaceToTrip(trip.id);
-  const removePlace = useRemovePlaceFromTrip(trip.id);
-  const bulkAddPlaces = useBulkAddPlacesToTrip(trip.id);
+  const [searchPrefill, setSearchPrefill] = useState<string | null>(null);
+  const addPlace = useAddPlaceToTrip(trip.id, leg.id);
+  const removePlace = useRemovePlaceFromTrip(trip.id, leg.id);
+  const bulkAddPlaces = useBulkAddPlacesToTrip(trip.id, leg.id);
+  const addFromSearch = useAddPlaceFromSearch(trip.id, leg.id);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
-  const bg = useColorModeValue("white", "gray.800");
   const borderColor = useColorModeValue("gray.200", "gray.700");
   const selectedBg = useColorModeValue("brand.50", "gray.700");
   const hoverBg = useColorModeValue("gray.50", "gray.700");
+  const aiSectionBg = useColorModeValue("purple.50", "purple.900");
 
-  const legPoolIds = useMemo(() => new Set(leg?.discoveryPoolIds ?? []), [leg?.discoveryPoolIds]);
+  const legPoolIds = useMemo(() => new Set(leg.discoveryPoolIds), [leg.discoveryPoolIds]);
+  const aiMatchedIds = useMemo(() => new Set(leg.aiMatchedPlaceIds ?? []), [leg.aiMatchedPlaceIds]);
 
   const scopedPoolPlaces = useMemo(() => {
-    if (!leg) return poolPlaces;
     if (legPoolIds.size === 0) return poolPlaces;
     return poolPlaces.filter((p) => p.googlePlaceId && legPoolIds.has(p.googlePlaceId));
-  }, [poolPlaces, leg, legPoolIds]);
+  }, [poolPlaces, legPoolIds]);
 
   const categories = useMemo(() => getUniqueCategories(scopedPoolPlaces), [scopedPoolPlaces]);
 
   const filteredPlaces = useMemo(
-    () => filterAndSortPlaces(scopedPoolPlaces, filters, leg?.hotelCoordinates ?? trip.hotelCoordinates),
-    [scopedPoolPlaces, filters, leg?.hotelCoordinates, trip.hotelCoordinates],
+    () => filterAndSortPlaces(scopedPoolPlaces, filters, leg.hotelCoordinates ?? trip.hotelCoordinates),
+    [scopedPoolPlaces, filters, leg.hotelCoordinates, trip.hotelCoordinates],
   );
 
   const filteredIds = useMemo(
@@ -154,21 +158,29 @@ export function DiscoveryPlacesPanel({
     handleBulkAdd([...checkedIds]);
   };
 
+  const handleAddFromSearch = async (selection: { googlePlaceId: string; name: string }) => {
+    try {
+      const result = await addFromSearch.mutateAsync(selection.googlePlaceId);
+      syncFromPlaces(result.places);
+      setSearchPrefill(null);
+      toast({ title: `"${selection.name}" added to trip`, status: "success" });
+    } catch (err) {
+      toast({ title: getApiErrorMessage(err), status: "error" });
+    }
+  };
+
+  const aiSuggestedNames = (leg.aiSuggestedPlaceNames ?? []).filter(
+    (name) => !filteredPlaces.some((p) => p.name.toLowerCase() === name.toLowerCase()),
+  );
+
   return (
-    <Box p={5} bg={bg} borderWidth="1px" borderColor={borderColor} borderRadius="xl">
+    <Box>
       <Flex justify="space-between" align="center" mb={4} flexWrap="wrap" gap={2}>
-        <Box>
-          <Text fontWeight="semibold" fontSize="sm">
-            {leg
-              ? `Discovery — ${leg.name || leg.baseCity} (${scopedPoolPlaces.length})`
-              : `Discovery results (${poolPlaces.length})`}
-          </Text>
-          <Text fontSize="xs" color="gray.500">
-            {leg?.dayTripAreas.length
-              ? `Covers ${leg.baseCity} + ${leg.dayTripAreas.join(", ")}`
-              : "Click a place for photos, hours, and Google Maps reviews"}
-          </Text>
-        </Box>
+        <Text fontSize="xs" color="gray.500">
+          {leg.dayTripAreas.length
+            ? `Covers ${leg.baseCity} + ${leg.dayTripAreas.join(", ")}`
+            : "Click a place for photos, hours, and Google Maps reviews"}
+        </Text>
         {filteredPlaces.length > 0 && (
           <HStack spacing={2} flexWrap="wrap">
             {checkedIds.size > 0 && (
@@ -195,11 +207,55 @@ export function DiscoveryPlacesPanel({
         )}
       </Flex>
 
+      <Box mb={4}>
+        <PlaceSearchInput
+          label="Search Google Places to add"
+          placeholder="Not seeing a place? Search Google Places..."
+          mode="place"
+          city={leg.baseCity}
+          country={leg.country}
+          onSelect={handleAddFromSearch}
+        />
+      </Box>
+
+      {aiSuggestedNames.length > 0 && (
+        <Box mb={4} p={3} bg={aiSectionBg} borderRadius="lg">
+          <Text fontSize="xs" fontWeight="medium" mb={2}>
+            AI suggested places (not found on Google — search to add)
+          </Text>
+          <HStack spacing={2} flexWrap="wrap">
+            {aiSuggestedNames.map((name) => (
+              <Tag
+                key={name}
+                size="sm"
+                cursor="pointer"
+                colorScheme="purple"
+                onClick={() => setSearchPrefill(name)}
+              >
+                {name}
+              </Tag>
+            ))}
+          </HStack>
+          {searchPrefill && (
+            <Box mt={3}>
+              <PlaceSearchInput
+                label={`Search for "${searchPrefill}"`}
+                placeholder="Search Google Places..."
+                mode="place"
+                city={leg.baseCity}
+                country={leg.country}
+                value={searchPrefill}
+                onSelect={handleAddFromSearch}
+                onClear={() => setSearchPrefill(null)}
+              />
+            </Box>
+          )}
+        </Box>
+      )}
+
       {scopedPoolPlaces.length === 0 ? (
         <Text color="gray.500" fontSize="sm">
-          {leg
-            ? `Click "Discover places" to search ${leg.baseCity}${leg.dayTripAreas.length ? `, ${leg.dayTripAreas.join(", ")}` : ""}.`
-            : 'Click "Discover Places" to search attractions via Google Places.'}
+          {`Click "Discover places" to search ${leg.baseCity}${leg.dayTripAreas.length ? `, ${leg.dayTripAreas.join(", ")}` : ""}.`}
         </Text>
       ) : (
         <Stack spacing={4}>
@@ -256,11 +312,18 @@ export function DiscoveryPlacesPanel({
                             <Text fontWeight="medium" fontSize="sm" noOfLines={2}>
                               {place.name}
                             </Text>
-                            {inTrip && (
-                              <Badge colorScheme="brand" fontSize="2xs" flexShrink={0}>
-                                In trip
-                              </Badge>
-                            )}
+                            <HStack spacing={1} flexShrink={0}>
+                              {aiMatchedIds.has(id) && (
+                                <Badge colorScheme="purple" fontSize="2xs">
+                                  Suggested by AI
+                                </Badge>
+                              )}
+                              {inTrip && (
+                                <Badge colorScheme="brand" fontSize="2xs">
+                                  In trip
+                                </Badge>
+                              )}
+                            </HStack>
                           </Flex>
                           <HStack spacing={2} mt={1} flexWrap="wrap">
                             <Tag size="sm">{place.category}</Tag>
@@ -306,6 +369,7 @@ export function DiscoveryPlacesPanel({
         isOpen={Boolean(modalPlaceId)}
         onClose={() => setModalPlaceId(null)}
         trip={trip}
+        legId={leg.id}
         placeId={modalPlaceId}
         isSelected={modalPlaceId ? selectedPlaceIds.has(modalPlaceId) : false}
         onSelectedChange={onSelectedChange}

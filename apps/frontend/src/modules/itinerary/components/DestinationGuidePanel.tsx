@@ -85,6 +85,23 @@ function BriefSection({ title, brief }: { title: string; brief: LegDestinationBr
         </Box>
       )}
 
+      {brief.festivals.length > 0 && (
+        <Box mb={3}>
+          <Text fontSize="xs" fontWeight="semibold" color="gray.500" mb={1} textTransform="uppercase">
+            Local festivals
+          </Text>
+          <Wrap spacing={2}>
+            {brief.festivals.map((item) => (
+              <WrapItem key={item}>
+                <Tag size="sm" colorScheme="pink">
+                  {item}
+                </Tag>
+              </WrapItem>
+            ))}
+          </Wrap>
+        </Box>
+      )}
+
       {brief.generalTips.length > 0 && (
         <Box>
           <Text fontSize="xs" fontWeight="semibold" color="gray.500" mb={1} textTransform="uppercase">
@@ -106,7 +123,7 @@ export function DestinationGuidePanel({ legs, singleBrief }: DestinationGuidePan
   if (!hasLegBriefs && !singleBrief) {
     return (
       <Text fontSize="sm" color="gray.500">
-        Generate the itinerary, then click &quot;AI Travel Guide&quot; for local specialties, food picks, and visit notes.
+        Click &quot;Generate local guide&quot; for local specialties, food picks, festivals, and tips.
       </Text>
     );
   }

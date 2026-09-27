@@ -9,7 +9,12 @@ import {
 } from "@/modules/trips/validators/trip.validator";
 import type { Trip, TripStats } from "@/modules/trips/types/trip.types";
 import type { TripStatus } from "@/types";
-import { syncTripDatesFromLegs } from "@/modules/trips/utils/trip-leg.utils";
+import {
+  buildTripDayPlans,
+  isDayOwnedByLeg,
+  syncTripDatesFromLegs,
+} from "@/modules/trips/utils/trip-leg.utils";
+import { syncLegacyHotelFields } from "@/modules/trips/utils/stay.utils";
 
 export type ActionResult<T = void> =
   | { success: true; data?: T; message?: string }
@@ -39,7 +44,8 @@ function toTripPayload(data: ReturnType<typeof createTripSchema.parse>) {
     hotelName: data.hotelName,
     hotelAddress: data.hotelAddress,
     hotelCoordinates: parseCoordinates(data),
-    legs: data.legs,
+    // Legs with stays mirror their first stay into the legacy hotel* fields older readers use.
+    legs: data.legs.map((leg) => (leg.stays.length > 0 ? syncLegacyHotelFields(leg) : leg)),
     transfers: data.transfers,
     dailyStartTime: data.dailyStartTime,
     dailyEndTime: data.dailyEndTime,
@@ -78,6 +84,18 @@ export async function updateTripFromRaw(
     return { success: false, error: parsed.error.issues[0]?.message ?? "Invalid input" };
   }
 
+  // Clients that predate stays (e.g. the mobile app) send legs without the field — keep what's
+  // stored instead of letting the schema default wipe it to [].
+  const rawLegs = buildTripInputFromRaw(raw).legs as Array<Record<string, unknown>>;
+  const legsWithoutStays = new Set(rawLegs.filter((l) => !("stays" in l)).map((l) => String(l.id)));
+  if (legsWithoutStays.size > 0) {
+    const existing = await TripRepository.findByIdForUser(tripId, userId);
+    const storedStays = new Map((existing?.legs ?? []).map((l) => [l.id, l.stays]));
+    parsed.data.legs = parsed.data.legs.map((leg) =>
+      legsWithoutStays.has(leg.id) ? { ...leg, stays: storedStays.get(leg.id) ?? [] } : leg,
+    );
+  }
+
   const trip = await TripRepository.update(tripId, userId, toTripPayload(parsed.data));
   if (!trip) return { success: false, error: "Trip not found" };
 
@@ -94,6 +112,68 @@ export async function deleteTrip(tripId: string, userId: string): Promise<Action
   await ItineraryRepository.deleteByTripId(tripId);
 
   return { success: true, message: "Trip deleted" };
+}
+
+export async function removeLegFromTrip(
+  tripId: string,
+  userId: string,
+  legId: string,
+): Promise<ActionResult<{ trip: Trip }>> {
+  const trip = await TripRepository.findByIdForUser(tripId, userId);
+  if (!trip) return { success: false, error: "Trip not found" };
+
+  if (trip.legs.length <= 1) {
+    return {
+      success: false,
+      error: "Can't delete the only leg. Add another leg first, or delete the whole trip.",
+    };
+  }
+
+  if (!trip.legs.some((l) => l.id === legId)) {
+    return { success: false, error: "Trip leg not found" };
+  }
+
+  const nextLegs = trip.legs
+    .filter((l) => l.id !== legId)
+    .sort((a, b) => a.order - b.order)
+    .map((l, i) => ({ ...l, order: i }));
+
+  const nextTransfers = trip.transfers.filter((t) => t.fromLegId !== legId && t.toLegId !== legId);
+
+  const synced = syncTripDatesFromLegs(nextLegs, nextTransfers);
+
+  const updated = await TripRepository.update(tripId, userId, {
+    legs: nextLegs,
+    transfers: nextTransfers,
+    discoveryPoolIds: Array.from(new Set(nextLegs.flatMap((l) => l.discoveryPoolIds))),
+    foodPoolIds: Array.from(new Set(nextLegs.flatMap((l) => l.foodPoolIds))),
+    marketPoolIds: Array.from(new Set(nextLegs.flatMap((l) => l.marketPoolIds))),
+    ...(synced
+      ? {
+          startDate: new Date(synced.startDate),
+          endDate: new Date(synced.endDate),
+          destinationCity: synced.destinationCity,
+        }
+      : {}),
+  });
+
+  if (!updated) return { success: false, error: "Failed to update trip" };
+
+  const existingItinerary = await ItineraryRepository.findByTripId(tripId);
+  if (existingItinerary) {
+    const dayPlans = buildTripDayPlans(trip);
+    const remainingDays = existingItinerary.days
+      .filter((d) => !isDayOwnedByLeg(d.date, dayPlans, legId))
+      .map((d, i) => ({ ...d, dayNumber: i + 1 }));
+
+    if (remainingDays.length === 0) {
+      await ItineraryRepository.deleteByTripId(tripId);
+    } else {
+      await ItineraryRepository.upsertDays(tripId, userId, remainingDays);
+    }
+  }
+
+  return { success: true, data: { trip: updated }, message: "Leg deleted" };
 }
 
 export async function duplicateTrip(tripId: string, userId: string): Promise<ActionResult<{ trip: Trip }>> {

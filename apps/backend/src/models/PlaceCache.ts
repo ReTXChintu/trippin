@@ -39,6 +39,12 @@ const PlaceSchema = new Schema(
     source: String,
     formattedAddress: String,
     weekdayDescriptions: [String],
+    // Mixed rather than nested schemas: these mirror Google payloads verbatim and are only ever
+    // read back whole, never queried.
+    openingPeriods: { type: [Schema.Types.Mixed], default: undefined },
+    reviews: { type: [Schema.Types.Mixed], default: undefined },
+    reviewSummary: String,
+    richVersion: Number,
     priceRange: String,
     websiteUri: String,
     googleMapsUri: String,

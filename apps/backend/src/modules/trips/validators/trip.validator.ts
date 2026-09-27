@@ -28,6 +28,31 @@ const optionalClockTimeSchema = z.preprocess(
   clockTimeSchema,
 );
 
+const dateStringSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be YYYY-MM-DD");
+
+export const tripStaySchema = z
+  .object({
+    id: z.string().min(1),
+    name: z.string().trim().min(1, "Stay name is required"),
+    address: z.string().optional(),
+    coordinates: coordinatesSchema.optional(),
+    googlePlaceId: z.string().optional(),
+    checkInDate: dateStringSchema,
+    checkOutDate: dateStringSchema,
+    checkInTime: optionalClockTimeSchema,
+    checkOutTime: optionalClockTimeSchema,
+    confirmationNumber: z.string().optional(),
+    pricePerNight: z.number().nonnegative().optional(),
+    currency: z.string().max(8).optional(),
+    bookingUrl: z.string().optional(),
+    notes: z.string().optional(),
+    rating: z.number().optional(),
+  })
+  .refine((stay) => stay.checkOutDate > stay.checkInDate, {
+    message: "Check-out must be after check-in",
+    path: ["checkOutDate"],
+  });
+
 export const tripLegSchema = z.object({
   id: z.string().min(1),
   name: z.string().min(1, "Leg name is required"),
@@ -42,10 +67,14 @@ export const tripLegSchema = z.object({
   hotelName: z.string().optional(),
   hotelAddress: z.string().optional(),
   hotelCoordinates: coordinatesSchema.optional(),
+  stays: z.array(tripStaySchema).default([]),
   order: z.number().int().min(0),
   discoveryPoolIds: z.array(z.string()).default([]),
   foodPoolIds: z.array(z.string()).default([]),
   marketPoolIds: z.array(z.string()).default([]),
+  selectedPlaceIds: z.array(z.string()).default([]),
+  aiMatchedPlaceIds: z.array(z.string()).default([]),
+  aiSuggestedPlaceNames: z.array(z.string()).default([]),
   destinationBrief: z
     .object({
       specialties: z.array(z.string()),
@@ -57,6 +86,7 @@ export const tripLegSchema = z.object({
           whatToBuy: z.array(z.string()),
         }),
       ),
+      festivals: z.array(z.string()).default([]),
       generalTips: z.array(z.string()),
       generatedAt: z.string().optional(),
     })

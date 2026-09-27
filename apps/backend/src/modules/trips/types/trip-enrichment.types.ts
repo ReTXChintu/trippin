@@ -21,6 +21,7 @@ export interface LegDestinationBrief {
   specialties: string[];
   localFood: string[];
   markets: LegMarketGuide[];
+  festivals: string[];
   generalTips: string[];
   generatedAt?: string;
 }

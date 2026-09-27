@@ -22,7 +22,7 @@ import {
 } from "@chakra-ui/react";
 import { FiClock, FiMapPin } from "react-icons/fi";
 import { format, parseISO } from "date-fns";
-import { TimelineStop } from "./TimelineStop";
+import { PinnedTimelineStop, TimelineStop, type AvailableDay } from "./TimelineStop";
 import type { ItineraryDay } from "@/modules/itinerary/types";
 
 interface DayTimelineProps {
@@ -30,6 +30,12 @@ interface DayTimelineProps {
   onReorder?: (dayNumber: number, stopIds: string[]) => void;
   isReordering?: boolean;
   readOnly?: boolean;
+  availableDays?: AvailableDay[];
+  onMoveStop?: (stopId: string, toDayNumber: number) => void;
+  movingStopId?: string | null;
+  tripId?: string;
+  destinationCity?: string;
+  destinationCountry?: string;
 }
 
 function formatDayDate(date: string) {
@@ -40,7 +46,18 @@ function formatDayDate(date: string) {
   }
 }
 
-export function DayTimeline({ day, onReorder, isReordering, readOnly = false }: DayTimelineProps) {
+export function DayTimeline({
+  day,
+  onReorder,
+  isReordering,
+  readOnly = false,
+  availableDays,
+  onMoveStop,
+  movingStopId,
+  tripId,
+  destinationCity,
+  destinationCountry,
+}: DayTimelineProps) {
   const borderColor = useColorModeValue("gray.200", "gray.700");
   const bg = useColorModeValue("white", "gray.800");
 
@@ -49,11 +66,15 @@ export function DayTimeline({ day, onReorder, isReordering, readOnly = false }: 
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
 
+  const pinnedFirst = day.stops.filter((s) => s.stopType === "transfer");
+  const pinnedLast = day.stops.filter((s) => s.stopType === "return");
+  const draggableStops = day.stops.filter((s) => s.stopType !== "transfer" && s.stopType !== "return");
+
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     if (!over || active.id === over.id || !onReorder) return;
 
-    const ids = day.stops.map((s) => s.id);
+    const ids = draggableStops.map((s) => s.id);
     const oldIndex = ids.indexOf(String(active.id));
     const newIndex = ids.indexOf(String(over.id));
     if (oldIndex === -1 || newIndex === -1) return;
@@ -61,7 +82,11 @@ export function DayTimeline({ day, onReorder, isReordering, readOnly = false }: 
     const reordered = [...ids];
     const [removed] = reordered.splice(oldIndex, 1);
     reordered.splice(newIndex, 0, removed);
-    onReorder(day.dayNumber, reordered);
+    onReorder(day.dayNumber, [
+      ...pinnedFirst.map((s) => s.id),
+      ...reordered,
+      ...pinnedLast.map((s) => s.id),
+    ]);
   };
 
   return (
@@ -95,17 +120,32 @@ export function DayTimeline({ day, onReorder, isReordering, readOnly = false }: 
           <ReadOnlyStop key={stop.id} stop={stop} isLast={index === day.stops.length - 1} />
         ))
       ) : (
-        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-          <SortableContext items={day.stops.map((s) => s.id)} strategy={verticalListSortingStrategy}>
-            {day.stops.map((stop, index) => (
-              <TimelineStop
-                key={stop.id}
-                stop={stop}
-                isLast={index === day.stops.length - 1}
-              />
-            ))}
-          </SortableContext>
-        </DndContext>
+        <>
+          {pinnedFirst.map((stop) => (
+            <PinnedTimelineStop key={stop.id} stop={stop} isLast={stop.id === day.stops[day.stops.length - 1]?.id} />
+          ))}
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+            <SortableContext items={draggableStops.map((s) => s.id)} strategy={verticalListSortingStrategy}>
+              {draggableStops.map((stop) => (
+                <TimelineStop
+                  key={stop.id}
+                  stop={stop}
+                  isLast={stop.id === day.stops[day.stops.length - 1]?.id}
+                  availableDays={availableDays}
+                  onMoveToDay={onMoveStop ? (toDayNumber) => onMoveStop(stop.id, toDayNumber) : undefined}
+                  isMoving={movingStopId === stop.id}
+                  tripId={tripId}
+                  dayNumber={day.dayNumber}
+                  destinationCity={destinationCity}
+                  destinationCountry={destinationCountry}
+                />
+              ))}
+            </SortableContext>
+          </DndContext>
+          {pinnedLast.map((stop) => (
+            <PinnedTimelineStop key={stop.id} stop={stop} isLast={stop.id === day.stops[day.stops.length - 1]?.id} />
+          ))}
+        </>
       )}
     </Box>
   );

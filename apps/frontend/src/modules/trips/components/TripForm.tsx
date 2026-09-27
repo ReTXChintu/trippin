@@ -22,41 +22,31 @@ import {
   Wrap,
   WrapItem,
 } from "@chakra-ui/react";
-import { format, addDays } from "date-fns";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { INTEREST_CATEGORIES } from "@/constants/interests";
-import { useCreateTrip, useUpdateTrip } from "@/modules/trips/hooks/useTrips";
+import { useCreateTrip } from "@/modules/trips/hooks/useTrips";
 import { getApiErrorMessage } from "@/lib/api";
 import {
   createTripSchema,
   tripFormSchema,
   type TripFormValues,
 } from "@/modules/trips/validators/trip.validator";
-import type { Trip } from "@/modules/trips/types/trip.types";
 import { parseCommaSeparated } from "@/utils/trip.utils";
 import { PlaceSearchInput } from "@/modules/places/components/PlaceSearchInput";
 import { TripLegBuilder } from "@/modules/trips/components/TripLegBuilder";
 import type { TripLeg, TripLegTransfer } from "@/modules/trips/types/trip-leg.types";
-import { syncTripDatesFromLegs } from "@/modules/trips/utils/trip-leg.utils";
-
-interface TripFormProps {
-  mode: "create" | "edit";
-  trip?: Trip;
-}
-
-const today = format(new Date(), "yyyy-MM-dd");
-const tomorrow = format(addDays(new Date(), 1), "yyyy-MM-dd");
+import { createEmptyLeg, syncTripDatesFromLegs } from "@/modules/trips/utils/trip-leg.utils";
 
 const defaultValues: TripFormValues = {
   title: "",
   destinationCity: "",
   destinationState: "",
   destinationCountry: "India",
-  startDate: today,
-  endDate: tomorrow,
+  startDate: "",
+  endDate: "",
   arrivalTime: "",
   departureTime: "",
   hotelName: "",
@@ -75,43 +65,12 @@ const defaultValues: TripFormValues = {
   transfers: [],
 };
 
-function tripToFormValues(trip: Trip): TripFormValues {
-  return {
-    title: trip.title,
-    destinationCity: trip.destinationCity,
-    destinationState: trip.destinationState ?? "",
-    destinationCountry: trip.destinationCountry,
-    startDate: trip.startDate.slice(0, 10),
-    endDate: trip.endDate.slice(0, 10),
-    arrivalTime: trip.arrivalTime ?? "",
-    departureTime: trip.departureTime ?? "",
-    hotelName: trip.hotelName ?? "",
-    hotelAddress: trip.hotelAddress ?? "",
-    hotelLat: trip.hotelCoordinates?.lat.toString() ?? "",
-    hotelLng: trip.hotelCoordinates?.lng.toString() ?? "",
-    dailyStartTime: trip.dailyStartTime,
-    dailyEndTime: trip.dailyEndTime,
-    useFlexibleSchedule: trip.useFlexibleSchedule,
-    transportationMode: trip.transportationMode,
-    travelStyle: trip.travelStyle,
-    budgetLevel: trip.budgetLevel,
-    interests: trip.interests,
-    mustVisitPlaces: trip.mustVisitPlaces,
-    excludedPlaces: trip.excludedPlaces,
-    notes: trip.notes ?? "",
-    status: trip.status,
-    legs: trip.legs,
-    transfers: trip.transfers,
-  };
-}
-
-export function TripForm({ mode, trip }: TripFormProps) {
+export function TripForm() {
   const navigate = useNavigate();
   const toast = useToast();
   const bg = useColorModeValue("white", "gray.800");
   const borderColor = useColorModeValue("gray.200", "gray.700");
   const createTrip = useCreateTrip();
-  const updateTrip = useUpdateTrip(trip?.id ?? "");
 
   const {
     register,
@@ -121,18 +80,15 @@ export function TripForm({ mode, trip }: TripFormProps) {
     formState: { errors, isSubmitting },
   } = useForm<TripFormValues>({
     resolver: zodResolver(tripFormSchema),
-    defaultValues: trip ? tripToFormValues(trip) : defaultValues,
+    defaultValues,
   });
 
-  const selectedInterests = watch("interests") ?? [];
-  const destinationCity = watch("destinationCity");
   const destinationCountry = watch("destinationCountry");
-  const [mustVisitList, setMustVisitList] = useState<string[]>(trip?.mustVisitPlaces ?? []);
-  const [excludedText, setExcludedText] = useState(trip?.excludedPlaces.join(", ") ?? "");
-  const [hotelSearchValue, setHotelSearchValue] = useState(trip?.hotelName ?? "");
-  const [multiDestination, setMultiDestination] = useState((trip?.legs.length ?? 0) > 0);
-  const [legs, setLegs] = useState<TripLeg[]>(trip?.legs ?? []);
-  const [transfers, setTransfers] = useState<TripLegTransfer[]>(trip?.transfers ?? []);
+  const [mustVisitList, setMustVisitList] = useState<string[]>([]);
+  const [excludedText, setExcludedText] = useState("");
+  const [legs, setLegs] = useState<TripLeg[]>([createEmptyLeg(0, "India")]);
+  const [transfers, setTransfers] = useState<TripLegTransfer[]>([]);
+  const selectedInterests = watch("interests") ?? [];
 
   const handleLegsChange = (nextLegs: TripLeg[], nextTransfers: TripLegTransfer[]) => {
     setLegs(nextLegs);
@@ -146,7 +102,7 @@ export function TripForm({ mode, trip }: TripFormProps) {
   };
 
   const onSubmit = async (data: TripFormValues) => {
-    const synced = multiDestination ? syncTripDatesFromLegs(legs, transfers) : null;
+    const synced = syncTripDatesFromLegs(legs, transfers);
     const payload = {
       ...data,
       destinationCity: synced?.destinationCity ?? data.destinationCity,
@@ -154,9 +110,18 @@ export function TripForm({ mode, trip }: TripFormProps) {
       endDate: synced?.endDate ?? data.endDate,
       mustVisitPlaces: mustVisitList,
       excludedPlaces: parseCommaSeparated(excludedText),
-      legs: multiDestination ? legs : [],
-      transfers: multiDestination ? transfers : [],
+      legs,
+      transfers,
     };
+
+    if (legs.filter((l) => l.baseCity.trim()).length === 0) {
+      toast({
+        title: "Add at least one destination leg with a base city",
+        status: "error",
+        duration: 4000,
+      });
+      return;
+    }
 
     const validated = createTripSchema.safeParse(payload);
     if (!validated.success) {
@@ -168,22 +133,9 @@ export function TripForm({ mode, trip }: TripFormProps) {
       return;
     }
 
-    if (multiDestination && legs.filter((l) => l.baseCity.trim()).length === 0) {
-      toast({
-        title: "Add at least one destination leg with a base city",
-        status: "error",
-        duration: 4000,
-      });
-      return;
-    }
-
     try {
-      const result =
-        mode === "create"
-          ? await createTrip.mutateAsync(validated.data)
-          : await updateTrip.mutateAsync(validated.data);
-
-      toast({ title: mode === "create" ? "Trip created successfully" : "Trip updated successfully", status: "success", duration: 3000 });
+      const result = await createTrip.mutateAsync(validated.data);
+      toast({ title: "Trip created successfully", status: "success", duration: 3000 });
       navigate(`/trips/${result.trip.id}`);
     } catch (err) {
       toast({ title: getApiErrorMessage(err), status: "error", duration: 4000 });
@@ -205,205 +157,44 @@ export function TripForm({ mode, trip }: TripFormProps) {
           <Heading size="md" mb={4}>
             Basic Information
           </Heading>
-          <Checkbox
-            mb={4}
-            isChecked={multiDestination}
-            onChange={(e) => setMultiDestination(e.target.checked)}
-          >
-            Multi-destination trip (multiple cities / stops)
-          </Checkbox>
 
-          {multiDestination ? (
-            <TripLegBuilder
-              legs={legs}
-              transfers={transfers}
-              country={destinationCountry}
-              onChange={handleLegsChange}
-            />
-          ) : (
-            <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
-              <FormControl isInvalid={!!errors.title} gridColumn={{ md: "span 2" }}>
-                <FormLabel>Trip Title</FormLabel>
-                <Input placeholder="3-Day Jaipur Heritage Trip" {...register("title")} />
-                <FormErrorMessage>{errors.title?.message}</FormErrorMessage>
-              </FormControl>
+          <FormControl isInvalid={!!errors.title} mb={4}>
+            <FormLabel>Trip Title</FormLabel>
+            <Input placeholder="Rajasthan: Ajmer to Jaipur" {...register("title")} />
+            <FormErrorMessage>{errors.title?.message}</FormErrorMessage>
+          </FormControl>
 
-              <FormControl isInvalid={!!errors.destinationCity}>
-                <FormLabel>Destination City</FormLabel>
-                <Input placeholder="Jaipur" {...register("destinationCity")} />
-                <FormErrorMessage>{errors.destinationCity?.message}</FormErrorMessage>
-              </FormControl>
-
-              <FormControl>
-                <FormLabel>State / Region</FormLabel>
-                <Input placeholder="Rajasthan" {...register("destinationState")} />
-              </FormControl>
-
-              <FormControl isInvalid={!!errors.destinationCountry}>
-                <FormLabel>Country</FormLabel>
-                <Input {...register("destinationCountry")} />
-                <FormErrorMessage>{errors.destinationCountry?.message}</FormErrorMessage>
-              </FormControl>
-
-              <FormControl isInvalid={!!errors.status}>
-                <FormLabel>Status</FormLabel>
-                <Select {...register("status")}>
-                  <option value="draft">Draft</option>
-                  <option value="active">Active</option>
-                  <option value="completed">Completed</option>
-                  <option value="archived">Archived</option>
-                </Select>
-              </FormControl>
-            </SimpleGrid>
-          )}
-
-          {multiDestination && (
-            <FormControl isInvalid={!!errors.title} mt={4}>
-              <FormLabel>Trip Title</FormLabel>
-              <Input placeholder="Rajasthan: Ajmer to Jaipur" {...register("title")} />
-              <FormErrorMessage>{errors.title?.message}</FormErrorMessage>
-            </FormControl>
-          )}
+          <TripLegBuilder legs={legs} transfers={transfers} country={destinationCountry} onChange={handleLegsChange} />
         </Box>
 
-        {!multiDestination && (
-          <Box>
-            <Heading size="md" mb={4}>
-              Dates & Schedule
-            </Heading>
-            <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
-              <FormControl isInvalid={!!errors.startDate}>
-                <FormLabel>Start Date</FormLabel>
-                <Input type="date" {...register("startDate")} />
-                <FormErrorMessage>{errors.startDate?.message}</FormErrorMessage>
-              </FormControl>
-
-              <FormControl isInvalid={!!errors.endDate}>
-                <FormLabel>End Date</FormLabel>
-                <Input type="date" {...register("endDate")} />
-                <FormErrorMessage>{errors.endDate?.message}</FormErrorMessage>
-              </FormControl>
-
-              <FormControl>
-                <FormLabel>Arrive at</FormLabel>
-                <Input type="time" {...register("arrivalTime")} />
-                <FormHelperText mt={1}>
-                  When you reach the destination (first day only). E.g. train lands 7:30 AM.
-                </FormHelperText>
-              </FormControl>
-
-              <FormControl>
-                <FormLabel>Leave at</FormLabel>
-                <Input type="time" {...register("departureTime")} />
-                <FormHelperText mt={1}>
-                  When you leave on the last day. Morning checkout = no sightseeing that day.
-                </FormHelperText>
-              </FormControl>
-
-              <FormControl>
-                <FormLabel>Daily Start Time</FormLabel>
-                <Input type="time" {...register("dailyStartTime")} />
-              </FormControl>
-
-              <FormControl>
-                <FormLabel>Daily End Time</FormLabel>
-                <Input type="time" {...register("dailyEndTime")} />
-              </FormControl>
-
-              <FormControl gridColumn={{ md: "span 2" }}>
-                <Checkbox {...register("useFlexibleSchedule")}>
-                  Plan by place best times (ignore fixed daily start)
-                </Checkbox>
-                <FormHelperText mt={1}>
-                  When enabled, the itinerary schedules each stop at category-based best times
-                  (e.g. temples early morning, markets evening), clamped within your arrival and
-                  departure windows.
-                </FormHelperText>
-              </FormControl>
-            </SimpleGrid>
-          </Box>
-        )}
-
-        {multiDestination && (
-          <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
-            <FormControl>
-              <FormLabel>Daily Start Time</FormLabel>
-              <Input type="time" {...register("dailyStartTime")} />
-            </FormControl>
-            <FormControl>
-              <FormLabel>Daily End Time</FormLabel>
-              <Input type="time" {...register("dailyEndTime")} />
-            </FormControl>
-            <FormControl gridColumn={{ md: "span 2" }}>
-              <Checkbox {...register("useFlexibleSchedule")}>
-                Plan by place best times (ignore fixed daily start)
-              </Checkbox>
-              <FormHelperText mt={1}>
-                Stops are scheduled at preferred or inferred best visit times instead of a fixed
-                morning start.
-              </FormHelperText>
-            </FormControl>
-            <FormControl isInvalid={!!errors.status}>
-              <FormLabel>Status</FormLabel>
-              <Select {...register("status")}>
-                <option value="draft">Draft</option>
-                <option value="active">Active</option>
-                <option value="completed">Completed</option>
-                <option value="archived">Archived</option>
-              </Select>
-            </FormControl>
-          </SimpleGrid>
-        )}
-
-        {!multiDestination && (
-          <Box>
-            <Heading size="md" mb={4}>
-              Accommodation
-            </Heading>
-            <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
-              <Box gridColumn={{ md: "span 2" }}>
-                <PlaceSearchInput
-                  label="Search Hotel"
-                  placeholder="Search hotels near your destination..."
-                  mode="hotel"
-                  city={destinationCity}
-                  country={destinationCountry}
-                  value={hotelSearchValue}
-                  onSelect={(sel) => {
-                    setHotelSearchValue(sel.name);
-                    setValue("hotelName", sel.name);
-                    setValue("hotelAddress", sel.address ?? "");
-                    if (sel.lat !== undefined) setValue("hotelLat", sel.lat.toString());
-                    if (sel.lng !== undefined) setValue("hotelLng", sel.lng.toString());
-                  }}
-                  onClear={() => {
-                    setValue("hotelName", "");
-                    setValue("hotelAddress", "");
-                    setValue("hotelLat", "");
-                    setValue("hotelLng", "");
-                  }}
-                />
-              </Box>
-
-              <FormControl gridColumn={{ md: "span 2" }}>
-                <FormLabel>Hotel Address</FormLabel>
-                <Input placeholder="Auto-filled from search" {...register("hotelAddress")} />
-              </FormControl>
-
-              <input type="hidden" {...register("hotelName")} />
-
-              <FormControl>
-                <FormLabel>Latitude</FormLabel>
-                <Input type="text" readOnly placeholder="Auto-filled" {...register("hotelLat")} />
-              </FormControl>
-
-              <FormControl>
-                <FormLabel>Longitude</FormLabel>
-                <Input type="text" readOnly placeholder="Auto-filled" {...register("hotelLng")} />
-              </FormControl>
-            </SimpleGrid>
-          </Box>
-        )}
+        <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
+          <FormControl>
+            <FormLabel>Daily Start Time</FormLabel>
+            <Input type="time" {...register("dailyStartTime")} />
+          </FormControl>
+          <FormControl>
+            <FormLabel>Daily End Time</FormLabel>
+            <Input type="time" {...register("dailyEndTime")} />
+          </FormControl>
+          <FormControl gridColumn={{ md: "span 2" }}>
+            <Checkbox {...register("useFlexibleSchedule")}>
+              Plan by place best times (ignore fixed daily start)
+            </Checkbox>
+            <FormHelperText mt={1}>
+              Stops are scheduled at preferred or inferred best visit times instead of a fixed
+              morning start.
+            </FormHelperText>
+          </FormControl>
+          <FormControl isInvalid={!!errors.status}>
+            <FormLabel>Status</FormLabel>
+            <Select {...register("status")}>
+              <option value="draft">Draft</option>
+              <option value="active">Active</option>
+              <option value="completed">Completed</option>
+              <option value="archived">Archived</option>
+            </Select>
+          </FormControl>
+        </SimpleGrid>
 
         <Box>
           <Heading size="md" mb={4}>
@@ -463,8 +254,8 @@ export function TripForm({ mode, trip }: TripFormProps) {
               label="Add Must-Visit Place"
               placeholder="Search attractions..."
               mode="place"
-              city={destinationCity}
-              country={destinationCountry}
+              city={legs[0]?.baseCity}
+              country={legs[0]?.country ?? destinationCountry}
               onSelect={(sel) => {
                 if (!mustVisitList.includes(sel.name)) {
                   setMustVisitList((prev) => [...prev, sel.name]);
@@ -506,7 +297,7 @@ export function TripForm({ mode, trip }: TripFormProps) {
         <Grid templateColumns={{ base: "1fr", md: "auto auto" }} gap={3}>
           <GridItem>
             <Button type="submit" colorScheme="brand" isLoading={isSubmitting}>
-              {mode === "create" ? "Create Trip" : "Save Changes"}
+              Create Trip
             </Button>
           </GridItem>
           <GridItem>

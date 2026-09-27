@@ -1,26 +1,114 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import {
+  Badge,
   Box,
   Flex,
   HStack,
   Icon,
+  IconButton,
+  Menu,
+  MenuButton,
+  MenuItem,
+  MenuList,
   Text,
   useColorModeValue,
 } from "@chakra-ui/react";
-import { FiClock, FiMapPin, FiMove } from "react-icons/fi";
-import type { ItineraryStop } from "@/modules/itinerary/types";
+import { FiCalendar, FiClock, FiMapPin, FiMove } from "react-icons/fi";
+import type { ItineraryStop, MealType } from "@/modules/itinerary/types";
 import { HypeBadge, StopTypeBadge } from "@/modules/itinerary/components/DestinationGuidePanel";
+import { MealSlotEditor } from "@/modules/itinerary/components/MealSlotEditor";
+
+export interface AvailableDay {
+  dayNumber: number;
+  label: string;
+}
+
+/**
+ * Non-draggable rendering for structural stops (transfer / return-to-hotel) that are always
+ * pinned first/last within a day — dragging them would break the "start/end of day" invariant
+ * the itinerary engine enforces server-side.
+ */
+export function PinnedTimelineStop({ stop, isLast = false }: { stop: ItineraryStop; isLast?: boolean }) {
+  const borderColor = useColorModeValue("gray.200", "gray.700");
+  const dotColor = useColorModeValue("purple.500", "purple.300");
+  const lineColor = useColorModeValue("gray.200", "gray.600");
+  const cardBg = useColorModeValue("gray.50", "gray.700");
+
+  return (
+    <Flex gap={3} position="relative" pb={isLast ? 0 : 4}>
+      <Box position="relative" w="20px" flexShrink={0}>
+        <Box w="12px" h="12px" borderRadius="full" bg={dotColor} position="absolute" top="6px" left="4px" />
+        {!isLast && <Box position="absolute" top="18px" left="9px" w="2px" bottom="-4px" bg={lineColor} />}
+      </Box>
+      <Box flex={1} p={3} borderWidth="1px" borderColor={borderColor} borderRadius="lg" bg={cardBg}>
+        <HStack spacing={2} mb={0.5} flexWrap="wrap">
+          <Badge colorScheme="purple" fontSize="2xs">
+            {stop.stopType === "transfer" ? "Transfer" : "Return to hotel"}
+          </Badge>
+          <Text fontWeight="semibold" fontSize="sm">
+            {stop.placeName}
+          </Text>
+        </HStack>
+        {stop.notes && (
+          <Text fontSize="xs" color="gray.500" mt={0.5}>
+            {stop.notes}
+          </Text>
+        )}
+        <Flex mt={2} gap={4} flexWrap="wrap" fontSize="xs" color="gray.500">
+          <Flex align="center" gap={1}>
+            <Icon as={FiClock} />
+            <Text>
+              {stop.arrivalTime} – {stop.departureTime}
+            </Text>
+          </Flex>
+          {stop.travelDurationMinutes > 0 && (
+            <Flex align="center" gap={1}>
+              <Icon as={FiMapPin} />
+              <Text>{stop.travelDurationMinutes} min travel</Text>
+            </Flex>
+          )}
+        </Flex>
+      </Box>
+    </Flex>
+  );
+}
+
+const MEAL_LABELS: Record<MealType, string> = {
+  breakfast: "Breakfast",
+  lunch: "Lunch",
+  tiffin: "Tiffin / Snacks",
+  dinner: "Dinner",
+};
 
 interface TimelineStopProps {
   stop: ItineraryStop;
   isLast?: boolean;
+  availableDays?: AvailableDay[];
+  onMoveToDay?: (toDayNumber: number) => void;
+  isMoving?: boolean;
+  tripId?: string;
+  dayNumber?: number;
+  destinationCity?: string;
+  destinationCountry?: string;
 }
 
-export function TimelineStop({ stop, isLast = false }: TimelineStopProps) {
+export function TimelineStop({
+  stop,
+  isLast = false,
+  availableDays,
+  onMoveToDay,
+  isMoving = false,
+  tripId,
+  dayNumber,
+  destinationCity,
+  destinationCountry,
+}: TimelineStopProps) {
   const borderColor = useColorModeValue("gray.200", "gray.700");
   const dotColor = useColorModeValue("brand.500", "brand.300");
   const lineColor = useColorModeValue("gray.200", "gray.600");
+  const mealDotColor = useColorModeValue("orange.400", "orange.300");
+  const cardBg = useColorModeValue("white", "gray.800");
 
   const {
     attributes,
@@ -37,6 +125,10 @@ export function TimelineStop({ stop, isLast = false }: TimelineStopProps) {
     opacity: isDragging ? 0.6 : 1,
   };
 
+  const canMove = onMoveToDay && availableDays && availableDays.length > 0;
+  const isMeal = stop.stopType === "meal";
+  const isAssignedMeal = isMeal && Boolean(stop.placeId);
+
   return (
     <Flex ref={setNodeRef} style={style} gap={3} position="relative" pb={isLast ? 0 : 4}>
       <Box position="relative" w="20px" flexShrink={0}>
@@ -44,7 +136,7 @@ export function TimelineStop({ stop, isLast = false }: TimelineStopProps) {
           w="12px"
           h="12px"
           borderRadius="full"
-          bg={dotColor}
+          bg={isMeal ? mealDotColor : dotColor}
           position="absolute"
           top="6px"
           left="4px"
@@ -66,16 +158,22 @@ export function TimelineStop({ stop, isLast = false }: TimelineStopProps) {
         p={3}
         borderWidth="1px"
         borderColor={borderColor}
+        borderStyle={isMeal && !isAssignedMeal ? "dashed" : "solid"}
         borderRadius="lg"
-        bg={useColorModeValue("white", "gray.800")}
+        bg={cardBg}
       >
         <Flex justify="space-between" align="start" gap={2}>
           <Box flex={1}>
             <HStack spacing={2} mb={0.5} flexWrap="wrap">
+              {isMeal && stop.mealType && (
+                <Badge colorScheme="orange" fontSize="2xs">
+                  {MEAL_LABELS[stop.mealType]}
+                </Badge>
+              )}
               <Text fontWeight="semibold" fontSize="sm">
-                {stop.placeName}
+                {isAssignedMeal || !isMeal ? stop.placeName : "Not assigned yet"}
               </Text>
-              <StopTypeBadge stopType={stop.stopType} />
+              {!isMeal && <StopTypeBadge stopType={stop.stopType} />}
               <HypeBadge level={stop.visitIntel?.hypeLevel} />
             </HStack>
             {stop.category && (
@@ -94,24 +192,56 @@ export function TimelineStop({ stop, isLast = false }: TimelineStopProps) {
               </Text>
             )}
           </Box>
-          <Box
-            {...attributes}
-            {...listeners}
-            cursor="grab"
-            color="gray.400"
-            _hover={{ color: "gray.600" }}
-            p={1}
-            aria-label="Drag to reorder"
-          >
-            <Icon as={FiMove} />
-          </Box>
+
+          <HStack spacing={1}>
+            {isMeal && tripId && dayNumber !== undefined && (
+              <MealSlotEditor
+                tripId={tripId}
+                dayNumber={dayNumber}
+                stop={stop}
+                destinationCity={destinationCity}
+                destinationCountry={destinationCountry}
+              />
+            )}
+            {canMove && (
+              <Menu>
+                <MenuButton
+                  as={IconButton}
+                  icon={<FiCalendar />}
+                  size="xs"
+                  variant="ghost"
+                  aria-label="Move to another day"
+                  isLoading={isMoving}
+                />
+                <MenuList>
+                  {availableDays!.map((day) => (
+                    <MenuItem key={day.dayNumber} onClick={() => onMoveToDay!(day.dayNumber)}>
+                      Move to {day.label}
+                    </MenuItem>
+                  ))}
+                </MenuList>
+              </Menu>
+            )}
+            <Box
+              {...attributes}
+              {...listeners}
+              cursor="grab"
+              color="gray.400"
+              _hover={{ color: "gray.600" }}
+              p={1}
+              aria-label="Drag to reorder"
+            >
+              <Icon as={FiMove} />
+            </Box>
+          </HStack>
         </Flex>
 
         <Flex mt={2} gap={4} flexWrap="wrap" fontSize="xs" color="gray.500">
           <Flex align="center" gap={1}>
             <Icon as={FiClock} />
             <Text>
-              {stop.arrivalTime} – {stop.departureTime} ({stop.visitDurationMinutes} min)
+              {stop.arrivalTime} – {stop.departureTime}
+              {!isMeal ? ` (${stop.visitDurationMinutes} min)` : ""}
             </Text>
           </Flex>
           {stop.travelDurationMinutes > 0 && (

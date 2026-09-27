@@ -3,6 +3,28 @@ import type {
   VehicleRentalSuggestion,
 } from "@/modules/trips/types/trip-enrichment.types";
 
+/** A place to sleep. Nights run checkInDate → checkOutDate (a stay covers d where
+ * checkInDate <= d < checkOutDate). */
+export interface TripStay {
+  id: string;
+  name: string;
+  address?: string;
+  coordinates?: { lat: number; lng: number };
+  googlePlaceId?: string;
+  checkInDate: string;
+  checkOutDate: string;
+  /** HH:mm */
+  checkInTime?: string;
+  /** HH:mm */
+  checkOutTime?: string;
+  confirmationNumber?: string;
+  pricePerNight?: number;
+  currency?: string;
+  bookingUrl?: string;
+  notes?: string;
+  rating?: number;
+}
+
 export interface TripLeg {
   id: string;
   name: string;
@@ -19,10 +41,17 @@ export interface TripLeg {
   hotelName?: string;
   hotelAddress?: string;
   hotelCoordinates?: { lat: number; lng: number };
+  /** Where you sleep during this leg. hotel* mirror the first stay. */
+  stays: TripStay[];
   order: number;
   discoveryPoolIds: string[];
   foodPoolIds: string[];
   marketPoolIds: string[];
+  selectedPlaceIds: string[];
+  /** googlePlaceIds within discoveryPoolIds that an AI suggestion matched on the last discovery run. */
+  aiMatchedPlaceIds: string[];
+  /** AI-suggested place names that didn't match any Google-discovered place — search & add manually. */
+  aiSuggestedPlaceNames: string[];
   destinationBrief?: LegDestinationBrief;
   vehicleRentalSuggestions: VehicleRentalSuggestion[];
 }

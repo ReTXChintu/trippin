@@ -17,6 +17,7 @@ import { getEffectiveLegs } from "@/modules/trips/utils/trip-leg.utils";
 
 interface VehicleRentalPanelProps {
   trip: Trip;
+  legId?: string;
 }
 
 function RentalCard({ rental }: { rental: VehicleRentalSuggestion }) {
@@ -87,36 +88,20 @@ function LegRentalSection({ leg, rentals }: { leg: TripLeg; rentals: VehicleRent
   );
 }
 
-export function VehicleRentalPanel({ trip }: VehicleRentalPanelProps) {
-  const borderColor = useColorModeValue("gray.200", "gray.700");
-  const bg = useColorModeValue("gray.50", "gray.900");
+export function VehicleRentalPanel({ trip, legId }: VehicleRentalPanelProps) {
+  const legs = getEffectiveLegs(trip).filter((leg) => !legId || leg.id === legId);
 
-  const legs = getEffectiveLegs(trip);
-  const isMultiLeg = trip.legs.length > 0;
-
-  const sections = isMultiLeg
-    ? legs
-        .map((leg) => ({ leg, rentals: leg.vehicleRentalSuggestions }))
-        .filter((s) => s.rentals.length > 0)
-    : trip.vehicleRentalSuggestions.length > 0
-      ? [{ leg: legs[0], rentals: trip.vehicleRentalSuggestions }]
-      : [];
+  const sections = legs
+    .map((leg) => ({ leg, rentals: leg.vehicleRentalSuggestions }))
+    .filter((s) => s.rentals.length > 0);
 
   if (sections.length === 0) return null;
 
   return (
-    <Box p={5} bg={bg} borderWidth="1px" borderColor={borderColor} borderRadius="xl">
-      <Heading size="md" mb={1}>
-        Nearby vehicle rentals
-      </Heading>
-      <Text fontSize="sm" color="gray.500" mb={4}>
-        Scooter & bike rental shops near your stay — run Discover Places to refresh suggestions.
-      </Text>
-      <Stack spacing={6}>
-        {sections.map(({ leg, rentals }) => (
-          <LegRentalSection key={leg.id} leg={leg} rentals={rentals} />
-        ))}
-      </Stack>
-    </Box>
+    <Stack spacing={6}>
+      {sections.map(({ leg, rentals }) => (
+        <LegRentalSection key={leg.id} leg={leg} rentals={rentals} />
+      ))}
+    </Stack>
   );
 }

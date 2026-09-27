@@ -38,7 +38,6 @@ export interface Trip {
   marketPoolIds: string[];
   destinationBrief?: LegDestinationBrief;
   vehicleRentalSuggestions: VehicleRentalSuggestion[];
-  selectedPlaceIds: string[];
   notes?: string;
   status: TripStatus;
   isPublic: boolean;
