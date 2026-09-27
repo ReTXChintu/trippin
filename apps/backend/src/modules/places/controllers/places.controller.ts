@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
-import { sendError, sendResult } from "@/lib/response";
+import { sendError, sendOk, sendResult } from "@/lib/response";
+import { searchCities } from "@/modules/places/services/city-lookup.service";
 import {
   searchPlaces,
   searchHotels,
@@ -21,6 +22,14 @@ export async function search(req: Request, res: Response) {
 
   const result = type === "hotels" ? await searchHotels(req.user!.sub, input) : await searchPlaces(req.user!.sub, input);
   return sendResult(res, result);
+}
+
+export async function cities(req: Request, res: Response) {
+  try {
+    return sendOk(res, { cities: await searchCities(String(req.query.q ?? "")) });
+  } catch (err) {
+    return sendError(res, err instanceof Error ? err.message : "City search failed", 502);
+  }
 }
 
 export async function getDetailRich(req: Request, res: Response) {

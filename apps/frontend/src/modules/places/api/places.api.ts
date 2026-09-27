@@ -16,6 +16,20 @@ export async function searchPlaces(params: {
   return res.data.data;
 }
 
+export interface CityMatch {
+  name: string;
+  state?: string;
+  country: string;
+  countryCode?: string;
+  lat: number;
+  lng: number;
+}
+
+export async function searchCities(q: string): Promise<{ cities: CityMatch[] }> {
+  const res = await api.get("/places/cities", { params: { q } });
+  return res.data.data;
+}
+
 export async function getPlaceDetailRich(tripId: string, placeId: string): Promise<{ place: PlaceDetail }> {
   const res = await api.post("/places/search", { tripId, placeId });
   return res.data.data;
