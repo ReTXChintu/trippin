@@ -11,6 +11,7 @@ import {
   addPlaceFromSearch,
   discoverPlacesForTrip,
   discoverVehicleRentalsForLeg,
+  searchAreaForLeg,
 } from "@/modules/places/services/places-actions.service";
 
 export async function list(req: Request, res: Response) {
@@ -108,5 +109,10 @@ export async function discoverVehicleRentals(req: Request, res: Response) {
     return sendError(res, "legId is required", 400);
   }
   const result = await discoverVehicleRentalsForLeg(req.user!.sub, { tripId, legId });
+  return sendResult(res, result);
+}
+
+export async function searchArea(req: Request, res: Response) {
+  const result = await searchAreaForLeg(req.user!.sub, req.params.id, req.body ?? {});
   return sendResult(res, result);
 }

@@ -112,3 +112,13 @@ export async function discoverVehicleRentalsForLeg(
   const res = await api.post(`/trips/${tripId}/places/vehicle-rentals`, { legId });
   return res.data.data;
 }
+
+export type AreaSearchCategory = "sights" | "nature" | "food" | "shopping";
+
+export async function searchArea(
+  tripId: string,
+  params: { legId: string; lat: number; lng: number; radiusMeters: number; category: AreaSearchCategory },
+): Promise<{ places: Place[]; added: number }> {
+  const res = await api.post(`/trips/${tripId}/places/search-area`, params);
+  return res.data.data;
+}

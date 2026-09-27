@@ -1,3 +1,4 @@
+import { z } from "zod";
 import {
   ApiKeyError,
   assertGoogleMapsKey,
@@ -7,6 +8,7 @@ import {
 } from "@/lib/services/trip-api-keys.service";
 import { getAIProvider } from "@/lib/ai";
 import { PlacesService } from "@/modules/places/services/places.service";
+import { mapSearchResultToPlace } from "@/modules/places/utils/google-places.mapper";
 import { matchAiSuggestionsToPlaces } from "@/modules/places/utils/place-name-match.utils";
 import { TripRepository } from "@/repositories/trip.repository";
 import { PlaceCacheRepository } from "@/repositories/place-cache.repository";
@@ -659,5 +661,74 @@ export async function addPlaceFromSearch(
     return { success: true, data: { places, place }, message: "Place added to trip" };
   } catch (err) {
     return actionError(err, "Failed to add place");
+  }
+}
+
+/** Google place types per "Search this area" category (Places API New, table A). */
+const AREA_SEARCH_TYPES: Record<string, string[]> = {
+  sights: ["tourist_attraction", "museum", "art_gallery", "hindu_temple", "church", "mosque", "amusement_park"],
+  nature: ["park", "national_park", "zoo", "aquarium"],
+  food: ["restaurant", "cafe", "bakery"],
+  shopping: ["shopping_mall", "clothing_store", "book_store"],
+};
+
+const areaSearchSchema = z.object({
+  legId: z.string().min(1),
+  lat: z.number().min(-90).max(90),
+  lng: z.number().min(-180).max(180),
+  radiusMeters: z.number().min(200).max(50_000),
+  category: z.enum(["sights", "nature", "food", "shopping"]),
+});
+
+/** Finds places around a map point and adds them to the leg's suggestions (or food list), so a
+ * "Search this area" on the map shows up everywhere suggestions do. */
+export async function searchAreaForLeg(
+  userId: string,
+  tripId: string,
+  input: unknown,
+): Promise<PlacesActionResult<{ places: Place[]; added: number }>> {
+  const parsed = areaSearchSchema.safeParse(input);
+  if (!parsed.success) return { success: false, error: parsed.error.issues[0]?.message ?? "Invalid search" };
+
+  const { legId, lat, lng, radiusMeters, category } = parsed.data;
+  const trip = await TripRepository.findByIdForUser(tripId, userId);
+  if (!trip) return { success: false, error: "Trip not found" };
+  const leg = findLeg(trip, legId);
+  if (!leg) return { success: false, error: "Trip leg not found" };
+
+  try {
+    const ownerKeys = await getOwnerApiKeysForTripDto(trip);
+    assertGoogleMapsKey(ownerKeys, "trip");
+    const rateLimit = await enforceRateLimit(userId);
+    if (rateLimit) return rateLimit;
+
+    const results = await PlacesService.searchNearby({
+      location: { lat, lng },
+      radiusMeters,
+      includedTypes: AREA_SEARCH_TYPES[category],
+      googleMapsApiKey: ownerKeys.googleMaps,
+    });
+    const context = legContext(leg, trip);
+    const places = results
+      .filter((r) => !r.types?.includes("lodging"))
+      .map((r) => mapSearchResultToPlace(r, context));
+    await PlaceCacheRepository.upsertMany(places);
+
+    const ids = places.map((p) => p.googlePlaceId).filter((id): id is string => Boolean(id));
+    const field = category === "food" ? "foodPoolIds" : "discoveryPoolIds";
+    const existing = new Set(leg[field]);
+    const fresh = ids.filter((id) => !existing.has(id));
+    if (fresh.length > 0) {
+      const updatedLegs = trip.legs.map((l) => (l.id === legId ? { ...l, [field]: [...l[field], ...fresh] } : l));
+      await TripRepository.update(tripId, userId, { legs: updatedLegs });
+    }
+
+    return {
+      success: true,
+      data: { places: await PlacesService.getCachedPlaces(ids), added: fresh.length },
+      message: fresh.length ? `Found ${fresh.length} new place(s)` : "Nothing new here",
+    };
+  } catch (err) {
+    return actionError(err, "Area search failed");
   }
 }

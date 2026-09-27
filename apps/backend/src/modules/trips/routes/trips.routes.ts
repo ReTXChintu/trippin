@@ -43,6 +43,7 @@ router.delete("/:id/places", places.remove);
 router.post("/:id/places/discover", places.discover);
 router.post("/:id/places/from-search", places.addFromSearch);
 router.post("/:id/places/vehicle-rentals", places.discoverVehicleRentals);
+router.post("/:id/places/search-area", places.searchArea);
 
 router.get("/:id/itinerary", getItinerary);
 router.post("/:id/itinerary", actItinerary);

@@ -93,3 +93,11 @@ export function usePlaceDetailRich(tripId: string) {
     mutationFn: (placeId: string) => placesApi.getPlaceDetailRich(tripId, placeId),
   });
 }
+
+export function useSearchArea(tripId: string) {
+  const invalidate = useInvalidateTripPlaces(tripId);
+  return useMutation({
+    mutationFn: (params: Parameters<typeof placesApi.searchArea>[1]) => placesApi.searchArea(tripId, params),
+    onSuccess: invalidate,
+  });
+}

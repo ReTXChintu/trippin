@@ -16,7 +16,14 @@ import { FiCompass } from "react-icons/fi";
 import { getApiErrorMessage } from "@/lib/api";
 import { DiscoveryPlacesPanel } from "@/modules/places/components/DiscoveryPlacesPanel";
 import { TripSelectedPlacesPanel } from "@/modules/places/components/TripSelectedPlacesPanel";
-import { useDiscoverPlaces, useTripPlacesQuery } from "@/modules/places/hooks/usePlaces";
+import {
+  useAddPlaceToTrip,
+  useDiscoverPlaces,
+  useRemovePlaceFromTrip,
+  useTripPlacesQuery,
+} from "@/modules/places/hooks/usePlaces";
+import { PlacesMapView } from "@/modules/places/components/PlacesMapView";
+import { PlaceDetailModal } from "@/modules/places/components/PlaceDetailModal";
 import type { Place } from "@/modules/places/types/place.types";
 import type { Trip } from "@/modules/trips/types/trip.types";
 import type { TripLeg } from "@/modules/trips/types/trip-leg.types";
@@ -36,6 +43,10 @@ export function TripPlacesPanel({ trip, leg, onPlanDays }: TripPlacesPanelProps)
   const poolQuery = useTripPlacesQuery(trip.id, "pool");
   const selectedQuery = useTripPlacesQuery(trip.id, "selected", leg.id);
   const discoverPlaces = useDiscoverPlaces(trip.id);
+  const addPlace = useAddPlaceToTrip(trip.id, leg.id);
+  const removePlace = useRemovePlaceFromTrip(trip.id, leg.id);
+  const [busyPlaceId, setBusyPlaceId] = useState<string | null>(null);
+  const [detailsPlaceId, setDetailsPlaceId] = useState<string | null>(null);
 
   const [localSelected, setLocalSelected] = useState<Place[] | null>(null);
 
@@ -96,10 +107,11 @@ export function TripPlacesPanel({ trip, leg, onPlanDays }: TripPlacesPanelProps)
       </HStack>
 
       <Box bg={bg} borderWidth="1px" borderColor={borderColor} borderRadius="xl" overflow="hidden">
-        <Tabs colorScheme="brand">
+        <Tabs colorScheme="brand" isLazy>
           <TabList px={4} pt={2}>
             <Tab fontSize="sm">Suggestions ({poolPlaces.filter((p) => p.googlePlaceId && leg.discoveryPoolIds.includes(p.googlePlaceId)).length})</Tab>
             <Tab fontSize="sm">My places ({selectedPlaces.length})</Tab>
+            <Tab fontSize="sm">Map</Tab>
           </TabList>
           <TabPanels p={5}>
             <TabPanel p={0}>
@@ -119,9 +131,44 @@ export function TripPlacesPanel({ trip, leg, onPlanDays }: TripPlacesPanelProps)
                 onSelectedChange={setLocalSelected}
               />
             </TabPanel>
+            <TabPanel p={0}>
+              <PlacesMapView
+                tripId={trip.id}
+                leg={leg}
+                places={[
+                  ...poolPlaces.filter((p) => p.googlePlaceId && leg.discoveryPoolIds.includes(p.googlePlaceId)),
+                  ...selectedPlaces.filter((p) => p.googlePlaceId && !leg.discoveryPoolIds.includes(p.googlePlaceId)),
+                ]}
+                selectedIds={selectedPlaceIds}
+                busyPlaceId={busyPlaceId}
+                onOpenDetails={setDetailsPlaceId}
+                onToggle={async (place, selected) => {
+                  setBusyPlaceId(place.googlePlaceId!);
+                  try {
+                    const result = selected
+                      ? await removePlace.mutateAsync(place.googlePlaceId!)
+                      : await addPlace.mutateAsync(place.googlePlaceId!);
+                    setLocalSelected(result.places);
+                  } catch (err) {
+                    toast({ title: getApiErrorMessage(err), status: "error" });
+                  } finally {
+                    setBusyPlaceId(null);
+                  }
+                }}
+              />
+            </TabPanel>
           </TabPanels>
         </Tabs>
       </Box>
+      <PlaceDetailModal
+        isOpen={Boolean(detailsPlaceId)}
+        onClose={() => setDetailsPlaceId(null)}
+        trip={trip}
+        legId={leg.id}
+        placeId={detailsPlaceId}
+        isSelected={detailsPlaceId ? selectedPlaceIds.has(detailsPlaceId) : false}
+        onSelectedChange={syncSelectedFromIds}
+      />
     </Box>
   );
 }

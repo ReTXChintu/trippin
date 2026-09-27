@@ -4,6 +4,7 @@ import {
   AlertIcon,
   Box,
   Button,
+  ButtonGroup,
   Circle,
   Collapse,
   Flex,
@@ -52,6 +53,7 @@ import {
 import { useWeatherQuery } from "@/modules/trips/hooks/useTrips";
 import { ItineraryExportMenu, ItineraryPrintContent } from "@/modules/itinerary/components/ItineraryExportMenu";
 import { MapView } from "@/modules/itinerary/components/MapView";
+import { TripMapView } from "@/modules/itinerary/components/TripMapView";
 import { PlaceDetailModal } from "@/modules/places/components/PlaceDetailModal";
 import type { ItineraryDay, ItineraryStop } from "@/modules/itinerary/types";
 import { formatDayDate } from "@/modules/itinerary/utils/plan.utils";
@@ -157,6 +159,7 @@ export function PlanView({ trip, hasMapsKey, cityId, onCityChange, onGoTo }: Pla
   const [detailsTarget, setDetailsTarget] = useState<StopTarget>(null);
   const [addDay, setAddDay] = useState<ItineraryDay | null>(null);
   const [busyStopId, setBusyStopId] = useState<string | null>(null);
+  const [mapMode, setMapMode] = useState<"day" | "trip">("day");
   const summary = useDisclosure({ defaultIsOpen: true });
   const dayRefs = useRef(new Map<number, HTMLDivElement>());
 
@@ -230,6 +233,7 @@ export function PlanView({ trip, hasMapsKey, cityId, onCityChange, onGoTo }: Pla
 
   const selectDay = (dayNumber: number, scroll = false) => {
     setSelectedDayNumber(dayNumber);
+    setMapMode("day");
     if (scroll) dayRefs.current.get(dayNumber)?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
@@ -576,6 +580,36 @@ export function PlanView({ trip, hasMapsKey, cityId, onCityChange, onGoTo }: Pla
             overflow="hidden"
             order={{ base: -1, xl: 0 }}
           >
+            <ButtonGroup
+              size="xs"
+              isAttached
+              position="absolute"
+              top={3}
+              right={3}
+              zIndex={1000}
+              boxShadow="sm"
+              borderRadius="md"
+              bg={cardBg}
+            >
+              <Button variant={mapMode === "day" ? "solid" : "outline"} colorScheme={mapMode === "day" ? "brand" : "gray"} onClick={() => setMapMode("day")}>
+                {selectedDay ? `Day ${selectedDay.dayNumber}` : "Day"}
+              </Button>
+              <Button variant={mapMode === "trip" ? "solid" : "outline"} colorScheme={mapMode === "trip" ? "brand" : "gray"} onClick={() => setMapMode("trip")}>
+                {activeLeg ? activeLeg.name || activeLeg.baseCity : "Whole trip"}
+              </Button>
+            </ButtonGroup>
+            {mapMode === "trip" ? (
+              <TripMapView
+                days={days}
+                stays={(activeLeg ? [activeLeg] : legs).flatMap((l) =>
+                  getEffectiveStays(l).flatMap((s) => (s.coordinates ? [{ name: s.name, coordinates: s.coordinates }] : [])),
+                )}
+                onSelectDay={(dayNumber) => {
+                  setMapMode("day");
+                  selectDay(dayNumber, true);
+                }}
+              />
+            ) : (
             <MapView
               day={selectedDay}
               hotelCoordinates={selectedStart}
@@ -588,6 +622,7 @@ export function PlanView({ trip, hasMapsKey, cityId, onCityChange, onGoTo }: Pla
                 if (selectedDay) dayRefs.current.get(selectedDay.dayNumber)?.scrollIntoView({ behavior: "smooth", block: "start" });
               }}
             />
+            )}
           </Box>
         </Grid>
 
