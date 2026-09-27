@@ -275,3 +275,63 @@ export function useWeatherQuery(tripId: string) {
     retry: false,
   });
 }
+
+export function useSetMemberRole(tripId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ userId, role }: { userId: string; role: "editor" | "viewer" }) => tripsApi.setMemberRole(tripId, userId, role),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["trips", tripId, "members"] });
+      queryClient.invalidateQueries({ queryKey: ["trips", tripId] });
+    },
+  });
+}
+
+export function useInviteLink(tripId: string) {
+  return useMutation({
+    mutationFn: ({ role, reset }: { role: "editor" | "viewer"; reset?: boolean }) => tripsApi.getInviteLink(tripId, role, reset),
+  });
+}
+
+export function useInvitePreviewQuery(token: string) {
+  return useQuery({ queryKey: ["invite", token], queryFn: () => tripsApi.previewInvite(token), enabled: !!token, retry: false });
+}
+
+export function useAcceptInvite() {
+  const invalidate = useInvalidateTrips();
+  return useMutation({ mutationFn: (token: string) => tripsApi.acceptInvite(token), onSuccess: () => invalidate() });
+}
+
+export function useVotePlace(tripId: string) {
+  const setTrip = useSetTrip(tripId);
+  return useMutation({
+    mutationFn: ({ placeId, voted }: { placeId: string; voted: boolean }) => tripsApi.votePlace(tripId, placeId, voted),
+    onSuccess: (data) => setTrip(data.trip),
+  });
+}
+
+export function useCommentsQuery(tripId: string, opts: { live?: boolean } = {}) {
+  return useQuery({
+    queryKey: ["comments", tripId],
+    queryFn: () => tripsApi.listComments(tripId),
+    enabled: !!tripId,
+    // Poll while a thread is open so replies from others show up.
+    refetchInterval: opts.live ? 20_000 : false,
+  });
+}
+
+export function useAddComment(tripId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (comment: Parameters<typeof tripsApi.addComment>[1]) => tripsApi.addComment(tripId, comment),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["comments", tripId] }),
+  });
+}
+
+export function useDeleteComment(tripId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (commentId: string) => tripsApi.deleteComment(tripId, commentId),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["comments", tripId] }),
+  });
+}

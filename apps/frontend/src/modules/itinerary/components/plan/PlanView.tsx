@@ -51,7 +51,8 @@ import {
   useAddStop,
   useSetStopStatus,
 } from "@/modules/itinerary/hooks/useItinerary";
-import { useWeatherQuery } from "@/modules/trips/hooks/useTrips";
+import { useCommentsQuery, useWeatherQuery } from "@/modules/trips/hooks/useTrips";
+import { CommentsDrawer, type CommentThreadTarget } from "@/modules/trips/components/collab/CommentsDrawer";
 import { ItineraryExportMenu, ItineraryPrintContent } from "@/modules/itinerary/components/ItineraryExportMenu";
 import { MapView } from "@/modules/itinerary/components/MapView";
 import { TripMapView } from "@/modules/itinerary/components/TripMapView";
@@ -73,6 +74,8 @@ export type TripTab = "plan" | "places" | "stays" | "food" | "bookings" | "budge
 
 interface PlanViewProps {
   trip: Trip;
+  /** View-only members see the plan but can't change it. */
+  canEdit: boolean;
   /** Whether the trip owner has a Google Maps key (real route times vs estimates). */
   hasMapsKey: boolean;
   cityId: string | null;
@@ -147,7 +150,7 @@ function CityHeader({ leg, onGoTo }: { leg: TripLeg; onGoTo: PlanViewProps["onGo
   );
 }
 
-export function PlanView({ trip, hasMapsKey, cityId, onCityChange, onGoTo }: PlanViewProps) {
+export function PlanView({ trip, canEdit, hasMapsKey, cityId, onCityChange, onGoTo }: PlanViewProps) {
   const toast = useToast();
   const navigate = useNavigate();
   const { data, isLoading } = useItineraryQuery(trip.id);
@@ -161,6 +164,12 @@ export function PlanView({ trip, hasMapsKey, cityId, onCityChange, onGoTo }: Pla
   const [addDay, setAddDay] = useState<ItineraryDay | null>(null);
   const [busyStopId, setBusyStopId] = useState<string | null>(null);
   const [mapMode, setMapMode] = useState<"day" | "trip">("day");
+  const [commentTarget, setCommentTarget] = useState<CommentThreadTarget | null>(null);
+  const { data: commentsData } = useCommentsQuery(trip.id);
+  const commentCounts = new Map<string, number>();
+  for (const c of commentsData?.comments ?? []) {
+    if (c.targetType === "stop") commentCounts.set(c.targetId, (commentCounts.get(c.targetId) ?? 0) + 1);
+  }
   const summary = useDisclosure({ defaultIsOpen: true });
   const dayRefs = useRef(new Map<number, HTMLDivElement>());
 
@@ -241,7 +250,9 @@ export function PlanView({ trip, hasMapsKey, cityId, onCityChange, onGoTo }: Pla
 
   const actions: PlanActions = {
     trip,
-    readOnly: false,
+    readOnly: !canEdit,
+    openComments: (stop) => setCommentTarget({ type: "stop", id: stop.id, label: stop.placeName }),
+    commentCount: (stopId) => commentCounts.get(stopId) ?? 0,
     highlightedStopId,
     setHighlightedStopId,
     busyStopId,
@@ -646,6 +657,7 @@ export function PlanView({ trip, hasMapsKey, cityId, onCityChange, onGoTo }: Pla
         {itinerary && <ItineraryPrintContent trip={trip} itinerary={itinerary} />}
       </Stack>
 
+      <CommentsDrawer trip={trip} target={commentTarget} onClose={() => setCommentTarget(null)} />
       <EditStopModal tripId={trip.id} currency={trip.currency} target={editTarget} onClose={() => setEditTarget(null)} />
       <MealPickerDrawer
         tripId={trip.id}

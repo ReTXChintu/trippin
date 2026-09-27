@@ -24,7 +24,7 @@ import { LoadingState } from "@/components/ui/LoadingState";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useTripQuery } from "@/modules/trips/hooks/useTrips";
 import { useAuthStore } from "@/store/authStore";
-import { isTripOwner } from "@/lib/trip-access";
+import { canEditTrip, isTripOwner } from "@/lib/trip-access";
 import { TripHeader } from "@/modules/trips/components/TripHeader";
 import { CitySwitcher } from "@/modules/trips/components/CitySwitcher";
 import { LegExplorePanel } from "@/modules/trips/components/LegExplorePanel";
@@ -61,6 +61,7 @@ export function TripDetailContent() {
   if (!trip) return <EmptyState title="Trip not found" />;
 
   const isOwner = isTripOwner(trip, currentUserId);
+  const canEdit = canEditTrip(trip, currentUserId);
   const legs = getEffectiveLegs(trip);
   const requestedTab = params.get("tab") as TripTab | null;
   const tab: TripTab = TABS.some((t) => t.key === requestedTab) ? requestedTab! : "plan";
@@ -107,6 +108,13 @@ export function TripDetailContent() {
         </Alert>
       )}
 
+      {!canEdit && (
+        <Alert status="info" borderRadius="md" fontSize="sm" py={2}>
+          <AlertIcon />
+          <AlertDescription>You have view-only access — you can vote on places and comment. Ask the owner if you want to edit.</AlertDescription>
+        </Alert>
+      )}
+
       <TripHeader
         trip={trip}
         currentUserId={currentUserId}
@@ -148,6 +156,7 @@ export function TripDetailContent() {
           <TabPanel px={0} pt={6}>
             <PlanView
               trip={trip}
+              canEdit={canEdit}
               hasMapsKey={!missingGoogleKey}
               cityId={cityId}
               onCityChange={setCity}

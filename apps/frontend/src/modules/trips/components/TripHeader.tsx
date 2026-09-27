@@ -27,7 +27,9 @@ import {
 } from "@chakra-ui/react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { FiArrowLeft, FiArrowRight, FiCalendar, FiPlus, FiSliders, FiSun } from "react-icons/fi";
+import { FiArrowLeft, FiArrowRight, FiCalendar, FiMessageSquare, FiPlus, FiSliders, FiSun } from "react-icons/fi";
+import { useCommentsQuery } from "@/modules/trips/hooks/useTrips";
+import { CommentsDrawer } from "@/modules/trips/components/collab/CommentsDrawer";
 import { differenceInCalendarDays, parseISO } from "date-fns";
 import { AddLegModal } from "@/modules/trips/components/AddLegModal";
 import { LegOverviewPanel } from "@/modules/trips/components/LegOverviewPanel";
@@ -57,6 +59,9 @@ interface TripHeaderProps {
 export function TripHeader({ trip, currentUserId, isOwner, onCityAdded, settings }: TripHeaderProps) {
   const addCity = useDisclosure();
   const [editingLegId, setEditingLegId] = useState<string | null>(null);
+  const [discussionOpen, setDiscussionOpen] = useState(false);
+  const { data: commentsData } = useCommentsQuery(trip.id);
+  const tripComments = (commentsData?.comments ?? []).filter((c) => c.targetType === "trip").length;
   const muted = useColorModeValue("gray.500", "gray.400");
 
   const legs = getEffectiveLegs(trip);
@@ -111,6 +116,9 @@ export function TripHeader({ trip, currentUserId, isOwner, onCityAdded, settings
               Today
             </Button>
           )}
+          <Button size="sm" variant="ghost" leftIcon={<FiMessageSquare />} onClick={() => setDiscussionOpen(true)}>
+            Discussion{tripComments ? ` (${tripComments})` : ""}
+          </Button>
           <Button size="sm" variant="outline" leftIcon={<FiSliders />} onClick={settings.onOpen}>
             Trip settings
           </Button>
@@ -176,6 +184,12 @@ export function TripHeader({ trip, currentUserId, isOwner, onCityAdded, settings
           <ModalBody pb={6}>{editingLeg && <LegOverviewPanel trip={trip} leg={editingLeg} />}</ModalBody>
         </ModalContent>
       </Modal>
+
+      <CommentsDrawer
+        trip={trip}
+        target={discussionOpen ? { type: "trip", id: "", label: trip.title } : null}
+        onClose={() => setDiscussionOpen(false)}
+      />
 
       <AddLegModal
         isOpen={addCity.isOpen}

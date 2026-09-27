@@ -2,6 +2,7 @@ import { api } from "@/lib/api";
 import type { Trip, TripStats } from "@/modules/trips/types/trip.types";
 import type { TripMember } from "@/modules/trips/types/trip-member.types";
 import type { TripStay } from "@/modules/trips/types/trip-leg.types";
+import type { CommentTarget, InviteLink, InvitePreview, TripComment } from "@/modules/trips/types/trip-collab.types";
 import type {
   BudgetSummary,
   ChecklistItem,
@@ -200,4 +201,46 @@ export async function removeExpense(tripId: string, expenseId: string): Promise<
 export async function getWeather(tripId: string): Promise<{ days: DayWeather[] }> {
   const res = await api.get(`/trips/${tripId}/weather`);
   return res.data.data;
+}
+
+export async function setMemberRole(tripId: string, userId: string, role: "editor" | "viewer"): Promise<{ members: TripMember[] }> {
+  const res = await api.patch(`/trips/${tripId}/members/${userId}/role`, { role });
+  return res.data.data;
+}
+
+export async function getInviteLink(tripId: string, role: "editor" | "viewer", reset = false): Promise<InviteLink> {
+  const res = await api.post(`/trips/${tripId}/invites`, { role, reset });
+  return res.data.data;
+}
+
+export async function previewInvite(token: string): Promise<InvitePreview> {
+  const res = await api.get(`/invites/${token}`);
+  return res.data.data;
+}
+
+export async function acceptInvite(token: string): Promise<{ tripId: string }> {
+  const res = await api.post(`/invites/${token}/accept`);
+  return res.data.data;
+}
+
+export async function votePlace(tripId: string, placeId: string, voted: boolean): Promise<{ trip: Trip }> {
+  const res = await api.post(`/trips/${tripId}/votes`, { placeId, voted });
+  return res.data.data;
+}
+
+export async function listComments(tripId: string): Promise<{ comments: TripComment[] }> {
+  const res = await api.get(`/trips/${tripId}/comments`);
+  return res.data.data;
+}
+
+export async function addComment(
+  tripId: string,
+  comment: { targetType: CommentTarget; targetId: string; targetLabel?: string; text: string },
+): Promise<{ comment: TripComment }> {
+  const res = await api.post(`/trips/${tripId}/comments`, comment);
+  return res.data.data;
+}
+
+export async function deleteComment(tripId: string, commentId: string): Promise<void> {
+  await api.delete(`/trips/${tripId}/comments/${commentId}`);
 }

@@ -25,6 +25,8 @@ export interface PlanActions {
   moveTargets: (day: ItineraryDay) => MoveTarget[];
   addBookingToDay: (booking: TripBooking, day: ItineraryDay) => void;
   setStatus: (stop: ItineraryStop, day: ItineraryDay, status: "done" | "skipped" | null) => void;
+  openComments: (stop: ItineraryStop) => void;
+  commentCount: (stopId: string) => number;
   busyStopId: string | null;
 }
 

@@ -24,6 +24,7 @@ import {
   FiCheck,
   FiClock,
   FiSkipForward,
+  FiMessageSquare,
   FiEdit2,
   FiInfo,
   FiLock,
@@ -36,6 +37,7 @@ import { MdHotel, MdRestaurant, MdTrain } from "react-icons/md";
 import type { ItineraryDay, ItineraryStop, MealType } from "@/modules/itinerary/types";
 import { formatDuration, gapBefore, transportIcon } from "@/modules/itinerary/utils/plan.utils";
 import { usePlan } from "./PlanContext";
+import { VoteButton } from "@/modules/trips/components/collab/VoteButton";
 
 const MEAL_LABELS: Record<MealType, string> = {
   breakfast: "Breakfast",
@@ -288,6 +290,23 @@ export function StopRow({ stop, day, visitNumber, draggable }: StopRowProps) {
             )}
           </Box>
 
+          {!isStructural && (plan.commentCount(stop.id) > 0 || plan.readOnly) && (
+            <Tooltip label="Comments" hasArrow>
+              <Button
+                size="xs"
+                variant="ghost"
+                leftIcon={<FiMessageSquare />}
+                onClick={() => plan.openComments(stop)}
+                px={1.5}
+                minW="auto"
+                flexShrink={0}
+                aria-label={`Comments on ${stop.placeName}`}
+              >
+                {plan.commentCount(stop.id) || ""}
+              </Button>
+            </Tooltip>
+          )}
+          {!isStructural && stop.placeId && stop.stopType !== "meal" && <VoteButton trip={plan.trip} placeId={stop.placeId} />}
           {!plan.readOnly && !isStructural && (
             <HStack spacing={0} flexShrink={0}>
               {!isMeal && (
@@ -317,6 +336,9 @@ export function StopRow({ stop, day, visitNumber, draggable }: StopRowProps) {
                       Details, photos & reviews
                     </MenuItem>
                   )}
+                  <MenuItem icon={<FiMessageSquare />} onClick={() => plan.openComments(stop)}>
+                    Comments{plan.commentCount(stop.id) ? ` (${plan.commentCount(stop.id)})` : ""}
+                  </MenuItem>
                   <MenuItem icon={<FiEdit2 />} onClick={() => plan.openEdit(stop, day)}>
                     Time, duration, cost & notes
                   </MenuItem>

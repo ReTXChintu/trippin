@@ -167,6 +167,37 @@ export class TripRepository {
   }
 
   /** Owner or member can update trip details. */
+  /** Sets a member's role: viewers are listed in viewerIds, editors aren't. */
+  static async setMemberRole(tripId: string, memberUserId: string, role: "editor" | "viewer"): Promise<Trip | null> {
+    await connectDB();
+    if (!mongoose.isValidObjectId(tripId) || !mongoose.isValidObjectId(memberUserId)) return null;
+    const update =
+      role === "viewer"
+        ? { $addToSet: { viewerIds: toObjectId(memberUserId) } }
+        : { $pull: { viewerIds: toObjectId(memberUserId) } };
+    const doc = await TripModel.findOneAndUpdate({ _id: tripId, memberIds: toObjectId(memberUserId) }, update, { new: true }).lean();
+    return doc ? toTripDTO(doc as unknown as ITripDocument) : null;
+  }
+
+  /** Access check without loading the whole trip: "owner" | "editor" | "viewer" | null. */
+  static async getRole(tripId: string, userId: string): Promise<"owner" | "editor" | "viewer" | null> {
+    await connectDB();
+    if (!mongoose.isValidObjectId(tripId) || !mongoose.isValidObjectId(userId)) return null;
+    const doc = await TripModel.findById(tripId).select({ userId: 1, memberIds: 1, viewerIds: 1 }).lean();
+    if (!doc) return null;
+    if (String(doc.userId) === userId) return "owner";
+    if (!(doc.memberIds ?? []).some((id) => String(id) === userId)) return null;
+    return (doc.viewerIds ?? []).some((id) => String(id) === userId) ? "viewer" : "editor";
+  }
+
+  static async setVote(tripId: string, userId: string, placeId: string, voted: boolean): Promise<Trip | null> {
+    await connectDB();
+    if (!mongoose.isValidObjectId(tripId)) return null;
+    const update = voted ? { $addToSet: { votes: { placeId, userId } } } : { $pull: { votes: { placeId, userId } } };
+    const doc = await TripModel.findOneAndUpdate({ _id: tripId, ...userAccessFilter(userId) }, update, { new: true }).lean();
+    return doc ? toTripDTO(doc as unknown as ITripDocument) : null;
+  }
+
   /** Appends one item to an embedded list (bookings, checklist) without rewriting the others. */
   static async addListItem<T extends { id: string }>(
     tripId: string,
@@ -327,7 +358,7 @@ export class TripRepository {
 
     const doc = await TripModel.findOneAndUpdate(
       { _id: tripId, ...userAccessFilter(requesterId) },
-      { $pull: { memberIds: toObjectId(memberUserId) } },
+      { $pull: { memberIds: toObjectId(memberUserId), viewerIds: toObjectId(memberUserId) } },
       { new: true },
     ).lean();
 

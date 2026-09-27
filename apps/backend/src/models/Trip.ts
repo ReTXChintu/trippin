@@ -100,6 +100,9 @@ export interface ITripLegTransfer {
 export interface ITripDocument extends Document {
   userId: mongoose.Types.ObjectId;
   memberIds: mongoose.Types.ObjectId[];
+  /** Members (subset of memberIds) with view-only access. */
+  viewerIds?: mongoose.Types.ObjectId[];
+  votes?: { placeId: string; userId: string }[];
   title: string;
   destinationCity: string;
   destinationState?: string;
@@ -288,6 +291,11 @@ const TripSchema = new Schema<ITripDocument>(
   {
     userId: { type: Schema.Types.ObjectId, ref: "User", required: true, index: true },
     memberIds: { type: [Schema.Types.ObjectId], ref: "User", default: [], index: true },
+    viewerIds: { type: [Schema.Types.ObjectId], ref: "User", default: [] },
+    votes: {
+      type: [new Schema({ placeId: { type: String, required: true }, userId: { type: String, required: true } }, { _id: false })],
+      default: [],
+    },
     title: { type: String, required: true, trim: true },
     destinationCity: { type: String, required: true, trim: true },
     destinationState: { type: String, trim: true },

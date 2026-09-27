@@ -95,7 +95,12 @@ export function LoginForm() {
 
         <Text textAlign="center" fontSize="sm" color="gray.500">
           Don&apos;t have an account?{" "}
-          <Link as={RouterLink} to="/register" color="brand.500" fontWeight="medium">
+          <Link
+            as={RouterLink}
+            to={callbackUrl !== "/dashboard" ? `/register?callbackUrl=${encodeURIComponent(callbackUrl)}` : "/register"}
+            color="brand.500"
+            fontWeight="medium"
+          >
             Create one
           </Link>
         </Text>

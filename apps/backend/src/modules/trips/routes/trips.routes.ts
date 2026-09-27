@@ -5,6 +5,8 @@ import * as members from "@/modules/trips/controllers/trip-members.controller";
 import * as places from "@/modules/trips/controllers/trip-places.controller";
 import * as stays from "@/modules/trips/controllers/trip-stays.controller";
 import * as logistics from "@/modules/trips/controllers/trip-logistics.controller";
+import * as collab from "@/modules/trips/controllers/trip-collab.controller";
+import { tripWriteGuard } from "@/middleware/trip-write.middleware";
 import {
   get as getItinerary,
   act as actItinerary,
@@ -15,6 +17,8 @@ import {
 const router = Router();
 
 router.use(authMiddleware);
+// View-only members can read everything under /:id but not change it.
+router.use("/:id", tripWriteGuard);
 
 router.get("/", trips.list);
 router.post("/", trips.create);
@@ -36,6 +40,12 @@ router.post("/:id/leave", members.leave);
 router.get("/:id/members", members.list);
 router.post("/:id/members", members.add);
 router.delete("/:id/members", members.remove);
+router.patch("/:id/members/:userId/role", collab.setRole);
+router.post("/:id/invites", collab.invite);
+router.post("/:id/votes", collab.vote);
+router.get("/:id/comments", collab.comments);
+router.post("/:id/comments", collab.comment);
+router.delete("/:id/comments/:commentId", collab.removeComment);
 
 router.get("/:id/places", places.list);
 router.post("/:id/places", places.add);

@@ -13,7 +13,7 @@ export type TripMemberActionResult<T = void> =
   | { success: true; data?: T; message?: string }
   | { success: false; error: string };
 
-async function buildMemberList(ownerId: string, memberIds: string[]): Promise<TripMember[]> {
+export async function buildMemberList(ownerId: string, memberIds: string[], viewerIds: string[] = []): Promise<TripMember[]> {
   const owner = await UserRepository.findById(ownerId);
   const members: TripMember[] = [];
 
@@ -33,7 +33,7 @@ async function buildMemberList(ownerId: string, memberIds: string[]): Promise<Tr
         id: user._id.toString(),
         name: user.name,
         email: user.email,
-        role: "member",
+        role: viewerIds.includes(memberId) ? "viewer" : "editor",
       });
     }
   }
@@ -48,7 +48,7 @@ export async function getTripMembers(
   const trip = await TripRepository.findByIdForUser(tripId, userId);
   if (!trip) return { success: false, error: "Trip not found" };
 
-  const members = await buildMemberList(trip.userId, trip.memberIds);
+  const members = await buildMemberList(trip.userId, trip.memberIds, trip.viewerIds);
   return { success: true, data: { members } };
 }
 
@@ -90,7 +90,7 @@ export async function addTripMember(
     addedByName: adder?.name ?? "Someone",
   });
 
-  const members = await buildMemberList(updated.userId, updated.memberIds);
+  const members = await buildMemberList(updated.userId, updated.memberIds, updated.viewerIds);
 
   return {
     success: true,
@@ -115,11 +115,14 @@ export async function removeTripMember(
   if (trip.userId === memberUserId) {
     return { success: false, error: "The trip owner cannot be removed" };
   }
+  if (!isTripOwner(trip, userId)) {
+    return { success: false, error: "Only the trip owner can remove people (you can leave the trip yourself)" };
+  }
 
   const updated = await TripRepository.removeMember(tripId, userId, memberUserId);
   if (!updated) return { success: false, error: "Failed to remove member" };
 
-  const members = await buildMemberList(updated.userId, updated.memberIds);
+  const members = await buildMemberList(updated.userId, updated.memberIds, updated.viewerIds);
   return { success: true, data: { members }, message: "Member removed" };
 }
 
@@ -158,4 +161,22 @@ export async function leaveTrip(tripId: string, userId: string): Promise<TripMem
   }
 
   return { success: true, message: "You left the trip" };
+}
+
+/** Owner only: make a member an editor or view-only. */
+export async function setTripMemberRole(
+  tripId: string,
+  userId: string,
+  memberUserId: string,
+  role: unknown,
+): Promise<TripMemberActionResult<{ members: TripMember[] }>> {
+  if (role !== "editor" && role !== "viewer") return { success: false, error: "Role must be editor or viewer" };
+  const trip = await TripRepository.findByIdForOwner(tripId, userId);
+  if (!trip) return { success: false, error: "Only the trip owner can change roles" };
+  if (!trip.memberIds.includes(memberUserId)) return { success: false, error: "That person isn't on the trip" };
+
+  const updated = await TripRepository.setMemberRole(tripId, memberUserId, role);
+  if (!updated) return { success: false, error: "Failed to update role" };
+  const members = await buildMemberList(updated.userId, updated.memberIds, updated.viewerIds);
+  return { success: true, data: { members }, message: role === "viewer" ? "Now view-only" : "Can now edit" };
 }

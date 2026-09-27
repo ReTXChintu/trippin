@@ -1,6 +1,6 @@
 import mongoose, { Schema, type Document, type Model } from "mongoose";
 
-export type NotificationType = "trip_member_left" | "trip_member_added";
+export type NotificationType = "trip_member_left" | "trip_member_added" | "trip_member_joined" | "trip_comment";
 
 export interface INotificationDocument extends Document {
   userId: mongoose.Types.ObjectId;
@@ -18,7 +18,7 @@ const NotificationSchema = new Schema<INotificationDocument>(
     userId: { type: Schema.Types.ObjectId, ref: "User", required: true, index: true },
     type: {
       type: String,
-      enum: ["trip_member_left", "trip_member_added"],
+      enum: ["trip_member_left", "trip_member_added", "trip_member_joined", "trip_comment"],
       required: true,
     },
     title: { type: String, required: true, trim: true },

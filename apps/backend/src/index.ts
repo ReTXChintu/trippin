@@ -9,6 +9,7 @@ import notificationsRoutes from "@/modules/notifications/routes/notifications.ro
 import placesRoutes from "@/modules/places/routes/places.routes";
 import shareRoutes from "@/modules/share/routes/share.routes";
 import dashboardRoutes from "@/modules/dashboard/routes/dashboard.routes";
+import invitesRoutes from "@/modules/trips/routes/invites.routes";
 
 const app = express();
 const PORT = Number(process.env.PORT ?? 4000);
@@ -31,6 +32,7 @@ app.use("/api/v1/notifications", notificationsRoutes);
 app.use("/api/v1/places", placesRoutes);
 app.use("/api/v1/share", shareRoutes);
 app.use("/api/v1/dashboard", dashboardRoutes);
+app.use("/api/v1/invites", invitesRoutes);
 
 app.listen(PORT, () => {
   console.log(`Backend listening on http://localhost:${PORT}`);

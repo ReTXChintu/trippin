@@ -9,6 +9,10 @@ export interface Trip {
   id: string;
   userId: string;
   memberIds: string[];
+  /** Members with view-only access (subset of memberIds). */
+  viewerIds: string[];
+  /** placeId → user ids who voted for it. */
+  placeVotes: Record<string, string[]>;
   title: string;
   destinationCity: string;
   destinationState?: string;

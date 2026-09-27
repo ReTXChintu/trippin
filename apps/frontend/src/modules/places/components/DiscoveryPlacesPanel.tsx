@@ -22,6 +22,7 @@ import {
 } from "@/modules/places/hooks/usePlaces";
 import { getApiErrorMessage } from "@/lib/api";
 import { PlaceDetailModal } from "@/modules/places/components/PlaceDetailModal";
+import { VoteButton } from "@/modules/trips/components/collab/VoteButton";
 import { PlaceFilterBar } from "@/modules/places/components/PlaceFilterBar";
 import { PlaceSearchInput } from "@/modules/places/components/PlaceSearchInput";
 import type { Place } from "@/modules/places/types/place.types";
@@ -327,6 +328,7 @@ export function DiscoveryPlacesPanel({
                           </Flex>
                           <HStack spacing={2} mt={1} flexWrap="wrap">
                             <Tag size="sm">{place.category}</Tag>
+                            <VoteButton trip={trip} placeId={id} />
                             {place.rating !== undefined && (
                               <Text fontSize="xs" color="gray.500">
                                 {place.rating.toFixed(1)} ★

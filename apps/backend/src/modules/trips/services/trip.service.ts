@@ -17,6 +17,7 @@ import {
 import { syncLegacyHotelFields } from "@/modules/trips/utils/stay.utils";
 import { defaultCurrencyFor } from "@/utils/currency";
 import { deleteExpensesForTrip } from "@/modules/trips/services/trip-budget.service";
+import { deleteCollabDataForTrip } from "@/modules/trips/services/trip-collab.service";
 
 export type ActionResult<T = void> =
   | { success: true; data?: T; message?: string }
@@ -115,6 +116,7 @@ export async function deleteTrip(tripId: string, userId: string): Promise<Action
 
   await ItineraryRepository.deleteByTripId(tripId);
   await deleteExpensesForTrip(tripId);
+  await deleteCollabDataForTrip(tripId);
 
   return { success: true, message: "Trip deleted" };
 }

@@ -15,7 +15,7 @@ import {
   VStack,
 } from "@chakra-ui/react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Link as RouterLink, useNavigate } from "react-router-dom";
+import { Link as RouterLink, useNavigate, useSearchParams } from "react-router-dom";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useRegister } from "@/modules/auth/hooks/useAuth";
@@ -24,6 +24,9 @@ import { registerSchema, type RegisterInput } from "@/modules/auth/validators/au
 
 export function RegisterForm() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const callbackUrl = searchParams.get("callbackUrl");
+  const callbackQuery = callbackUrl?.startsWith("/") ? `&callbackUrl=${encodeURIComponent(callbackUrl)}` : "";
   const [error, setError] = useState<string | null>(null);
   const register_ = useRegister();
 
@@ -42,7 +45,7 @@ export function RegisterForm() {
     setError(null);
     try {
       await register_.mutateAsync(data);
-      navigate("/login?registered=true");
+      navigate(`/login?registered=true${callbackQuery}`);
     } catch (err) {
       setError(getApiErrorMessage(err));
     }
@@ -99,7 +102,7 @@ export function RegisterForm() {
 
         <Text textAlign="center" fontSize="sm" color="gray.500">
           Already have an account?{" "}
-          <Link as={RouterLink} to="/login" color="brand.500" fontWeight="medium">
+          <Link as={RouterLink} to={`/login${callbackQuery ? `?${callbackQuery.slice(1)}` : ""}`} color="brand.500" fontWeight="medium">
             Sign in
           </Link>
         </Text>

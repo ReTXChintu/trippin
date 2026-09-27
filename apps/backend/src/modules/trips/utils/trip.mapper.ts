@@ -8,6 +8,8 @@ type TripDocLike = Pick<
   | "_id"
   | "userId"
   | "memberIds"
+  | "viewerIds"
+  | "votes"
   | "title"
   | "destinationCity"
   | "destinationState"
@@ -144,6 +146,11 @@ export function toTripDTO(doc: TripDocLike): Trip {
     id: doc._id.toString(),
     userId: doc.userId.toString(),
     memberIds: (doc.memberIds ?? []).map((id) => id.toString()),
+    viewerIds: (doc.viewerIds ?? []).map((id) => id.toString()),
+    placeVotes: (doc.votes ?? []).reduce<Record<string, string[]>>((acc, v) => {
+      (acc[v.placeId] ??= []).push(v.userId);
+      return acc;
+    }, {}),
     title: doc.title,
     destinationCity: doc.destinationCity,
     destinationState: doc.destinationState,
