@@ -16,6 +16,8 @@ export interface CityValue {
   city: string;
   state?: string;
   country: string;
+  lat?: number;
+  lng?: number;
 }
 
 const DEBOUNCE_MS = 250;
@@ -81,7 +83,7 @@ export function CityInput({
   };
 
   const pick = (c: CityMatch) => {
-    onChange({ city: c.name, state: c.state, country: c.country });
+    onChange({ city: c.name, state: c.state, country: c.country, lat: c.lat, lng: c.lng });
     setQuery(c.name);
     setOpen(false);
   };

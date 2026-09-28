@@ -5,6 +5,7 @@ import {
   Collapse,
   Flex,
   FormControl,
+  Grid,
   FormHelperText,
   FormLabel,
   Heading,
@@ -29,7 +30,6 @@ import { addDays, format, parseISO } from "date-fns";
 import { useState } from "react";
 import type { IconType } from "react-icons";
 import {
-  FiArrowRight,
   FiChevronDown,
   FiMinus,
   FiNavigation,
@@ -39,19 +39,31 @@ import {
   FiTruck,
   FiUsers,
 } from "react-icons/fi";
-import { MdDirectionsBike, MdDirectionsCar, MdDirectionsWalk, MdLocalTaxi } from "react-icons/md";
+import {
+  MdDirectionsBike,
+  MdDirectionsCar,
+  MdDirectionsWalk,
+  MdLocalTaxi,
+} from "react-icons/md";
 import { useNavigate } from "react-router-dom";
 import { INTEREST_CATEGORIES } from "@/constants/interests";
 import { getApiErrorMessage } from "@/lib/api";
 import { PlaceSearchInput } from "@/modules/places/components/PlaceSearchInput";
 import { useCreateTrip } from "@/modules/trips/hooks/useTrips";
 import { createTripSchema } from "@/modules/trips/validators/trip.validator";
-import { createEmptyLeg, newTripLegId } from "@/modules/trips/utils/trip-leg.utils";
+import {
+  createEmptyLeg,
+  newTripLegId,
+} from "@/modules/trips/utils/trip-leg.utils";
 import { COMMON_CURRENCIES } from "@/modules/trips/utils/money";
 import { parseCommaSeparated } from "@/utils/trip.utils";
-import type { TripLeg, TripLegTransfer } from "@/modules/trips/types/trip-leg.types";
+import type {
+  TripLeg,
+  TripLegTransfer,
+} from "@/modules/trips/types/trip-leg.types";
 import type { TransportationMode, TravelStyle, TripStatus } from "@/types";
 import { CityInput, type CityValue } from "./CityInput";
+import { RoutePreviewMap, type RoutePoint } from "./RoutePreviewMap";
 
 interface CityRow extends CityValue {
   id: string;
@@ -59,7 +71,11 @@ interface CityRow extends CityValue {
   arrivalTime?: string;
   departureTime?: string;
   dayTripAreas: string[];
-  hotel?: { name: string; address?: string; coordinates?: { lat: number; lng: number } };
+  hotel?: {
+    name: string;
+    address?: string;
+    coordinates?: { lat: number; lng: number };
+  };
 }
 
 type BudgetLevel = "budget" | "moderate" | "luxury";
@@ -72,7 +88,11 @@ const PACES: { value: TravelStyle; label: string; hint: string }[] = [
   { value: "Fast Paced", label: "Packed", hint: "See as much as possible" },
 ];
 
-const TRANSPORT: { value: TransportationMode; label: string; icon: IconType }[] = [
+const TRANSPORT: {
+  value: TransportationMode;
+  label: string;
+  icon: IconType;
+}[] = [
   { value: "Walking", label: "Walking", icon: MdDirectionsWalk },
   { value: "Public Transport", label: "Public transport", icon: FiTruck },
   { value: "Cab", label: "Taxi / cab", icon: MdLocalTaxi },
@@ -95,7 +115,10 @@ function newCity(country = ""): CityRow {
 }
 
 /** Consecutive cities: each gets its days; moving on happens on the first day of the next city. */
-function buildRoute(cities: CityRow[], startDate: string): { legs: TripLeg[]; transfers: TripLegTransfer[] } {
+function buildRoute(
+  cities: CityRow[],
+  startDate: string,
+): { legs: TripLeg[]; transfers: TripLegTransfer[] } {
   const legs: TripLeg[] = [];
   const transfers: TripLegTransfer[] = [];
   let cursor = startDate;
@@ -138,7 +161,17 @@ function autoTitle(cities: CityRow[]): string {
   return `${names[0]} → ${names[names.length - 1]} trip`;
 }
 
-function ChoiceChip({ selected, onClick, children, icon }: { selected: boolean; onClick: () => void; children: React.ReactNode; icon?: IconType }) {
+function ChoiceChip({
+  selected,
+  onClick,
+  children,
+  icon,
+}: {
+  selected: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+  icon?: IconType;
+}) {
   return (
     <Button
       size="sm"
@@ -155,12 +188,33 @@ function ChoiceChip({ selected, onClick, children, icon }: { selected: boolean; 
   );
 }
 
-function Section({ step, title, hint, children }: { step: number; title: string; hint?: string; children: React.ReactNode }) {
+function Section({
+  step,
+  title,
+  hint,
+  children,
+}: {
+  step: number;
+  title: string;
+  hint?: string;
+  children: React.ReactNode;
+}) {
   const muted = useColorModeValue("gray.500", "gray.400");
   return (
     <Box>
       <HStack spacing={3} mb={hint ? 1 : 4} align="center">
-        <Flex w={7} h={7} borderRadius="full" bg="brand.500" color="white" align="center" justify="center" fontSize="sm" fontWeight="bold" flexShrink={0}>
+        <Flex
+          w={7}
+          h={7}
+          borderRadius="full"
+          bg="brand.500"
+          color="white"
+          align="center"
+          justify="center"
+          fontSize="sm"
+          fontWeight="bold"
+          flexShrink={0}
+        >
           {step}
         </Flex>
         <Heading size="sm">{title}</Heading>
@@ -175,14 +229,39 @@ function Section({ step, title, hint, children }: { step: number; title: string;
   );
 }
 
-function DaysStepper({ value, onChange }: { value: number; onChange: (n: number) => void }) {
+function DaysStepper({
+  value,
+  onChange,
+}: {
+  value: number;
+  onChange: (n: number) => void;
+}) {
   return (
     <HStack spacing={0} borderWidth="1px" borderRadius="md" flexShrink={0}>
-      <IconButton aria-label="Fewer days" icon={<FiMinus />} size="sm" variant="ghost" onClick={() => onChange(Math.max(1, value - 1))} isDisabled={value <= 1} />
-      <Text fontSize="sm" fontWeight="semibold" minW="4.5rem" textAlign="center">
+      <IconButton
+        aria-label="Fewer days"
+        icon={<FiMinus />}
+        size="sm"
+        variant="ghost"
+        onClick={() => onChange(Math.max(1, value - 1))}
+        isDisabled={value <= 1}
+      />
+      <Text
+        fontSize="sm"
+        fontWeight="semibold"
+        minW="4.5rem"
+        textAlign="center"
+      >
         {value} {value === 1 ? "day" : "days"}
       </Text>
-      <IconButton aria-label="More days" icon={<FiPlus />} size="sm" variant="ghost" onClick={() => onChange(Math.min(MAX_DAYS_PER_CITY, value + 1))} isDisabled={value >= MAX_DAYS_PER_CITY} />
+      <IconButton
+        aria-label="More days"
+        icon={<FiPlus />}
+        size="sm"
+        variant="ghost"
+        onClick={() => onChange(Math.min(MAX_DAYS_PER_CITY, value + 1))}
+        isDisabled={value >= MAX_DAYS_PER_CITY}
+      />
     </HStack>
   );
 }
@@ -212,13 +291,18 @@ function CityCard({
 
   const addArea = () => {
     const area = areaInput.trim();
-    if (area && !row.dayTripAreas.includes(area)) onChange({ dayTripAreas: [...row.dayTripAreas, area] });
+    if (area && !row.dayTripAreas.includes(area))
+      onChange({ dayTripAreas: [...row.dayTripAreas, area] });
     setAreaInput("");
   };
 
   return (
     <Box borderWidth="1px" borderColor={border} borderRadius="lg" p={3}>
-      <Flex gap={3} align={{ base: "stretch", md: "center" }} direction={{ base: "column", md: "row" }}>
+      <Flex
+        gap={3}
+        align={{ base: "stretch", md: "center" }}
+        direction={{ base: "column", md: "row" }}
+      >
         <Box flex={1} minW={0}>
           <CityInput
             value={row}
@@ -229,8 +313,19 @@ function CityCard({
           />
         </Box>
         <HStack spacing={2} justify="space-between">
-          <DaysStepper value={row.days} onChange={(days) => onChange({ days })} />
-          {canRemove && <IconButton aria-label="Remove city" icon={<FiTrash2 />} size="sm" variant="ghost" onClick={onRemove} />}
+          <DaysStepper
+            value={row.days}
+            onChange={(days) => onChange({ days })}
+          />
+          {canRemove && (
+            <IconButton
+              aria-label="Remove city"
+              icon={<FiTrash2 />}
+              size="sm"
+              variant="ghost"
+              onClick={onRemove}
+            />
+          )}
         </HStack>
       </Flex>
 
@@ -239,17 +334,43 @@ function CityCard({
           <Text fontSize="xs" color={muted} flexShrink={0}>
             Country:
           </Text>
-          <Input size="xs" maxW="12rem" placeholder="Pick from the list or type it" value={row.country} isInvalid={attempted} onChange={(e) => onChange({ country: e.target.value })} />
+          <Input
+            size="xs"
+            maxW="12rem"
+            placeholder="Pick from the list or type it"
+            value={row.country}
+            isInvalid={attempted}
+            onChange={(e) => onChange({ country: e.target.value })}
+          />
         </HStack>
       )}
 
-      <Flex mt={2} justify="space-between" align="center" gap={2} flexWrap="wrap">
+      <Flex
+        mt={2}
+        justify="space-between"
+        align="center"
+        gap={2}
+        flexWrap="wrap"
+      >
         <Text fontSize="xs" color={muted}>
-          {dates ? `${format(parseISO(dates.start), "EEE d MMM")} – ${format(parseISO(dates.end), "EEE d MMM")}` : "Pick a start date"}
-          {row.state || row.country ? ` · ${[row.state, row.country].filter(Boolean).join(", ")}` : ""}
+          {dates
+            ? `${format(parseISO(dates.start), "EEE d MMM")} – ${format(parseISO(dates.end), "EEE d MMM")}`
+            : "Pick a start date"}
+          {row.state || row.country
+            ? ` · ${[row.state, row.country].filter(Boolean).join(", ")}`
+            : ""}
           {row.hotel ? ` · staying at ${row.hotel.name}` : ""}
         </Text>
-        <Button size="xs" variant="ghost" rightIcon={<FiChevronDown style={{ transform: more.isOpen ? "rotate(180deg)" : undefined }} />} onClick={more.onToggle}>
+        <Button
+          size="xs"
+          variant="ghost"
+          rightIcon={
+            <FiChevronDown
+              style={{ transform: more.isOpen ? "rotate(180deg)" : undefined }}
+            />
+          }
+          onClick={more.onToggle}
+        >
           Times, day trips, hotel
         </Button>
       </Flex>
@@ -260,15 +381,33 @@ function CityCard({
             <FormLabel fontSize="xs" mb={1}>
               Arriving at
             </FormLabel>
-            <Input size="sm" type="time" value={row.arrivalTime ?? ""} onChange={(e) => onChange({ arrivalTime: e.target.value || undefined })} />
-            <FormHelperText fontSize="xs">First day starts after you get in.</FormHelperText>
+            <Input
+              size="sm"
+              type="time"
+              value={row.arrivalTime ?? ""}
+              onChange={(e) =>
+                onChange({ arrivalTime: e.target.value || undefined })
+              }
+            />
+            <FormHelperText fontSize="xs">
+              First day starts after you get in.
+            </FormHelperText>
           </FormControl>
           <FormControl>
             <FormLabel fontSize="xs" mb={1}>
               Leaving at
             </FormLabel>
-            <Input size="sm" type="time" value={row.departureTime ?? ""} onChange={(e) => onChange({ departureTime: e.target.value || undefined })} />
-            <FormHelperText fontSize="xs">Last day ends in time to leave.</FormHelperText>
+            <Input
+              size="sm"
+              type="time"
+              value={row.departureTime ?? ""}
+              onChange={(e) =>
+                onChange({ departureTime: e.target.value || undefined })
+              }
+            />
+            <FormHelperText fontSize="xs">
+              Last day ends in time to leave.
+            </FormHelperText>
           </FormControl>
           <FormControl>
             <FormLabel fontSize="xs" mb={1}>
@@ -287,7 +426,11 @@ function CityCard({
                   }
                 }}
               />
-              <Button size="sm" onClick={addArea} isDisabled={!areaInput.trim()}>
+              <Button
+                size="sm"
+                onClick={addArea}
+                isDisabled={!areaInput.trim()}
+              >
                 Add
               </Button>
             </HStack>
@@ -297,7 +440,15 @@ function CityCard({
                   <WrapItem key={area}>
                     <Tag size="sm">
                       {area}
-                      <TagCloseButton onClick={() => onChange({ dayTripAreas: row.dayTripAreas.filter((a) => a !== area) })} />
+                      <TagCloseButton
+                        onClick={() =>
+                          onChange({
+                            dayTripAreas: row.dayTripAreas.filter(
+                              (a) => a !== area,
+                            ),
+                          })
+                        }
+                      />
                     </Tag>
                   </WrapItem>
                 ))}
@@ -317,7 +468,10 @@ function CityCard({
                   hotel: {
                     name: sel.name,
                     address: sel.address,
-                    coordinates: sel.lat !== undefined && sel.lng !== undefined ? { lat: sel.lat, lng: sel.lng } : undefined,
+                    coordinates:
+                      sel.lat !== undefined && sel.lng !== undefined
+                        ? { lat: sel.lat, lng: sel.lng }
+                        : undefined,
                   },
                 })
               }
@@ -330,6 +484,179 @@ function CityCard({
   );
 }
 
+function TripPreview({
+  title,
+  startDate,
+  endDate,
+  totalDays,
+  cities,
+  legs,
+  pace,
+  transport,
+  budgetLevel,
+  interests,
+  isSubmitting,
+  onCancel,
+}: {
+  title: string;
+  startDate: string;
+  endDate: string;
+  totalDays: number;
+  cities: CityRow[];
+  legs: TripLeg[];
+  pace: TravelStyle;
+  transport: TransportationMode;
+  budgetLevel?: BudgetLevel;
+  interests: string[];
+  isSubmitting: boolean;
+  onCancel: () => void;
+}) {
+  const cardBg = useColorModeValue("white", "gray.800");
+  const border = useColorModeValue("gray.200", "gray.700");
+  const muted = useColorModeValue("gray.500", "gray.400");
+  const line = useColorModeValue("gray.200", "gray.600");
+  const points: RoutePoint[] = cities
+    .filter((c) => c.lat !== undefined && c.lng !== undefined)
+    .map((c) => ({ label: c.city, lat: c.lat!, lng: c.lng! }));
+  const named = cities.filter((c) => c.city.trim());
+  const transportLabel = TRANSPORT.find((t) => t.value === transport)?.label;
+  const paceLabel = PACES.find((p) => p.value === pace)?.label;
+  const budgetLabel = BUDGETS.find((b) => b.value === budgetLevel)?.label;
+
+  return (
+    <Box
+      position={{ xl: "sticky" }}
+      top={{ xl: "88px" }}
+      bg={cardBg}
+      borderWidth="1px"
+      borderColor={border}
+      borderRadius="xl"
+      overflow="hidden"
+    >
+      <RoutePreviewMap points={points} height="220px" />
+      <Stack spacing={4} p={5}>
+        <Box>
+          <Text
+            fontSize="xs"
+            textTransform="uppercase"
+            letterSpacing="wider"
+            color={muted}
+            fontWeight="semibold"
+          >
+            Your trip
+          </Text>
+          <Heading size="md" mt={1} noOfLines={2}>
+            {title || "Where to?"}
+          </Heading>
+          {startDate && (
+            <Text fontSize="sm" color={muted} mt={1}>
+              {format(parseISO(startDate), "EEE d MMM")} →{" "}
+              {format(parseISO(endDate), "EEE d MMM yyyy")} · {totalDays}{" "}
+              {totalDays === 1 ? "day" : "days"}
+            </Text>
+          )}
+        </Box>
+
+        {named.length === 0 ? (
+          <Text fontSize="sm" color={muted}>
+            Add a city on the left — your route and dates show up here.
+          </Text>
+        ) : (
+          <Stack spacing={0}>
+            {cities.map((c, i) => {
+              const leg = legs[i];
+              return (
+                <Flex key={c.id} gap={3}>
+                  <Flex direction="column" align="center" flexShrink={0}>
+                    <Flex
+                      w={6}
+                      h={6}
+                      borderRadius="full"
+                      bg="brand.500"
+                      color="white"
+                      fontSize="xs"
+                      fontWeight="bold"
+                      align="center"
+                      justify="center"
+                    >
+                      {i + 1}
+                    </Flex>
+                    {i < cities.length - 1 && (
+                      <Box w="2px" flex={1} minH={6} bg={line} my={1} />
+                    )}
+                  </Flex>
+                  <Box pb={i < cities.length - 1 ? 3 : 0} minW={0} flex={1}>
+                    <Flex justify="space-between" gap={2}>
+                      <Text fontWeight="semibold" fontSize="sm" noOfLines={1}>
+                        {c.city.trim() || "Next city"}
+                      </Text>
+                      <Text fontSize="xs" color={muted} flexShrink={0}>
+                        {c.days} {c.days === 1 ? "day" : "days"}
+                      </Text>
+                    </Flex>
+                    <Text fontSize="xs" color={muted}>
+                      {leg
+                        ? `${format(parseISO(leg.startDate), "d MMM")} – ${format(parseISO(leg.endDate), "d MMM")}`
+                        : ""}
+                      {c.country ? ` · ${c.country}` : ""}
+                    </Text>
+                    {i < cities.length - 1 && legs[i + 1] && (
+                      <HStack spacing={1} fontSize="xs" color={muted} mt={2}>
+                        <Icon as={FiNavigation} />
+                        <Text>
+                          Travel day{" "}
+                          {format(parseISO(legs[i + 1].startDate), "EEE d MMM")}
+                        </Text>
+                      </HStack>
+                    )}
+                  </Box>
+                </Flex>
+              );
+            })}
+          </Stack>
+        )}
+
+        <Wrap spacing={2}>
+          {[paceLabel && `${paceLabel} pace`, transportLabel, budgetLabel]
+            .filter(Boolean)
+            .map((t) => (
+              <WrapItem key={t as string}>
+                <Tag size="sm" variant="subtle" colorScheme="brand">
+                  {t}
+                </Tag>
+              </WrapItem>
+            ))}
+          {interests.map((i) => (
+            <WrapItem key={i}>
+              <Tag size="sm" variant="outline">
+                {i}
+              </Tag>
+            </WrapItem>
+          ))}
+        </Wrap>
+
+        <Stack spacing={2}>
+          <Button
+            type="submit"
+            colorScheme="brand"
+            size="lg"
+            isLoading={isSubmitting}
+            loadingText="Creating…"
+          >
+            Create trip
+          </Button>
+          <Button variant="ghost" size="sm" onClick={onCancel}>
+            Cancel
+          </Button>
+          <Text fontSize="xs" color={muted} textAlign="center">
+            Next you&apos;ll pick places, then generate the day-by-day plan.
+          </Text>
+        </Stack>
+      </Stack>
+    </Box>
+  );
+}
+
 export function SimpleTripForm() {
   const navigate = useNavigate();
   const toast = useToast();
@@ -337,10 +664,11 @@ export function SimpleTripForm() {
   const cardBg = useColorModeValue("white", "gray.800");
   const border = useColorModeValue("gray.200", "gray.700");
   const muted = useColorModeValue("gray.500", "gray.400");
-  const summaryBg = useColorModeValue("brand.50", "whiteAlpha.100");
   const more = useDisclosure();
 
-  const [startDate, setStartDate] = useState(() => isoAddDays(format(new Date(), "yyyy-MM-dd"), 14));
+  const [startDate, setStartDate] = useState(() =>
+    isoAddDays(format(new Date(), "yyyy-MM-dd"), 14),
+  );
   const [cities, setCities] = useState<CityRow[]>([newCity()]);
   const [pace, setPace] = useState<TravelStyle>("Balanced");
   const [transport, setTransport] = useState<TransportationMode>("Cab");
@@ -363,21 +691,42 @@ export function SimpleTripForm() {
   const endDate = startDate ? isoAddDays(startDate, totalDays - 1) : "";
   const named = cities.filter((c) => c.city.trim());
 
-  const updateCity = (id: string, patch: Partial<CityRow>) => setCities((rows) => rows.map((r) => (r.id === id ? { ...r, ...patch } : r)));
-  const toggleInterest = (i: string) => setInterests((prev) => (prev.includes(i) ? prev.filter((x) => x !== i) : [...prev, i]));
+  const updateCity = (id: string, patch: Partial<CityRow>) =>
+    setCities((rows) =>
+      rows.map((r) => (r.id === id ? { ...r, ...patch } : r)),
+    );
+  const toggleInterest = (i: string) =>
+    setInterests((prev) =>
+      prev.includes(i) ? prev.filter((x) => x !== i) : [...prev, i],
+    );
 
   const submit = async () => {
     setAttempted(true);
-    if (!startDate) return toast({ title: "Pick a start date", status: "warning" });
+    if (!startDate)
+      return toast({ title: "Pick a start date", status: "warning" });
     const blank = cities.find((c) => c.city.trim().length < 2);
-    if (blank) return toast({ title: cities.length > 1 ? "Every city needs a name (or remove the empty one)" : "Where are you going?", status: "warning" });
+    if (blank)
+      return toast({
+        title:
+          cities.length > 1
+            ? "Every city needs a name (or remove the empty one)"
+            : "Where are you going?",
+        status: "warning",
+      });
     const noCountry = cities.find((c) => !c.country.trim());
-    if (noCountry) return toast({ title: `Which country is ${noCountry.city}? Pick it from the list or type the country.`, status: "warning" });
+    if (noCountry)
+      return toast({
+        title: `Which country is ${noCountry.city}? Pick it from the list or type the country.`,
+        status: "warning",
+      });
 
     const { legs, transfers } = buildRoute(cities, startDate);
     const payload = {
       title: title.trim() || autoTitle(cities),
-      destinationCity: cities.length === 1 ? legs[0].baseCity : `${legs[0].baseCity} → ${legs[legs.length - 1].baseCity}`,
+      destinationCity:
+        cities.length === 1
+          ? legs[0].baseCity
+          : `${legs[0].baseCity} → ${legs[legs.length - 1].baseCity}`,
       destinationState: legs[0].state,
       destinationCountry: legs[0].country,
       startDate,
@@ -399,177 +748,266 @@ export function SimpleTripForm() {
       status,
     };
     const validated = createTripSchema.safeParse(payload);
-    if (!validated.success) return toast({ title: validated.error.issues[0]?.message ?? "Please check the form", status: "error" });
+    if (!validated.success)
+      return toast({
+        title: validated.error.issues[0]?.message ?? "Please check the form",
+        status: "error",
+      });
 
     try {
       const result = await createTrip.mutateAsync(validated.data);
-      toast({ title: "Trip created", description: "Next: pick the places you want to see.", status: "success", duration: 4000 });
+      toast({
+        title: "Trip created",
+        description: "Next: pick the places you want to see.",
+        status: "success",
+        duration: 4000,
+      });
       navigate(`/trips/${result.trip.id}?tab=places`);
     } catch (err) {
-      toast({ title: getApiErrorMessage(err), status: "error", duration: 5000 });
+      toast({
+        title: getApiErrorMessage(err),
+        status: "error",
+        duration: 5000,
+      });
     }
   };
 
+  const card = {
+    bg: cardBg,
+    borderWidth: "1px",
+    borderColor: border,
+    borderRadius: "xl",
+    p: { base: 4, md: 6 },
+  } as const;
+
   return (
-    <Box
+    <Grid
       as="form"
       onSubmit={(e: React.FormEvent) => {
         e.preventDefault();
         void submit();
       }}
-      bg={cardBg}
-      borderWidth="1px"
-      borderColor={border}
-      borderRadius="xl"
-      p={{ base: 4, md: 6 }}
+      templateColumns={{
+        base: "1fr",
+        xl: "minmax(0, 1fr) 400px",
+        "2xl": "minmax(0, 1fr) 460px",
+      }}
+      gap={6}
+      alignItems="start"
     >
-      <Stack spacing={8}>
-        <Section step={1} title="Where & when" hint="Add each city you'll stay in, in order. Travel days between them are added for you.">
-          <Stack spacing={3}>
-            <FormControl maxW="16rem" isInvalid={attempted && !startDate}>
-              <FormLabel fontSize="sm" mb={1}>
-                Starting
-              </FormLabel>
-              <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
-            </FormControl>
+      <Stack spacing={6} minW={0}>
+        <Box {...card}>
+          <Section
+            step={1}
+            title="Where & when"
+            hint="Add each city you'll stay in, in order. Travel days between them are added for you."
+          >
+            <Stack spacing={3}>
+              <FormControl maxW="16rem" isInvalid={attempted && !startDate}>
+                <FormLabel fontSize="sm" mb={1}>
+                  Starting
+                </FormLabel>
+                <Input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                />
+              </FormControl>
 
-            {cities.map((row, i) => {
-              const leg = route?.legs[i];
-              return (
-                <Box key={row.id}>
-                  {i > 0 && (
-                    <HStack spacing={2} color={muted} fontSize="xs" pl={3} pb={2}>
-                      <Icon as={FiNavigation} />
-                      <Text>
-                        Travel to {row.city.trim() || "the next city"}
-                        {leg ? ` on ${format(parseISO(leg.startDate), "EEE d MMM")}` : ""}
-                      </Text>
-                    </HStack>
-                  )}
-                  <CityCard
-                    row={row}
-                    index={i}
-                    dates={leg ? { start: leg.startDate, end: leg.endDate } : null}
-                    canRemove={cities.length > 1}
-                    attempted={attempted}
-                    onChange={(patch) => updateCity(row.id, patch)}
-                    onRemove={() => setCities((rows) => rows.filter((r) => r.id !== row.id))}
-                  />
-                </Box>
-              );
-            })}
-
-            <Button leftIcon={<FiPlus />} size="sm" variant="ghost" alignSelf="flex-start" onClick={() => setCities((rows) => [...rows, newCity(rows[rows.length - 1]?.country)])}>
-              Add another city
-            </Button>
-
-            {startDate && named.length > 0 && (
-              <Flex bg={summaryBg} borderRadius="md" px={4} py={2.5} gap={2} align="center" flexWrap="wrap" fontSize="sm">
-                <Text fontWeight="semibold">
-                  {format(parseISO(startDate), "EEE d MMM")} → {format(parseISO(endDate), "EEE d MMM yyyy")}
-                </Text>
-                <Text color={muted}>
-                  · {totalDays} {totalDays === 1 ? "day" : "days"}
-                </Text>
-                {named.length > 1 && (
-                  <HStack spacing={1} color={muted}>
-                    <Text>·</Text>
-                    {named.map((c, i) => (
-                      <HStack key={c.id} spacing={1}>
-                        {i > 0 && <Icon as={FiArrowRight} boxSize={3} />}
-                        <Text>{c.city}</Text>
+              {cities.map((row, i) => {
+                const leg = route?.legs[i];
+                return (
+                  <Box key={row.id}>
+                    {i > 0 && (
+                      <HStack
+                        spacing={2}
+                        color={muted}
+                        fontSize="xs"
+                        pl={3}
+                        pb={2}
+                      >
+                        <Icon as={FiNavigation} />
+                        <Text>
+                          Travel to {row.city.trim() || "the next city"}
+                          {leg
+                            ? ` on ${format(parseISO(leg.startDate), "EEE d MMM")}`
+                            : ""}
+                        </Text>
                       </HStack>
+                    )}
+                    <CityCard
+                      row={row}
+                      index={i}
+                      dates={
+                        leg ? { start: leg.startDate, end: leg.endDate } : null
+                      }
+                      canRemove={cities.length > 1}
+                      attempted={attempted}
+                      onChange={(patch) => updateCity(row.id, patch)}
+                      onRemove={() =>
+                        setCities((rows) => rows.filter((r) => r.id !== row.id))
+                      }
+                    />
+                  </Box>
+                );
+              })}
+
+              <Button
+                leftIcon={<FiPlus />}
+                size="sm"
+                variant="ghost"
+                alignSelf="flex-start"
+                onClick={() =>
+                  setCities((rows) => [
+                    ...rows,
+                    newCity(rows[rows.length - 1]?.country),
+                  ])
+                }
+              >
+                Add another city
+              </Button>
+            </Stack>
+          </Section>
+        </Box>
+
+        <Box {...card}>
+          <Section
+            step={2}
+            title="How you like to travel"
+            hint="This shapes how full each day is and how travel times are worked out."
+          >
+            <Stack spacing={5}>
+              <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={5}>
+                <Box>
+                  <Text fontSize="sm" fontWeight="medium" mb={2}>
+                    Pace
+                  </Text>
+                  <Wrap spacing={2}>
+                    {PACES.map((p) => (
+                      <WrapItem key={p.value}>
+                        <ChoiceChip
+                          selected={pace === p.value}
+                          onClick={() => setPace(p.value)}
+                        >
+                          {p.label}
+                        </ChoiceChip>
+                      </WrapItem>
                     ))}
-                  </HStack>
-                )}
-              </Flex>
-            )}
-          </Stack>
-        </Section>
-
-        <Section step={2} title="How you like to travel" hint="This shapes how full each day is and how travel times are worked out.">
-          <Stack spacing={5}>
-            <Box>
-              <Text fontSize="sm" fontWeight="medium" mb={2}>
-                Pace
-              </Text>
-              <Wrap spacing={2}>
-                {PACES.map((p) => (
-                  <WrapItem key={p.value}>
-                    <ChoiceChip selected={pace === p.value} onClick={() => setPace(p.value)}>
-                      {p.label}
-                    </ChoiceChip>
-                  </WrapItem>
-                ))}
-              </Wrap>
-              <Text fontSize="xs" color={muted} mt={1}>
-                {PACES.find((p) => p.value === pace)?.hint}
-              </Text>
-            </Box>
-            <Box>
-              <Text fontSize="sm" fontWeight="medium" mb={2}>
-                Getting around in each city
-              </Text>
-              <Wrap spacing={2}>
-                {TRANSPORT.map((t) => (
-                  <WrapItem key={t.value}>
-                    <ChoiceChip selected={transport === t.value} onClick={() => setTransport(t.value)} icon={t.icon}>
-                      {t.label}
-                    </ChoiceChip>
-                  </WrapItem>
-                ))}
-              </Wrap>
-            </Box>
-            <Box>
-              <Text fontSize="sm" fontWeight="medium" mb={2}>
-                Budget
-              </Text>
-              <Wrap spacing={2}>
-                {BUDGETS.map((b) => (
-                  <WrapItem key={b.value}>
-                    <ChoiceChip selected={budgetLevel === b.value} onClick={() => setBudgetLevel(budgetLevel === b.value ? undefined : b.value)}>
-                      {b.label}
-                    </ChoiceChip>
-                  </WrapItem>
-                ))}
-              </Wrap>
-            </Box>
-            <Box>
-              <Text fontSize="sm" fontWeight="medium" mb={2}>
-                What do you enjoy?{" "}
-                <Text as="span" fontWeight="normal" color={muted} fontSize="xs">
-                  (pick any — used to suggest places)
+                  </Wrap>
+                  <Text fontSize="xs" color={muted} mt={1}>
+                    {PACES.find((p) => p.value === pace)?.hint}
+                  </Text>
+                </Box>
+                <Box>
+                  <Text fontSize="sm" fontWeight="medium" mb={2}>
+                    Budget
+                  </Text>
+                  <Wrap spacing={2}>
+                    {BUDGETS.map((b) => (
+                      <WrapItem key={b.value}>
+                        <ChoiceChip
+                          selected={budgetLevel === b.value}
+                          onClick={() =>
+                            setBudgetLevel(
+                              budgetLevel === b.value ? undefined : b.value,
+                            )
+                          }
+                        >
+                          {b.label}
+                        </ChoiceChip>
+                      </WrapItem>
+                    ))}
+                  </Wrap>
+                </Box>
+              </SimpleGrid>
+              <Box>
+                <Text fontSize="sm" fontWeight="medium" mb={2}>
+                  Getting around in each city
                 </Text>
-              </Text>
-              <Wrap spacing={2}>
-                {INTEREST_CATEGORIES.map((i) => (
-                  <WrapItem key={i}>
-                    <ChoiceChip selected={interests.includes(i)} onClick={() => toggleInterest(i)}>
-                      {i}
-                    </ChoiceChip>
-                  </WrapItem>
-                ))}
-              </Wrap>
-            </Box>
-          </Stack>
-        </Section>
+                <Wrap spacing={2}>
+                  {TRANSPORT.map((t) => (
+                    <WrapItem key={t.value}>
+                      <ChoiceChip
+                        selected={transport === t.value}
+                        onClick={() => setTransport(t.value)}
+                        icon={t.icon}
+                      >
+                        {t.label}
+                      </ChoiceChip>
+                    </WrapItem>
+                  ))}
+                </Wrap>
+              </Box>
+              <Box>
+                <Text fontSize="sm" fontWeight="medium" mb={2}>
+                  What do you enjoy?{" "}
+                  <Text
+                    as="span"
+                    fontWeight="normal"
+                    color={muted}
+                    fontSize="xs"
+                  >
+                    (pick any — used to suggest places)
+                  </Text>
+                </Text>
+                <Wrap spacing={2}>
+                  {INTEREST_CATEGORIES.map((i) => (
+                    <WrapItem key={i}>
+                      <ChoiceChip
+                        selected={interests.includes(i)}
+                        onClick={() => toggleInterest(i)}
+                      >
+                        {i}
+                      </ChoiceChip>
+                    </WrapItem>
+                  ))}
+                </Wrap>
+              </Box>
+            </Stack>
+          </Section>
+        </Box>
 
-        <Box>
-          <Button variant="ghost" size="sm" leftIcon={<FiSettings />} rightIcon={<FiChevronDown style={{ transform: more.isOpen ? "rotate(180deg)" : undefined }} />} onClick={more.onToggle}>
+        <Box {...card}>
+          <Button
+            variant="ghost"
+            size="sm"
+            leftIcon={<FiSettings />}
+            rightIcon={
+              <FiChevronDown
+                style={{
+                  transform: more.isOpen ? "rotate(180deg)" : undefined,
+                }}
+              />
+            }
+            onClick={more.onToggle}
+          >
             More options
           </Button>
           <Text fontSize="xs" color={muted} ml={3}>
-            Trip name, daily hours, budget amount, must-see places, notes — all can be changed later too.
+            Trip name, daily hours, budget amount, must-see places, notes — all
+            can be changed later too.
           </Text>
           <Collapse in={more.isOpen} animateOpacity>
-            <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4} mt={4} ml={{ base: 0, md: 10 }}>
+            <SimpleGrid
+              columns={{ base: 1, md: 2 }}
+              spacing={4}
+              mt={4}
+              ml={{ base: 0, md: 10 }}
+            >
               <FormControl>
                 <FormLabel fontSize="sm">Trip name</FormLabel>
-                <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder={autoTitle(cities) || "e.g. Japan in spring"} />
+                <Input
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder={autoTitle(cities) || "e.g. Japan in spring"}
+                />
               </FormControl>
               <FormControl>
                 <FormLabel fontSize="sm">Status</FormLabel>
-                <Select value={status} onChange={(e) => setStatus(e.target.value as TripStatus)}>
+                <Select
+                  value={status}
+                  onChange={(e) => setStatus(e.target.value as TripStatus)}
+                >
                   <option value="draft">Planning (draft)</option>
                   <option value="active">Active</option>
                   <option value="completed">Completed</option>
@@ -579,19 +1017,45 @@ export function SimpleTripForm() {
               <FormControl>
                 <FormLabel fontSize="sm">Day starts / ends</FormLabel>
                 <HStack>
-                  <Input type="time" value={dailyStart} onChange={(e) => setDailyStart(e.target.value)} aria-label="Day starts" />
+                  <Input
+                    type="time"
+                    value={dailyStart}
+                    onChange={(e) => setDailyStart(e.target.value)}
+                    aria-label="Day starts"
+                  />
                   <Text color={muted}>–</Text>
-                  <Input type="time" value={dailyEnd} onChange={(e) => setDailyEnd(e.target.value)} aria-label="Day ends" />
+                  <Input
+                    type="time"
+                    value={dailyEnd}
+                    onChange={(e) => setDailyEnd(e.target.value)}
+                    aria-label="Day ends"
+                  />
                 </HStack>
-                <Checkbox mt={2} size="sm" isChecked={flexible} onChange={(e) => setFlexible(e.target.checked)}>
+                <Checkbox
+                  mt={2}
+                  size="sm"
+                  isChecked={flexible}
+                  onChange={(e) => setFlexible(e.target.checked)}
+                >
                   Schedule by each place&apos;s best time instead
                 </Checkbox>
               </FormControl>
               <FormControl>
                 <FormLabel fontSize="sm">Total budget</FormLabel>
                 <HStack>
-                  <Input type="number" min={0} value={budgetAmount} onChange={(e) => setBudgetAmount(e.target.value)} placeholder="Optional" />
-                  <Select value={currency} onChange={(e) => setCurrency(e.target.value)} maxW="9rem" aria-label="Currency">
+                  <Input
+                    type="number"
+                    min={0}
+                    value={budgetAmount}
+                    onChange={(e) => setBudgetAmount(e.target.value)}
+                    placeholder="Optional"
+                  />
+                  <Select
+                    value={currency}
+                    onChange={(e) => setCurrency(e.target.value)}
+                    maxW="9rem"
+                    aria-label="Currency"
+                  >
                     <option value="">Local currency</option>
                     {COMMON_CURRENCIES.map((c) => (
                       <option key={c} value={c}>
@@ -608,7 +1072,10 @@ export function SimpleTripForm() {
                   mode="place"
                   city={named[0]?.city}
                   country={named[0]?.country}
-                  onSelect={(sel) => !mustVisit.includes(sel.name) && setMustVisit((prev) => [...prev, sel.name])}
+                  onSelect={(sel) =>
+                    !mustVisit.includes(sel.name) &&
+                    setMustVisit((prev) => [...prev, sel.name])
+                  }
                 />
                 {mustVisit.length > 0 && (
                   <Wrap mt={2}>
@@ -616,7 +1083,13 @@ export function SimpleTripForm() {
                       <WrapItem key={p}>
                         <Tag size="sm" colorScheme="brand">
                           {p}
-                          <TagCloseButton onClick={() => setMustVisit((prev) => prev.filter((x) => x !== p))} />
+                          <TagCloseButton
+                            onClick={() =>
+                              setMustVisit((prev) =>
+                                prev.filter((x) => x !== p),
+                              )
+                            }
+                          />
                         </Tag>
                       </WrapItem>
                     ))}
@@ -625,28 +1098,43 @@ export function SimpleTripForm() {
               </Box>
               <FormControl>
                 <FormLabel fontSize="sm">Places to skip</FormLabel>
-                <Input value={excluded} onChange={(e) => setExcluded(e.target.value)} placeholder="Comma-separated" />
+                <Input
+                  value={excluded}
+                  onChange={(e) => setExcluded(e.target.value)}
+                  placeholder="Comma-separated"
+                />
               </FormControl>
               <FormControl gridColumn={{ md: "span 2" }}>
                 <FormLabel fontSize="sm">
                   <Icon as={FiUsers} mr={1} />
                   Notes
                 </FormLabel>
-                <Textarea rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Who's coming, needs like step-free access, anything the plan should know" />
+                <Textarea
+                  rows={2}
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="Who's coming, needs like step-free access, anything the plan should know"
+                />
               </FormControl>
             </SimpleGrid>
           </Collapse>
         </Box>
-
-        <HStack spacing={3}>
-          <Button type="submit" colorScheme="brand" isLoading={createTrip.isPending} loadingText="Creating…">
-            Create trip
-          </Button>
-          <Button variant="ghost" onClick={() => navigate(-1)}>
-            Cancel
-          </Button>
-        </HStack>
       </Stack>
-    </Box>
+
+      <TripPreview
+        title={title.trim() || autoTitle(cities)}
+        startDate={startDate}
+        endDate={endDate}
+        totalDays={totalDays}
+        cities={cities}
+        legs={route?.legs ?? []}
+        pace={pace}
+        transport={transport}
+        budgetLevel={budgetLevel}
+        interests={interests}
+        isSubmitting={createTrip.isPending}
+        onCancel={() => navigate(-1)}
+      />
+    </Grid>
   );
 }
