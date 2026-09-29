@@ -124,7 +124,9 @@ const theme = extendTheme({
   },
   styles: {
     global: {
-      "html, body": { bg: "bg.canvas", color: "fg.default", fontSize: "14px", lineHeight: 1.45 },
+      // Root stays 16px so Chakra spacing (rem) matches the design pixel-for-pixel; body text is 14px.
+      html: { bg: "bg.canvas" },
+      body: { bg: "bg.canvas", color: "fg.default", fontSize: "14px", lineHeight: 1.45 },
       "h1, h2, h3": { letterSpacing: "-0.01em" },
       "::placeholder": { color: "fg.muted", opacity: 1 },
       ".leaflet-container": { fontFamily: "'DM Sans', system-ui, sans-serif", bg: "map.land" },

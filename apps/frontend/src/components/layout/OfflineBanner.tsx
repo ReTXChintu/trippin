@@ -1,29 +1,31 @@
-import { Box, HStack, Icon, Text } from "@chakra-ui/react";
-import { useEffect, useState } from "react";
+import { Flex, Icon, Text } from "@chakra-ui/react";
 import { FiWifiOff } from "react-icons/fi";
+import { useOnlineStatus } from "@/components/states/useOnlineStatus";
 
 /** Shown while the device is offline: the app keeps working from the last copy it saw. */
 export function OfflineBanner() {
-  const [online, setOnline] = useState(() => navigator.onLine);
-
-  useEffect(() => {
-    const up = () => setOnline(true);
-    const down = () => setOnline(false);
-    window.addEventListener("online", up);
-    window.addEventListener("offline", down);
-    return () => {
-      window.removeEventListener("online", up);
-      window.removeEventListener("offline", down);
-    };
-  }, []);
-
+  const online = useOnlineStatus();
   if (online) return null;
   return (
-    <Box bg="fg.default" color="bg.canvas" px={4} py={1.5} position="sticky" top={0} zIndex={1500}>
-      <HStack justify="center" spacing={2} fontSize="sm">
-        <Icon as={FiWifiOff} />
-        <Text>You're offline — showing the last saved copy of your trips. Changes need a connection.</Text>
-      </HStack>
-    </Box>
+    <Flex
+      role="status"
+      align="center"
+      justify="center"
+      gap={2}
+      minH="34px"
+      px={4}
+      py={1.5}
+      bg="warn.soft"
+      color="warn"
+      fontSize="13px"
+      fontWeight={600}
+      textAlign="center"
+      position="sticky"
+      top={0}
+      zIndex={1500}
+    >
+      <Icon as={FiWifiOff} boxSize="15px" flexShrink={0} />
+      <Text>You're offline — showing saved data. Changes need a connection, so editing is paused.</Text>
+    </Flex>
   );
 }

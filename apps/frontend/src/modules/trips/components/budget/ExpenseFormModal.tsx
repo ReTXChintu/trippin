@@ -83,21 +83,19 @@ export function ExpenseFormModal({ trip, members, currentUserId, initial, onClos
   return (
     <Modal isOpen={Boolean(initial)} onClose={onClose} size="lg">
       <ModalOverlay />
-      <ModalContent>
+      <ModalContent mx={{ base: 3, md: "auto" }}>
         <ModalHeader>{draft.id ? "Edit expense" : "Add an expense"}</ModalHeader>
         <ModalCloseButton />
         <ModalBody>
           <Stack spacing={4}>
             <FormControl isRequired>
-              <FormLabel fontSize="sm">What for?</FormLabel>
-              <Input size="sm" value={draft.description ?? ""} onChange={(e) => patch({ description: e.target.value })} placeholder="Dinner at Tapri, auto to fort…" />
+              <FormLabel>What for?</FormLabel>
+              <Input value={draft.description ?? ""} onChange={(e) => patch({ description: e.target.value })} placeholder="Dinner at Tapri, auto to fort…" />
             </FormControl>
             <HStack align="end" spacing={3}>
               <FormControl isRequired>
-                <FormLabel fontSize="sm">Amount</FormLabel>
-                <Input
-                  size="sm"
-                  type="number"
+                <FormLabel>Amount</FormLabel>
+                <Input type="number"
                   min={0}
                   step="0.01"
                   value={draft.amount ?? ""}
@@ -105,8 +103,8 @@ export function ExpenseFormModal({ trip, members, currentUserId, initial, onClos
                 />
               </FormControl>
               <FormControl w="120px" flexShrink={0}>
-                <FormLabel fontSize="sm">Currency</FormLabel>
-                <Select size="sm" value={draft.currency ?? trip.currency} onChange={(e) => patch({ currency: e.target.value })}>
+                <FormLabel>Currency</FormLabel>
+                <Select value={draft.currency ?? trip.currency} onChange={(e) => patch({ currency: e.target.value })}>
                   {[...new Set([trip.currency, ...COMMON_CURRENCIES])].map((c) => (
                     <option key={c} value={c}>
                       {c}
@@ -117,8 +115,8 @@ export function ExpenseFormModal({ trip, members, currentUserId, initial, onClos
             </HStack>
             <SimpleGrid columns={2} spacing={3}>
               <FormControl>
-                <FormLabel fontSize="sm">Category</FormLabel>
-                <Select size="sm" value={draft.category ?? "food"} onChange={(e) => patch({ category: e.target.value as ExpenseCategory })}>
+                <FormLabel>Category</FormLabel>
+                <Select value={draft.category ?? "food"} onChange={(e) => patch({ category: e.target.value as ExpenseCategory })}>
                   {EXPENSE_CATEGORIES.map((c) => (
                     <option key={c} value={c}>
                       {CATEGORY_LABELS[c].label}
@@ -127,15 +125,15 @@ export function ExpenseFormModal({ trip, members, currentUserId, initial, onClos
                 </Select>
               </FormControl>
               <FormControl>
-                <FormLabel fontSize="sm">Date</FormLabel>
-                <Input size="sm" type="date" value={draft.date ?? ""} onChange={(e) => patch({ date: e.target.value })} />
+                <FormLabel>Date</FormLabel>
+                <Input type="date" value={draft.date ?? ""} onChange={(e) => patch({ date: e.target.value })} />
               </FormControl>
             </SimpleGrid>
             {members.length > 1 && (
               <>
                 <FormControl>
-                  <FormLabel fontSize="sm">Paid by</FormLabel>
-                  <Select size="sm" value={draft.paidBy ?? ""} onChange={(e) => patch({ paidBy: e.target.value })}>
+                  <FormLabel>Paid by</FormLabel>
+                  <Select value={draft.paidBy ?? ""} onChange={(e) => patch({ paidBy: e.target.value })}>
                     {members.map((m) => (
                       <option key={m.id} value={m.id}>
                         {m.id === currentUserId ? `${m.name} (you)` : m.name}
@@ -144,7 +142,7 @@ export function ExpenseFormModal({ trip, members, currentUserId, initial, onClos
                   </Select>
                 </FormControl>
                 <FormControl>
-                  <FormLabel fontSize="sm">Split equally between</FormLabel>
+                  <FormLabel>Split equally between</FormLabel>
                   <CheckboxGroup value={draft.splitWith ?? []} onChange={(v) => patch({ splitWith: v as string[] })}>
                     <Wrap spacing={4}>
                       {members.map((m) => (
@@ -165,7 +163,7 @@ export function ExpenseFormModal({ trip, members, currentUserId, initial, onClos
           <Button variant="ghost" mr={2} onClick={onClose}>
             Cancel
           </Button>
-          <Button colorScheme="brand" onClick={handleSave} isDisabled={!valid} isLoading={save.isPending}>
+          <Button onClick={handleSave} isDisabled={!valid} isLoading={save.isPending}>
             {draft.id ? "Save" : "Add expense"}
           </Button>
         </ModalFooter>

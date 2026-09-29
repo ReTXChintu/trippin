@@ -5,28 +5,7 @@ import "leaflet/dist/leaflet.css";
 import { decode } from "@googlemaps/polyline-codec";
 import type { ItineraryDay, ItineraryStop } from "@/modules/itinerary/types";
 import type { DayRoute } from "@/modules/itinerary/api/itinerary.api";
-
-const BRAND = "#0d9488";
-const MEAL = "#f97316";
-const STAY = "#3182CE";
-
-function pinIcon(label: string, color: string, highlighted: boolean): L.DivIcon {
-  const size = highlighted ? 34 : 26;
-  return L.divIcon({
-    className: "",
-    html: `<div style="background:${color};color:white;width:${size}px;height:${size}px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:${highlighted ? 14 : 12}px;font-weight:700;border:2px solid white;box-shadow:0 1px 5px rgba(0,0,0,${highlighted ? 0.45 : 0.3});transition:all .15s">${label}</div>`,
-    iconSize: [size, size],
-    iconAnchor: [size / 2, size / 2],
-    popupAnchor: [0, -size / 2],
-  });
-}
-
-const stayIcon = L.divIcon({
-  className: "",
-  html: `<div style="background:${STAY};color:white;width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,0.3);">🛏</div>`,
-  iconSize: [28, 28],
-  iconAnchor: [14, 14],
-});
+import { V, dayVar, mealPin, numberPin, stayPin, useDayColors } from "./map-pins";
 
 const HOTEL_START_ID = "hotel-start";
 
@@ -38,9 +17,25 @@ interface MapViewProps {
   route?: DayRoute | null;
   height?: string;
   highlightedStopId?: string | null;
+  /** The stop picked in the list — drawn larger with an accent ring. */
+  selectedStopId?: string | null;
   onStopClick?: (stopId: string) => void;
   /** Where to look when the day itself has nothing to show (e.g. a travel day). */
   fallbackCenter?: { lat: number; lng: number };
+  /** Hide Leaflet's zoom buttons (phones pinch). */
+  zoomControl?: boolean;
+}
+
+/** Keeps Leaflet's size in step with its box (tab switches, panel resizes, List/Map toggles). */
+export function AutoResize() {
+  const map = useMap();
+  useEffect(() => {
+    const el = map.getContainer();
+    const ro = new ResizeObserver(() => map.invalidateSize());
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [map]);
+  return null;
 }
 
 function FitBounds({ points }: { points: { lat: number; lng: number }[] }) {
@@ -49,11 +44,13 @@ function FitBounds({ points }: { points: { lat: number; lng: number }[] }) {
 
   useEffect(() => {
     if (points.length === 0) return;
-    if (points.length === 1) {
-      map.setView([points[0].lat, points[0].lng], 14);
-      return;
-    }
-    map.fitBounds(L.latLngBounds(points.map((p) => [p.lat, p.lng] as [number, number])), { padding: [40, 40] });
+    const fit = () => {
+      map.invalidateSize();
+      if (points.length === 1) map.setView([points[0].lat, points[0].lng], 14);
+      else map.fitBounds(L.latLngBounds(points.map((p) => [p.lat, p.lng] as [number, number])), { padding: [48, 48] });
+    };
+    const timer = window.setTimeout(fit, 30);
+    return () => window.clearTimeout(timer);
     // Refit only when the set of points actually changes, not on every render.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [map, key]);
@@ -61,7 +58,7 @@ function FitBounds({ points }: { points: { lat: number; lng: number }[] }) {
   return null;
 }
 
-function PanToHighlighted({ stop }: { stop: ItineraryStop | undefined }) {
+function PanToStop({ stop }: { stop: ItineraryStop | undefined }) {
   const map = useMap();
   useEffect(() => {
     if (stop?.coordinates && !map.getBounds().contains([stop.coordinates.lat, stop.coordinates.lng])) {
@@ -71,13 +68,12 @@ function PanToHighlighted({ stop }: { stop: ItineraryStop | undefined }) {
   return null;
 }
 
-/** Visits get numbers matching the timeline; meals with a chosen place get a fork. */
+/** Visits get numbers matching the timeline. */
 function markerLabels(stops: ItineraryStop[]): Map<string, string> {
   const labels = new Map<string, string>();
   let n = 0;
   for (const stop of stops) {
-    if (stop.stopType === "meal") labels.set(stop.id, "🍴");
-    else if (stop.stopType !== "return" && stop.stopType !== "transfer") labels.set(stop.id, String(++n));
+    if (stop.stopType !== "meal" && stop.stopType !== "return" && stop.stopType !== "transfer") labels.set(stop.id, String(++n));
   }
   return labels;
 }
@@ -88,9 +84,16 @@ export function MapView({
   route,
   height = "100%",
   highlightedStopId,
+  selectedStopId,
   onStopClick,
   fallbackCenter,
+  zoomControl = true,
 }: MapViewProps) {
+  const dayColors = useDayColors();
+  const dayNumber = day?.dayNumber ?? 1;
+  const lineColor = dayColors[(dayNumber - 1) % 8];
+  const pinColor = dayVar(dayNumber);
+
   const stops = useMemo(
     () => day?.stops.filter((s) => s.coordinates && s.stopType !== "transfer" && s.stopType !== "return") ?? [],
     [day],
@@ -144,49 +147,57 @@ export function MapView({
     })
     .filter((h): h is NonNullable<typeof h> => h !== null);
 
-  const highlighted = highlightedStopId ? stopById.get(highlightedStopId) : undefined;
+  const focusStop = (selectedStopId && stopById.get(selectedStopId)) || (highlightedStopId ? stopById.get(highlightedStopId) : undefined);
 
   return (
-    <MapContainer center={defaultCenter} zoom={defaultZoom} style={{ height, width: "100%", borderRadius: "12px" }} scrollWheelZoom>
+    <MapContainer center={defaultCenter} zoom={defaultZoom} style={{ height, width: "100%" }} scrollWheelZoom zoomControl={false}>
       <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
+      {zoomControl && <ZoomTopRight />}
+      <AutoResize />
       <FitBounds points={allPoints} />
-      <PanToHighlighted stop={highlighted} />
+      <PanToStop stop={focusStop} />
+
+      {decodedLines
+        ? decodedLines.map((line, i) => <Polyline key={i} positions={line} color={lineColor} weight={4} opacity={0.85} />)
+        : straightLine.length >= 2 && <Polyline positions={straightLine} color={lineColor} weight={3} opacity={0.8} dashArray="6 7" />}
 
       {hotelCoordinates && (
-        <Marker position={[hotelCoordinates.lat, hotelCoordinates.lng]} icon={stayIcon}>
+        <Marker position={[hotelCoordinates.lat, hotelCoordinates.lng]} icon={stayPin} zIndexOffset={500}>
           <Popup>Start of the day — your stay</Popup>
         </Marker>
       )}
       {endStay && (!hotelCoordinates || endStay.lat !== hotelCoordinates.lat || endStay.lng !== hotelCoordinates.lng) && (
-        <Marker position={[endStay.lat, endStay.lng]} icon={stayIcon}>
+        <Marker position={[endStay.lat, endStay.lng]} icon={stayPin}>
           <Popup>Tonight's stay</Popup>
         </Marker>
       )}
 
-      {stops.map((stop) => (
-        <Marker
-          key={stop.id}
-          position={[stop.coordinates!.lat, stop.coordinates!.lng]}
-          icon={pinIcon(labels.get(stop.id) ?? "•", stop.stopType === "meal" ? MEAL : BRAND, stop.id === highlightedStopId)}
-          zIndexOffset={stop.id === highlightedStopId ? 1000 : 0}
-          eventHandlers={onStopClick ? { click: () => onStopClick(stop.id) } : undefined}
-        >
-          <Tooltip direction="top" offset={[0, -12]}>
-            <strong>{stop.placeName}</strong>
-            <br />
-            {stop.arrivalTime} – {stop.departureTime}
-          </Tooltip>
-        </Marker>
-      ))}
-
-      {decodedLines
-        ? decodedLines.map((line, i) => <Polyline key={i} positions={line} color={BRAND} weight={4} opacity={0.75} />)
-        : straightLine.length >= 2 && (
-            <Polyline positions={straightLine} color={BRAND} weight={3} opacity={0.6} dashArray="6 6" />
-          )}
+      {stops.map((stop) => {
+        const selected = stop.id === selectedStopId;
+        const hover = !selected && stop.id === highlightedStopId;
+        const icon =
+          stop.stopType === "meal"
+            ? mealPin(selected || hover)
+            : numberPin(labels.get(stop.id) ?? "•", pinColor, selected ? "selected" : hover ? "hover" : stop.status ? "dim" : "normal");
+        return (
+          <Marker
+            key={stop.id}
+            position={[stop.coordinates!.lat, stop.coordinates!.lng]}
+            icon={icon}
+            zIndexOffset={selected ? 1200 : hover ? 1000 : 0}
+            eventHandlers={onStopClick ? { click: () => onStopClick(stop.id) } : undefined}
+          >
+            <Tooltip direction="top" offset={[0, -14]}>
+              <strong>{stop.placeName}</strong>
+              <br />
+              {stop.arrivalTime} – {stop.departureTime}
+            </Tooltip>
+          </Marker>
+        );
+      })}
 
       {hopMidpoints.map((hop) => (
         <Marker
@@ -194,7 +205,7 @@ export function MapView({
           position={hop.position}
           icon={L.divIcon({
             className: "",
-            html: `<div style="background:white;color:#2D3748;padding:1px 6px;border-radius:8px;font-size:11px;font-weight:600;white-space:nowrap;border:1px solid #CBD5E0;box-shadow:0 1px 3px rgba(0,0,0,0.2);transform:translate(-50%,-50%)">${hop.durationMinutes} min</div>`,
+            html: `<div style="background:${V.surface};color:${V.muted};padding:1px 7px;border-radius:999px;font:600 11px 'DM Sans',sans-serif;white-space:nowrap;border:1px solid ${V.line};box-shadow:0 1px 3px rgba(0,0,0,0.15);transform:translate(-50%,-50%)">${hop.durationMinutes} min</div>`,
             iconSize: [0, 0],
           })}
           interactive={false}
@@ -205,3 +216,17 @@ export function MapView({
     </MapContainer>
   );
 }
+
+/** Leaflet's zoom buttons, top-right. */
+export function ZoomTopRight() {
+  const map = useMap();
+  useEffect(() => {
+    const control = L.control.zoom({ position: "topright" });
+    control.addTo(map);
+    return () => {
+      control.remove();
+    };
+  }, [map]);
+  return null;
+}
+

@@ -1,39 +1,31 @@
-import { Badge, Box, HStack, Text } from "@chakra-ui/react";
+import { Flex, Icon, Text } from "@chakra-ui/react";
 import type { ItineraryStop } from "@/modules/itinerary/types";
+import { categoryIcon } from "@/modules/trips/components/tabs/placeMeta";
 
 interface PlaceCardProps {
   stop: ItineraryStop;
   compact?: boolean;
 }
 
+/** Compact stop card: name, category, time window, visit length. */
 export function PlaceCard({ stop, compact = false }: PlaceCardProps) {
-  const borderColor = "border.line";
-  const bg = "bg.subtle";
-
   return (
-    <Box
-      p={compact ? 2 : 3}
-      bg={bg}
-      borderWidth="1px"
-      borderColor={borderColor}
-      borderRadius="md"
-    >
-      <Text fontWeight="medium" fontSize={compact ? "sm" : "md"} noOfLines={1}>
+    <Flex direction="column" gap="4px" px={compact ? "10px" : "14px"} py={compact ? "8px" : "12px"} bg="bg.surface" borderWidth="1px" borderColor="border.line" borderRadius="xl">
+      <Text fontWeight={600} fontSize={compact ? "13px" : "14px"} noOfLines={1}>
         {stop.placeName}
       </Text>
-      <HStack spacing={2} mt={1} flexWrap="wrap">
+      <Flex align="center" gap={2} fontSize="12px" color="fg.muted" flexWrap="wrap">
         {stop.category && (
-          <Badge size="sm" colorScheme="brand">
-            {stop.category}
-          </Badge>
+          <Flex align="center" gap={1}>
+            <Icon as={categoryIcon(stop.category)} boxSize="13px" />
+            <Text>{stop.category}</Text>
+          </Flex>
         )}
-        <Text fontSize="xs" color="fg.muted">
+        <Text>
           {stop.arrivalTime} – {stop.departureTime}
         </Text>
-        <Text fontSize="xs" color="fg.muted">
-          {stop.visitDurationMinutes} min visit
-        </Text>
-      </HStack>
-    </Box>
+        <Text>· {stop.visitDurationMinutes} min visit</Text>
+      </Flex>
+    </Flex>
   );
 }

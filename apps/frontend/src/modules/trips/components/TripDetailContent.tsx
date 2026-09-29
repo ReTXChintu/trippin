@@ -1,31 +1,15 @@
-import {
-  Alert,
-  AlertDescription,
-  AlertIcon,
-  Box,
-  Circle,
-  HStack,
-  Icon,
-  Stack,
-  Tab,
-  TabList,
-  TabPanel,
-  TabPanels,
-  Tabs,
-  Text,
-  useDisclosure,
-} from "@chakra-ui/react";
-import { Link, useParams, useSearchParams } from "react-router-dom";
-import { FiBookOpen, FiCalendar, FiCheckSquare, FiDollarSign, FiMapPin } from "react-icons/fi";
-import { MdConfirmationNumber, MdHotel, MdRestaurant } from "react-icons/md";
-import type { IconType } from "react-icons";
+import { Box, Button, Stack, Text, useDisclosure } from "@chakra-ui/react";
+import { useState } from "react";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { LuBookOpen, LuListChecks, LuTicket, LuUtensils, LuWallet } from "react-icons/lu";
 import { LoadingState } from "@/components/ui/LoadingState";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { useTripQuery } from "@/modules/trips/hooks/useTrips";
+import { KeyMissingNotice, ViewOnlyBanner } from "@/components/states";
+import { useBudgetQuery, useTripQuery } from "@/modules/trips/hooks/useTrips";
+import { useItineraryQuery } from "@/modules/itinerary/hooks/useItinerary";
 import { useAuthStore } from "@/store/authStore";
 import { canEditTrip, isTripOwner } from "@/lib/trip-access";
 import { TripHeader } from "@/modules/trips/components/TripHeader";
-import { CitySwitcher } from "@/modules/trips/components/CitySwitcher";
 import { LegExplorePanel } from "@/modules/trips/components/LegExplorePanel";
 import { StaysView } from "@/modules/trips/components/stays/StaysView";
 import { TripPlacesPanel } from "@/modules/places/components/TripPlacesPanel";
@@ -34,27 +18,34 @@ import { FoodView } from "@/modules/itinerary/components/FoodView";
 import { BookingsView } from "@/modules/trips/components/bookings/BookingsView";
 import { BudgetView } from "@/modules/trips/components/budget/BudgetView";
 import { ChecklistView } from "@/modules/trips/components/ChecklistView";
+import { ItineraryPrintContent } from "@/modules/itinerary/components/ItineraryExportMenu";
+import { useItineraryExport } from "@/modules/itinerary/components/useItineraryExport";
+import { MoreSheet, TripBottomNav, TripTabBar, type TabBadges } from "@/modules/trips/components/workspace/TripTabs";
+import { MORE_ICONS, TRIP_TABS } from "@/modules/trips/components/workspace/tabs";
 import { getEffectiveLegs } from "@/modules/trips/utils/trip-leg.utils";
 import { getUncoveredNights } from "@/modules/trips/utils/stay.utils";
-
-const TABS: { key: TripTab; label: string; icon: IconType }[] = [
-  { key: "plan", label: "Plan", icon: FiCalendar },
-  { key: "places", label: "Places", icon: FiMapPin },
-  { key: "stays", label: "Stays", icon: MdHotel },
-  { key: "food", label: "Food", icon: MdRestaurant },
-  { key: "bookings", label: "Bookings", icon: MdConfirmationNumber },
-  { key: "budget", label: "Budget", icon: FiDollarSign },
-  { key: "checklist", label: "Checklist", icon: FiCheckSquare },
-  { key: "guide", label: "Guide", icon: FiBookOpen },
-];
+import { getTripStages } from "@/modules/trips/utils/trip-stage";
+import { formatMoney } from "@/modules/trips/utils/money";
 
 export function TripDetailContent() {
   const { id = "" } = useParams();
+  const navigate = useNavigate();
   const currentUserId = useAuthStore((s) => s.user?.id ?? "");
   const [params, setParams] = useSearchParams();
   const { data: trip, isLoading } = useTripQuery(id);
-  const tabBorder = "border.line";
+  const { data: itineraryData } = useItineraryQuery(id);
+  const { data: budget } = useBudgetQuery(id);
   const settings = useDisclosure();
+  const discussion = useDisclosure();
+  const more = useDisclosure();
+  const itinerary = itineraryData?.itinerary ?? null;
+  const exportActions = useItineraryExport(trip!, itinerary);
+
+  const requestedTab = params.get("tab") as TripTab | null;
+  const tab: TripTab = TRIP_TABS.some((t) => t.key === requestedTab) ? requestedTab! : "plan";
+  // Tabs stay mounted once opened (keeps map position, scroll and drafts when switching back).
+  const [visited, setVisited] = useState<Set<TripTab>>(() => new Set([tab]));
+  if (!visited.has(tab)) setVisited(new Set(visited).add(tab));
 
   if (isLoading) return <LoadingState />;
   if (!trip) return <EmptyState title="Trip not found" />;
@@ -62,8 +53,6 @@ export function TripDetailContent() {
   const isOwner = isTripOwner(trip, currentUserId);
   const canEdit = canEditTrip(trip, currentUserId);
   const legs = getEffectiveLegs(trip);
-  const requestedTab = params.get("tab") as TripTab | null;
-  const tab: TripTab = TABS.some((t) => t.key === requestedTab) ? requestedTab! : "plan";
   const requestedCity = params.get("city");
   const cityId = legs.some((l) => l.id === requestedCity) ? requestedCity : null;
   /** Per-city tabs always need a city; default to the first. */
@@ -78,135 +67,155 @@ export function TripDetailContent() {
   };
   const setCity = (legId: string | null) => go(tab, legId);
 
-  const missingGoogleKey = trip.ownerApiKeys && !trip.ownerApiKeys.hasGoogleMapsKey;
-  const missingAiKey = trip.ownerApiKeys && !trip.ownerApiKeys.hasAiKey;
+  const missingGoogleKey = Boolean(trip.ownerApiKeys && !trip.ownerApiKeys.hasGoogleMapsKey);
+  const missingAiKey = Boolean(trip.ownerApiKeys && !trip.ownerApiKeys.hasAiKey);
   const selectedCount = legs.reduce((sum, l) => sum + l.selectedPlaceIds.length, 0);
-  const missingNights = legs.reduce((sum, l) => sum + getUncoveredNights(l).length, 0);
+  const gapCities = legs.filter((l) => getUncoveredNights(l).length > 0).length;
+  const savedFood = legs.reduce((sum, l) => sum + (l.foodPoolIds?.length ?? 0), 0);
+  const checklistDone = trip.checklist.filter((c) => c.done).length;
+  const bookedTransfers = new Set(trip.bookings.map((b) => b.transferId).filter(Boolean));
+  const unbookedTransfers = (trip.transfers ?? []).filter((t) => !bookedTransfers.has(t.id)).length;
   const focusedLeg = legs.find((l) => l.id === focusedCityId);
+  const hasPlan = Boolean(itinerary?.days.some((d) => d.stops.some((s) => s.stopType !== "meal")));
+  const stages = getTripStages(trip, { hasPlan, edits: itinerary?.historyCount ?? 0 });
+
+  const badges: TabBadges = {
+    places: selectedCount > 0 ? { text: String(selectedCount) } : undefined,
+    stays: gapCities > 0 ? { text: `${gapCities} gap${gapCities === 1 ? "" : "s"}`, warn: true } : undefined,
+    food: savedFood > 0 ? { text: String(savedFood) } : undefined,
+    bookings: trip.bookings.length > 0 ? { text: String(trip.bookings.length) } : undefined,
+    checklist: trip.checklist.length > 0 ? { text: `${checklistDone}/${trip.checklist.length}` } : undefined,
+  };
+
+  const banners = (missingGoogleKey || missingAiKey || !canEdit) && (
+    <Stack spacing={2} mb={3} mt={{ base: 3, lg: 0 }}>
+      {missingGoogleKey && <KeyMissingNotice kind="maps" canFix={isOwner} />}
+      {missingAiKey && <KeyMissingNotice kind="ai" canFix={isOwner} />}
+      {!canEdit && (
+        <ViewOnlyBanner
+          action={
+            <Button variant="link" size="sm" fontSize="12px" color="accent.text" textDecoration="underline" onClick={discussion.onOpen} flexShrink={0}>
+              Ask owner for edit access
+            </Button>
+          }
+        />
+      )}
+    </Stack>
+  );
+
+  const panel = (key: TripTab, content: React.ReactNode, padded = true) =>
+    visited.has(key) ? (
+      <Box
+        key={key}
+        role="tabpanel"
+        id={`trip-panel-${key}`}
+        aria-labelledby={`trip-tab-${key}`}
+        display={tab === key ? "block" : "none"}
+        px={padded ? { base: 4, md: 7 } : 0}
+        pt={padded ? 6 : 0}
+      >
+        {content}
+      </Box>
+    ) : null;
+
+  const moreItems = [
+    { key: "food", icon: LuUtensils, label: "Food", value: savedFood > 0 ? `${savedFood} saved` : undefined, onClick: () => go("food") },
+    {
+      key: "bookings",
+      icon: LuTicket,
+      label: "Bookings",
+      value: unbookedTransfers > 0 ? `${unbookedTransfers} need${unbookedTransfers === 1 ? "s" : ""} booking` : trip.bookings.length > 0 ? `${trip.bookings.length} booked` : undefined,
+      onClick: () => go("bookings"),
+    },
+    {
+      key: "budget",
+      icon: LuWallet,
+      label: "Budget",
+      value: budget && budget.spent.total > 0 ? `${formatMoney(budget.spent.total, budget.currency)} spent` : undefined,
+      onClick: () => go("budget"),
+    },
+    {
+      key: "checklist",
+      icon: LuListChecks,
+      label: "Checklist",
+      value: trip.checklist.length > 0 ? `${checklistDone} / ${trip.checklist.length}` : undefined,
+      onClick: () => go("checklist"),
+    },
+    { key: "guide", icon: LuBookOpen, label: "Guide", value: "AI local guide", onClick: () => go("guide") },
+    ...(canEdit && hasPlan
+      ? [{ key: "compare", icon: MORE_ICONS.compare, label: "Compare with AI plan", onClick: () => navigate(`/trips/${trip.id}/itinerary/compare${cityId ? `?legId=${cityId}` : ""}`) }]
+      : []),
+    ...(itinerary ? [{ key: "print", icon: MORE_ICONS.print, label: "Print itinerary", onClick: exportActions.print }] : []),
+    { key: "share", icon: MORE_ICONS.share, label: "Share & members", onClick: settings.onOpen },
+  ];
 
   return (
-    <Stack spacing={6} maxW="1600px" mx="auto">
-      {(missingGoogleKey || missingAiKey) && (
-        <Alert status="warning" borderRadius="md" fontSize="sm" py={2}>
-          <AlertIcon />
-          <AlertDescription>
-            {isOwner ? (
-              <>
-                Add your {missingGoogleKey ? "Google Maps" : ""}
-                {missingGoogleKey && missingAiKey ? " and " : ""}
-                {missingAiKey ? "OpenAI or Gemini" : ""} key in{" "}
-                <Link to="/profile" style={{ textDecoration: "underline" }}>
-                  Profile
-                </Link>{" "}
-                to unlock {missingGoogleKey ? "place search, hotels, restaurants and real travel times" : "AI features"}.
-              </>
-            ) : (
-              <>The trip owner needs to add {missingGoogleKey ? "a Google Maps" : "an OpenAI or Gemini"} key before those features work.</>
-            )}
-          </AlertDescription>
-        </Alert>
+    <Box mx={{ base: -4, md: -7 }} mt={{ base: -4, md: -5 }} mb={{ lg: -10 }}>
+      <Box bg="bg.surface" borderBottomWidth="1px" borderColor="border.line" px={{ base: 4, md: 7 }} pt={{ base: 0, lg: 4 }}>
+        <TripHeader
+          trip={trip}
+          currentUserId={currentUserId}
+          isOwner={isOwner}
+          canEdit={canEdit}
+          cityId={cityId}
+          stages={stages}
+          exportActions={exportActions}
+          onGo={go}
+          onCity={setCity}
+          onCityAdded={(legId) => go("places", legId)}
+          settings={settings}
+          discussion={discussion}
+          banners={banners || undefined}
+          tabs={<TripTabBar tab={tab} badges={badges} onChange={(t) => go(t)} />}
+        />
+      </Box>
+
+      {panel(
+        "plan",
+        <PlanView
+          trip={trip}
+          canEdit={canEdit}
+          hasMapsKey={!missingGoogleKey}
+          hasAiKey={!missingAiKey}
+          isOwner={isOwner}
+          cityId={cityId}
+          onCityChange={setCity}
+          onGoTo={(t, legId) => go(t, legId)}
+        />,
+        false,
+      )}
+      {panel(
+        "places",
+        focusedLeg ? (
+          <TripPlacesPanel key={focusedLeg.id} trip={trip} leg={focusedLeg} onPlanDays={() => go("plan", focusedLeg.id)} onCityChange={setCity} />
+        ) : null,
+      )}
+      {panel("stays", <StaysView trip={trip} cityId={cityId} onCityChange={setCity} />)}
+      {panel("food", <FoodView trip={trip} cityId={focusedCityId} onCityChange={setCity} onGoToGuide={() => go("guide")} />)}
+      {panel("bookings", <BookingsView trip={trip} />)}
+      {panel("budget", <BudgetView trip={trip} currentUserId={currentUserId} onOpenSettings={settings.onOpen} />)}
+      {panel("checklist", <ChecklistView trip={trip} />)}
+      {panel(
+        "guide",
+        focusedLeg && trip.legs.some((l) => l.id === focusedLeg.id) ? (
+          <LegExplorePanel key={focusedLeg.id} trip={trip} leg={focusedLeg} onCityChange={setCity} />
+        ) : (
+          <Text fontSize="sm" color="fg.muted">
+            Add a city to this trip to get a local guide.
+          </Text>
+        ),
       )}
 
-      {!canEdit && (
-        <Alert status="info" borderRadius="md" fontSize="sm" py={2}>
-          <AlertIcon />
-          <AlertDescription>You have view-only access — you can vote on places and comment. Ask the owner if you want to edit.</AlertDescription>
-        </Alert>
-      )}
+      {itinerary && <ItineraryPrintContent trip={trip} itinerary={itinerary} />}
 
-      <TripHeader
-        trip={trip}
-        currentUserId={currentUserId}
-        isOwner={isOwner}
-        onCityAdded={(legId) => go("places", legId)}
-        settings={settings}
+      <TripBottomNav
+        tab={tab}
+        todayHref={`/trips/${trip.id}/today`}
+        moreOpen={more.isOpen}
+        onTab={(t) => go(t)}
+        onMore={more.onOpen}
       />
-
-      <Tabs
-        index={TABS.findIndex((t) => t.key === tab)}
-        onChange={(i) => go(TABS[i].key)}
-        colorScheme="brand"
-        isLazy
-        lazyBehavior="keepMounted"
-      >
-        <TabList borderColor={tabBorder} overflowX="auto" overflowY="hidden">
-          {TABS.map((t) => (
-            <Tab key={t.key} fontWeight="semibold" fontSize="sm" px={{ base: 3, md: 5 }} flexShrink={0}>
-              <HStack spacing={2}>
-                <Icon as={t.icon} />
-                <Text>{t.label}</Text>
-                {t.key === "places" && selectedCount > 0 && (
-                  <Text as="span" fontSize="xs" color="fg.muted" fontWeight="normal">
-                    {selectedCount}
-                  </Text>
-                )}
-                {t.key === "stays" && missingNights > 0 && <Circle size="7px" bg="orange.400" />}
-                {t.key === "checklist" && trip.checklist.length > 0 && (
-                  <Text as="span" fontSize="xs" color="fg.muted" fontWeight="normal">
-                    {trip.checklist.filter((c) => c.done).length}/{trip.checklist.length}
-                  </Text>
-                )}
-              </HStack>
-            </Tab>
-          ))}
-        </TabList>
-
-        <TabPanels>
-          <TabPanel px={0} pt={6}>
-            <PlanView
-              trip={trip}
-              canEdit={canEdit}
-              hasMapsKey={!missingGoogleKey}
-              hasAiKey={!missingAiKey}
-              cityId={cityId}
-              onCityChange={setCity}
-              onGoTo={(t, legId) => go(t, legId)}
-            />
-          </TabPanel>
-          <TabPanel px={0} pt={6}>
-            <Stack spacing={5}>
-              <CitySwitcher legs={legs} value={focusedCityId} onChange={setCity} />
-              {focusedLeg && (
-                <TripPlacesPanel
-                  key={focusedLeg.id}
-                  trip={trip}
-                  leg={focusedLeg}
-                  onPlanDays={() => go("plan", focusedLeg.id)}
-                />
-              )}
-            </Stack>
-          </TabPanel>
-          <TabPanel px={0} pt={6}>
-            <StaysView trip={trip} cityId={focusedCityId} onCityChange={setCity} />
-          </TabPanel>
-          <TabPanel px={0} pt={6}>
-            <FoodView trip={trip} cityId={focusedCityId} onCityChange={setCity} onGoToGuide={() => go("guide")} />
-          </TabPanel>
-          <TabPanel px={0} pt={6}>
-            <BookingsView trip={trip} />
-          </TabPanel>
-          <TabPanel px={0} pt={6}>
-            <BudgetView trip={trip} currentUserId={currentUserId} onOpenSettings={settings.onOpen} />
-          </TabPanel>
-          <TabPanel px={0} pt={6}>
-            <ChecklistView trip={trip} />
-          </TabPanel>
-          <TabPanel px={0} pt={6}>
-            <Stack spacing={5}>
-              <CitySwitcher legs={legs} value={focusedCityId} onChange={setCity} />
-              {focusedLeg && trip.legs.some((l) => l.id === focusedLeg.id) ? (
-                <LegExplorePanel key={focusedLeg.id} trip={trip} leg={focusedLeg} />
-              ) : (
-                <Box>
-                  <Text fontSize="sm" color="fg.muted">
-                    Add a city to this trip to get a local guide.
-                  </Text>
-                </Box>
-              )}
-            </Stack>
-          </TabPanel>
-        </TabPanels>
-      </Tabs>
-    </Stack>
+      <MoreSheet isOpen={more.isOpen} onClose={more.onClose} items={moreItems} />
+    </Box>
   );
 }

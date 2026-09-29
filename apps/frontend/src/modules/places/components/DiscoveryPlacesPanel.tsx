@@ -1,18 +1,8 @@
-import {
-  Badge,
-  Box,
-  Button,
-  Checkbox,
-  Flex,
-  HStack,
-  SimpleGrid,
-  Stack,
-  Tag,
-  Text,
-  useToast,
-} from "@chakra-ui/react";
-import { useMemo, useState } from "react";
-import { FiMinus, FiPlus } from "react-icons/fi";
+import { Box, Button, Flex, Icon, SimpleGrid, Stack, Text, useToast } from "@chakra-ui/react";
+import { type ReactNode, useMemo, useState } from "react";
+import { FiCheckSquare, FiPlus, FiSearch, FiX } from "react-icons/fi";
+import { LuSparkles } from "react-icons/lu";
+import { ChoiceChip, EmptyState } from "@/components/ui";
 import {
   useAddPlaceFromSearch,
   useAddPlaceToTrip,
@@ -21,7 +11,6 @@ import {
 } from "@/modules/places/hooks/usePlaces";
 import { getApiErrorMessage } from "@/lib/api";
 import { PlaceDetailModal } from "@/modules/places/components/PlaceDetailModal";
-import { VoteButton } from "@/modules/trips/components/collab/VoteButton";
 import { PlaceFilterBar } from "@/modules/places/components/PlaceFilterBar";
 import { PlaceSearchInput } from "@/modules/places/components/PlaceSearchInput";
 import type { Place } from "@/modules/places/types/place.types";
@@ -31,6 +20,8 @@ import {
   getUniqueCategories,
   type PlaceFilterState,
 } from "@/modules/places/utils/place-filter.utils";
+import { PlaceTile } from "@/modules/trips/components/tabs/PlaceTile";
+import { DEFAULT_QUICK_FILTERS, isOpenNow, type PlaceQuickFilters } from "@/modules/trips/components/tabs/placeMeta";
 import type { Trip } from "@/modules/trips/types/trip.types";
 import type { TripLeg } from "@/modules/trips/types/trip-leg.types";
 
@@ -40,6 +31,8 @@ interface DiscoveryPlacesPanelProps {
   poolPlaces: Place[];
   selectedPlaceIds: Set<string>;
   onSelectedChange: (ids: string[]) => void;
+  /** Shown in the empty state (e.g. the "Find places" button). */
+  emptyAction?: ReactNode;
 }
 
 export function DiscoveryPlacesPanel({
@@ -48,22 +41,21 @@ export function DiscoveryPlacesPanel({
   poolPlaces,
   selectedPlaceIds,
   onSelectedChange,
+  emptyAction,
 }: DiscoveryPlacesPanelProps) {
   const toast = useToast();
   const [filters, setFilters] = useState<PlaceFilterState>(DEFAULT_PLACE_FILTERS);
+  const [quick, setQuick] = useState<PlaceQuickFilters>(DEFAULT_QUICK_FILTERS);
   const [modalPlaceId, setModalPlaceId] = useState<string | null>(null);
+  const [selectMode, setSelectMode] = useState(false);
   const [checkedIds, setCheckedIds] = useState<Set<string>>(new Set());
+  const [showAiSearch, setShowAiSearch] = useState(false);
   const [searchPrefill, setSearchPrefill] = useState<string | null>(null);
   const addPlace = useAddPlaceToTrip(trip.id, leg.id);
   const removePlace = useRemovePlaceFromTrip(trip.id, leg.id);
   const bulkAddPlaces = useBulkAddPlacesToTrip(trip.id, leg.id);
   const addFromSearch = useAddPlaceFromSearch(trip.id, leg.id);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
-
-  const borderColor = "border.line";
-  const selectedBg = "accent.soft";
-  const hoverBg = "bg.subtle";
-  const aiSectionBg = "accent.soft";
 
   const legPoolIds = useMemo(() => new Set(leg.discoveryPoolIds), [leg.discoveryPoolIds]);
   const aiMatchedIds = useMemo(() => new Set(leg.aiMatchedPlaceIds ?? []), [leg.aiMatchedPlaceIds]);
@@ -75,10 +67,16 @@ export function DiscoveryPlacesPanel({
 
   const categories = useMemo(() => getUniqueCategories(scopedPoolPlaces), [scopedPoolPlaces]);
 
-  const filteredPlaces = useMemo(
-    () => filterAndSortPlaces(scopedPoolPlaces, filters, leg.hotelCoordinates ?? trip.hotelCoordinates),
-    [scopedPoolPlaces, filters, leg.hotelCoordinates, trip.hotelCoordinates],
-  );
+  const filteredPlaces = useMemo(() => {
+    const base = filterAndSortPlaces(scopedPoolPlaces, filters, leg.hotelCoordinates ?? trip.hotelCoordinates);
+    return base.filter((p) => {
+      const id = p.googlePlaceId ?? "";
+      if (quick.aiMatches && !aiMatchedIds.has(id)) return false;
+      if (quick.voted && !(trip.placeVotes?.[id]?.length ?? 0)) return false;
+      if (quick.openNow && isOpenNow(p) !== true) return false;
+      return true;
+    });
+  }, [scopedPoolPlaces, filters, quick, aiMatchedIds, trip.placeVotes, leg.hotelCoordinates, trip.hotelCoordinates]);
 
   const filteredIds = useMemo(
     () => filteredPlaces.map((p) => p.googlePlaceId).filter((id): id is string => Boolean(id)),
@@ -86,8 +84,6 @@ export function DiscoveryPlacesPanel({
   );
 
   const allVisibleChecked = filteredIds.length > 0 && filteredIds.every((id) => checkedIds.has(id));
-  const someVisibleChecked = filteredIds.some((id) => checkedIds.has(id));
-
   const selectedToAddCount = [...checkedIds].filter((id) => !selectedPlaceIds.has(id)).length;
 
   const toggleChecked = (placeId: string, checked: boolean) => {
@@ -100,19 +96,11 @@ export function DiscoveryPlacesPanel({
   };
 
   const toggleAllVisible = () => {
-    if (allVisibleChecked) {
-      setCheckedIds((prev) => {
-        const next = new Set(prev);
-        filteredIds.forEach((id) => next.delete(id));
-        return next;
-      });
-    } else {
-      setCheckedIds((prev) => {
-        const next = new Set(prev);
-        filteredIds.forEach((id) => next.add(id));
-        return next;
-      });
-    }
+    setCheckedIds((prev) => {
+      const next = new Set(prev);
+      filteredIds.forEach((id) => (allVisibleChecked ? next.delete(id) : next.add(id)));
+      return next;
+    });
   };
 
   const syncFromPlaces = (places: Place[]) => {
@@ -134,28 +122,19 @@ export function DiscoveryPlacesPanel({
 
   const handleBulkAdd = async (placeIds: string[]) => {
     const toAdd = placeIds.filter((id) => !selectedPlaceIds.has(id));
-
     if (toAdd.length === 0) {
       toast({ title: "Selected places are already in your trip", status: "info" });
       return;
     }
-
     try {
       const result = await bulkAddPlaces.mutateAsync(toAdd);
       syncFromPlaces(result.places);
       setCheckedIds(new Set());
+      setSelectMode(false);
       toast({ title: `Added ${toAdd.length} place(s) to trip`, status: "success" });
     } catch (err) {
       toast({ title: getApiErrorMessage(err), status: "error" });
     }
-  };
-
-  const handleBulkAddVisible = () => {
-    handleBulkAdd(filteredIds);
-  };
-
-  const handleBulkAddSelected = () => {
-    handleBulkAdd([...checkedIds]);
   };
 
   const handleAddFromSearch = async (selection: { googlePlaceId: string; name: string }) => {
@@ -170,201 +149,150 @@ export function DiscoveryPlacesPanel({
   };
 
   const aiSuggestedNames = (leg.aiSuggestedPlaceNames ?? []).filter(
-    (name) => !filteredPlaces.some((p) => p.name.toLowerCase() === name.toLowerCase()),
+    (name) => !scopedPoolPlaces.some((p) => p.name.toLowerCase() === name.toLowerCase()),
   );
+  const cityName = leg.name || leg.baseCity;
+
+  const resultActions =
+    filteredPlaces.length > 0 ? (
+      selectMode ? (
+        <>
+          <Button size="xs" variant="ghost" onClick={toggleAllVisible}>
+            {allVisibleChecked ? "Clear" : `Select all ${filteredIds.length}`}
+          </Button>
+          <Button size="xs" leftIcon={<FiPlus />} onClick={() => void handleBulkAdd([...checkedIds])} isDisabled={checkedIds.size === 0} isLoading={bulkAddPlaces.isPending}>
+            Add selected ({selectedToAddCount})
+          </Button>
+          <Button size="xs" variant="ghost" aria-label="Leave select mode" onClick={() => { setSelectMode(false); setCheckedIds(new Set()); }}>
+            <FiX />
+          </Button>
+        </>
+      ) : (
+        <>
+          <Button size="xs" variant="ghost" leftIcon={<FiCheckSquare />} onClick={() => setSelectMode(true)}>
+            Select
+          </Button>
+          <Button size="xs" variant="ghost" leftIcon={<FiPlus />} onClick={() => void handleBulkAdd(filteredIds)} isLoading={bulkAddPlaces.isPending}>
+            Add all visible
+          </Button>
+        </>
+      )
+    ) : null;
 
   return (
-    <Box>
-      <Flex justify="space-between" align="center" mb={4} flexWrap="wrap" gap={2}>
-        <Text fontSize="xs" color="fg.muted">
-          {leg.dayTripAreas.length
-            ? `Covers ${leg.baseCity} + ${leg.dayTripAreas.join(", ")}`
-            : "Click a place for photos, hours, and Google Maps reviews"}
-        </Text>
-        {filteredPlaces.length > 0 && (
-          <HStack spacing={2} flexWrap="wrap">
-            {checkedIds.size > 0 && (
-              <Button
-                size="sm"
-                colorScheme="brand"
-                leftIcon={<FiPlus />}
-                onClick={handleBulkAddSelected}
-                isLoading={bulkAddPlaces.isPending}
-              >
-                Add selected ({selectedToAddCount})
-              </Button>
-            )}
-            <Button
-              size="sm"
-              variant="outline"
-              leftIcon={<FiPlus />}
-              onClick={handleBulkAddVisible}
-              isLoading={bulkAddPlaces.isPending}
-            >
-              Add all visible
-            </Button>
-          </HStack>
-        )}
-      </Flex>
-
-      <Box mb={4}>
-        <PlaceSearchInput
-          label="Search Google Places to add"
-          placeholder="Not seeing a place? Search Google Places..."
-          mode="place"
-          city={leg.baseCity}
-          country={leg.country}
-          onSelect={handleAddFromSearch}
+    <Stack spacing="14px">
+      {scopedPoolPlaces.length === 0 ? (
+        <Box bg="bg.surface" borderWidth="1px" borderColor="border.line" borderRadius="xl">
+          <EmptyState
+            icon={FiSearch}
+            title={`Find the best of ${cityName}`}
+            text={`We'll search ${leg.baseCity}${leg.dayTripAreas.length ? `, ${leg.dayTripAreas.join(", ")}` : ""} for sights that match your interests.`}
+            action={emptyAction}
+          />
+        </Box>
+      ) : (
+        <PlaceFilterBar
+          categories={categories}
+          filters={filters}
+          onChange={setFilters}
+          resultCount={filteredPlaces.length}
+          totalCount={scopedPoolPlaces.length}
+          quick={quick}
+          onQuickChange={setQuick}
+          showAiMatches={aiMatchedIds.size > 0}
+          actions={resultActions}
         />
-      </Box>
+      )}
 
       {aiSuggestedNames.length > 0 && (
-        <Box mb={4} p={3} bg={aiSectionBg} borderRadius="lg">
-          <Text fontSize="xs" fontWeight="medium" mb={2}>
-            AI suggested places (not found on Google — search to add)
-          </Text>
-          <HStack spacing={2} flexWrap="wrap">
-            {aiSuggestedNames.map((name) => (
-              <Tag
-                key={name}
-                size="sm"
-                cursor="pointer"
-                colorScheme="brand"
-                onClick={() => setSearchPrefill(name)}
-              >
-                {name}
-              </Tag>
-            ))}
-          </HStack>
-          {searchPrefill && (
-            <Box mt={3}>
-              <PlaceSearchInput
-                label={`Search for "${searchPrefill}"`}
-                placeholder="Search Google Places..."
-                mode="place"
-                city={leg.baseCity}
-                country={leg.country}
-                value={searchPrefill}
-                onSelect={handleAddFromSearch}
-                onClear={() => setSearchPrefill(null)}
-              />
-            </Box>
+        <Box bg="accent.soft" color="accent.text" borderRadius="xl" px="14px" py="10px">
+          <Flex align="center" gap="10px">
+            <Icon as={LuSparkles} boxSize="16px" flexShrink={0} />
+            <Text fontSize="12px" flex={1} minW={0}>
+              <b>
+                {aiSuggestedNames.length} AI-suggested place{aiSuggestedNames.length === 1 ? "" : "s"} weren&rsquo;t found
+              </b>{" "}
+              on the map. Search {aiSuggestedNames.length === 1 ? "it" : "them"} manually.
+            </Text>
+            <Button variant="outline" leftIcon={<FiSearch size={16} />} onClick={() => setShowAiSearch((v) => !v)} aria-expanded={showAiSearch}>
+              Search
+            </Button>
+          </Flex>
+          {showAiSearch && (
+            <Stack spacing={3} mt={3}>
+              <Flex gap="6px" flexWrap="wrap">
+                {aiSuggestedNames.map((name) => (
+                  <ChoiceChip key={name} selected={searchPrefill === name} onClick={() => setSearchPrefill(name)}>
+                    {name}
+                  </ChoiceChip>
+                ))}
+              </Flex>
+              {searchPrefill && (
+                <PlaceSearchInput
+                  label={`Search for "${searchPrefill}"`}
+                  placeholder="Search Google Places…"
+                  mode="place"
+                  city={leg.baseCity}
+                  country={leg.country}
+                  value={searchPrefill}
+                  onSelect={handleAddFromSearch}
+                  onClear={() => setSearchPrefill(null)}
+                  hideLabel
+                />
+              )}
+            </Stack>
           )}
         </Box>
       )}
 
-      {scopedPoolPlaces.length === 0 ? (
-        <Text color="fg.muted" fontSize="sm">
-          {`Click "Discover places" to search ${leg.baseCity}${leg.dayTripAreas.length ? `, ${leg.dayTripAreas.join(", ")}` : ""}.`}
+      {scopedPoolPlaces.length > 0 &&
+        (filteredPlaces.length === 0 ? (
+          <Text color="fg.muted" fontSize="13px" py={4}>
+            No places match these filters.
+          </Text>
+        ) : (
+          <SimpleGrid columns={2} spacing={{ base: "10px", sm: "14px" }}>
+            {filteredPlaces.map((place) => {
+              const id = place.googlePlaceId!;
+              const inTrip = selectedPlaceIds.has(id);
+              return (
+                <PlaceTile
+                  key={id}
+                  trip={trip}
+                  place={place}
+                  inTrip={inTrip}
+                  aiMatch={aiMatchedIds.has(id)}
+                  busy={updatingId === id}
+                  onToggle={() => void handleToggleTrip(id, inTrip)}
+                  onOpen={() => setModalPlaceId(id)}
+                  selectable={selectMode}
+                  checked={checkedIds.has(id)}
+                  onCheck={(c) => toggleChecked(id, c)}
+                />
+              );
+            })}
+          </SimpleGrid>
+        ))}
+
+      <Box borderWidth="1px" borderStyle="dashed" borderColor="border.line" borderRadius="xl" p="14px">
+        <Text fontSize="13px" fontWeight={600} mb={2}>
+          Not seeing a place?
         </Text>
-      ) : (
-        <Stack spacing={4}>
-          <PlaceFilterBar
-            categories={categories}
-            filters={filters}
-            onChange={setFilters}
-            resultCount={filteredPlaces.length}
-            totalCount={scopedPoolPlaces.length}
-          />
-
-          {filteredPlaces.length === 0 ? (
-            <Text color="fg.muted" fontSize="sm">
-              No places match your filters.
-            </Text>
-          ) : (
-            <>
-              <Checkbox
-                size="sm"
-                isChecked={allVisibleChecked}
-                isIndeterminate={!allVisibleChecked && someVisibleChecked}
-                onChange={toggleAllVisible}
-              >
-                Select all visible ({filteredIds.length})
-              </Checkbox>
-
-              <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={3} maxH="520px" overflowY="auto">
-                {filteredPlaces.map((place) => {
-                  const id = place.googlePlaceId!;
-                  const inTrip = selectedPlaceIds.has(id);
-                  const isChecked = checkedIds.has(id);
-
-                  return (
-                    <Box
-                      key={id}
-                      p={3}
-                      borderWidth="1px"
-                      borderColor={inTrip ? "brand.300" : borderColor}
-                      bg={inTrip ? selectedBg : undefined}
-                      borderRadius="lg"
-                      transition="background 0.15s"
-                      _hover={{ bg: inTrip ? selectedBg : hoverBg }}
-                    >
-                      <Flex align="start" gap={2}>
-                        <Checkbox
-                          mt={0.5}
-                          isChecked={isChecked}
-                          onChange={(e) => toggleChecked(id, e.target.checked)}
-                          onClick={(e) => e.stopPropagation()}
-                          aria-label={`Select ${place.name}`}
-                        />
-                        <Box flex={1} minW={0} cursor="pointer" onClick={() => setModalPlaceId(id)}>
-                          <Flex justify="space-between" align="start" gap={2}>
-                            <Text fontWeight="medium" fontSize="sm" noOfLines={2}>
-                              {place.name}
-                            </Text>
-                            <HStack spacing={1} flexShrink={0}>
-                              {aiMatchedIds.has(id) && (
-                                <Badge colorScheme="brand" fontSize="2xs">
-                                  Suggested by AI
-                                </Badge>
-                              )}
-                              {inTrip && (
-                                <Badge colorScheme="brand" fontSize="2xs">
-                                  In trip
-                                </Badge>
-                              )}
-                            </HStack>
-                          </Flex>
-                          <HStack spacing={2} mt={1} flexWrap="wrap">
-                            <Tag size="sm">{place.category}</Tag>
-                            <VoteButton trip={trip} placeId={id} />
-                            {place.rating !== undefined && (
-                              <Text fontSize="xs" color="fg.muted">
-                                {place.rating.toFixed(1)} ★
-                              </Text>
-                            )}
-                          </HStack>
-                          {place.formattedAddress && (
-                            <Text fontSize="xs" color="fg.muted" mt={1} noOfLines={1}>
-                              {place.formattedAddress}
-                            </Text>
-                          )}
-                        </Box>
-                      </Flex>
-
-                      <Button
-                        mt={3}
-                        size="xs"
-                        w="full"
-                        variant={inTrip ? "outline" : "solid"}
-                        colorScheme={inTrip ? "red" : "brand"}
-                        leftIcon={inTrip ? <FiMinus /> : <FiPlus />}
-                        isLoading={updatingId === id}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleToggleTrip(id, inTrip);
-                        }}
-                      >
-                        {inTrip ? "Remove from trip" : "Add to trip"}
-                      </Button>
-                    </Box>
-                  );
-                })}
-              </SimpleGrid>
-            </>
-          )}
-        </Stack>
-      )}
+        <PlaceSearchInput
+          label="Search Google Places to add"
+          placeholder={`Search places in ${cityName}…`}
+          mode="place"
+          city={leg.baseCity}
+          country={leg.country}
+          onSelect={handleAddFromSearch}
+          hideLabel
+        />
+        {leg.dayTripAreas.length > 0 && (
+          <Text fontSize="12px" color="fg.muted" mt={2}>
+            Suggestions cover {leg.baseCity} + {leg.dayTripAreas.join(", ")}.
+          </Text>
+        )}
+      </Box>
 
       <PlaceDetailModal
         isOpen={Boolean(modalPlaceId)}
@@ -375,6 +303,6 @@ export function DiscoveryPlacesPanel({
         isSelected={modalPlaceId ? selectedPlaceIds.has(modalPlaceId) : false}
         onSelectedChange={onSelectedChange}
       />
-    </Box>
+    </Stack>
   );
 }

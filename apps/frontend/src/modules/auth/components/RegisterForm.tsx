@@ -1,36 +1,22 @@
-import {
-  Alert,
-  AlertIcon,
-  Box,
-  Button,
-  FormControl,
-  FormErrorMessage,
-  FormLabel,
-  Heading,
-  Input,
-  Link,
-  Stack,
-  Text,
-  VStack,
-} from "@chakra-ui/react";
+import { Button, Link, SimpleGrid, Stack, Text } from "@chakra-ui/react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Link as RouterLink, useNavigate, useSearchParams } from "react-router-dom";
+import { Link as RouterLink, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { FiArrowRight, FiLock, FiMail, FiUser } from "react-icons/fi";
+import { LuKeyRound } from "react-icons/lu";
 import { useRegister } from "@/modules/auth/hooks/useAuth";
 import { getApiErrorMessage } from "@/lib/api";
 import { registerSchema, type RegisterInput } from "@/modules/auth/validators/auth.validator";
+import { IconInput } from "@/components/ui/app";
+import { AuthField, AuthIntro, AuthNotice } from "./AuthIntro";
+import { authLinkProps, callbackQuery, useCallbackUrl } from "./auth-callback";
 
 export function RegisterForm() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const callbackUrl = searchParams.get("callbackUrl");
-  const callbackQuery = callbackUrl?.startsWith("/") ? `&callbackUrl=${encodeURIComponent(callbackUrl)}` : "";
+  const callbackUrl = useCallbackUrl();
   const [error, setError] = useState<string | null>(null);
   const register_ = useRegister();
-
-  const bg = "bg.surface";
-  const borderColor = "border.line";
 
   const {
     register,
@@ -44,68 +30,55 @@ export function RegisterForm() {
     setError(null);
     try {
       await register_.mutateAsync(data);
-      navigate(`/login?registered=true${callbackQuery}`);
+      navigate(`/login?registered=true${callbackQuery(callbackUrl, "&")}`);
     } catch (err) {
       setError(getApiErrorMessage(err));
     }
   };
 
   return (
-    <Box w="full" maxW="md" p={8} bg={bg} borderWidth="1px" borderColor={borderColor} borderRadius="xl" shadow="sm">
-      <VStack spacing={6} align="stretch">
-        <Box textAlign="center">
-          <Heading size="lg" mb={2}>
+    <Stack spacing="20px">
+      <AuthIntro
+        title="Create your account"
+        subtitle="Free to start. AI is optional."
+        mode="register"
+        notice={error ? <AuthNotice tone="danger">{error}</AuthNotice> : null}
+      />
+
+      <form onSubmit={handleSubmit(onSubmit)} noValidate>
+        <Stack spacing="16px">
+          <AuthField label="Name" error={errors.name?.message}>
+            <IconInput icon={FiUser} autoComplete="name" placeholder="Your name" {...register("name")} />
+          </AuthField>
+
+          <AuthField label="Email" error={errors.email?.message}>
+            <IconInput icon={FiMail} type="email" autoComplete="email" placeholder="you@example.com" {...register("email")} />
+          </AuthField>
+
+          <SimpleGrid columns={{ base: 1, sm: 2 }} spacing="16px">
+            <AuthField label="Password" error={errors.password?.message}>
+              <IconInput icon={LuKeyRound} type="password" autoComplete="new-password" placeholder="8+ characters" {...register("password")} />
+            </AuthField>
+            <AuthField label="Confirm password" error={errors.confirmPassword?.message}>
+              <IconInput icon={FiLock} type="password" autoComplete="new-password" placeholder="Same again" {...register("confirmPassword")} />
+            </AuthField>
+          </SimpleGrid>
+          <Text fontSize="12px" color="fg.muted" mt={-1}>
+            At least 8 characters, with an uppercase letter and a number.
+          </Text>
+
+          <Button type="submit" size="xl" w="full" mt={1} leftIcon={<FiArrowRight />} isLoading={register_.isPending}>
             Create account
-          </Heading>
-          <Text color="fg.muted">Start planning smarter trips today</Text>
-        </Box>
+          </Button>
+        </Stack>
+      </form>
 
-        {error && (
-          <Alert status="error" borderRadius="md">
-            <AlertIcon />
-            {error}
-          </Alert>
-        )}
-
-        <form onSubmit={handleSubmit(onSubmit)}>
-          <Stack spacing={4}>
-            <FormControl isInvalid={!!errors.name}>
-              <FormLabel>Full Name</FormLabel>
-              <Input placeholder="Your name" {...register("name")} />
-              <FormErrorMessage>{errors.name?.message}</FormErrorMessage>
-            </FormControl>
-
-            <FormControl isInvalid={!!errors.email}>
-              <FormLabel>Email</FormLabel>
-              <Input type="email" placeholder="you@example.com" {...register("email")} />
-              <FormErrorMessage>{errors.email?.message}</FormErrorMessage>
-            </FormControl>
-
-            <FormControl isInvalid={!!errors.password}>
-              <FormLabel>Password</FormLabel>
-              <Input type="password" placeholder="••••••••" {...register("password")} />
-              <FormErrorMessage>{errors.password?.message}</FormErrorMessage>
-            </FormControl>
-
-            <FormControl isInvalid={!!errors.confirmPassword}>
-              <FormLabel>Confirm Password</FormLabel>
-              <Input type="password" placeholder="••••••••" {...register("confirmPassword")} />
-              <FormErrorMessage>{errors.confirmPassword?.message}</FormErrorMessage>
-            </FormControl>
-
-            <Button type="submit" colorScheme="brand" size="lg" isLoading={register_.isPending}>
-              Create Account
-            </Button>
-          </Stack>
-        </form>
-
-        <Text textAlign="center" fontSize="sm" color="fg.muted">
-          Already have an account?{" "}
-          <Link as={RouterLink} to={`/login${callbackQuery ? `?${callbackQuery.slice(1)}` : ""}`} color="brand.500" fontWeight="medium">
-            Sign in
-          </Link>
-        </Text>
-      </VStack>
-    </Box>
+      <Text fontSize="12px" color="fg.muted">
+        Already have an account?{" "}
+        <Link as={RouterLink} to={`/login${callbackQuery(callbackUrl)}`} {...authLinkProps}>
+          Log in
+        </Link>
+      </Text>
+    </Stack>
   );
 }

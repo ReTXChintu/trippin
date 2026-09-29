@@ -226,7 +226,7 @@ export function TimelineStop({
               {...listeners}
               cursor="grab"
               color="fg.muted"
-              _hover={{ color: "gray.600" }}
+              _hover={{ color: "fg.default" }}
               p={1}
               aria-label="Drag to reorder"
             >

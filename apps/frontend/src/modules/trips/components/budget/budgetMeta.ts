@@ -1,12 +1,12 @@
 import type { IconType } from "react-icons";
-import { MdConfirmationNumber, MdHotel, MdLocalTaxi, MdMoreHoriz, MdRestaurant, MdShoppingBag } from "react-icons/md";
+import { LuBed, LuCarTaxiFront, LuEllipsis, LuShoppingBag, LuTicket, LuUtensils } from "react-icons/lu";
 import type { ExpenseCategory } from "@/modules/trips/types/trip-extras.types";
 
-export const CATEGORY_LABELS: Record<ExpenseCategory, { label: string; color: string; icon: IconType }> = {
-  stay: { label: "Stays", color: "blue", icon: MdHotel },
-  transport: { label: "Transport", color: "purple", icon: MdLocalTaxi },
-  food: { label: "Food & drink", color: "orange", icon: MdRestaurant },
-  activities: { label: "Tickets & activities", color: "green", icon: MdConfirmationNumber },
-  shopping: { label: "Shopping", color: "pink", icon: MdShoppingBag },
-  other: { label: "Other", color: "gray", icon: MdMoreHoriz },
+export const CATEGORY_LABELS: Record<ExpenseCategory, { label: string; short: string; color: string; icon: IconType }> = {
+  stay: { short: "Stays", label: "Stays", color: "blue", icon: LuBed },
+  transport: { short: "Transport", label: "Transport", color: "purple", icon: LuCarTaxiFront },
+  food: { short: "Food", label: "Food & drink", color: "orange", icon: LuUtensils },
+  activities: { short: "Activities", label: "Tickets & activities", color: "green", icon: LuTicket },
+  shopping: { short: "Shopping", label: "Shopping", color: "pink", icon: LuShoppingBag },
+  other: { short: "Other", label: "Other", color: "gray", icon: LuEllipsis },
 };

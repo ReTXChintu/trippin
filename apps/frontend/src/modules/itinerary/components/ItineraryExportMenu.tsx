@@ -1,104 +1,53 @@
-import {
-  Button,
-  Menu,
-  MenuButton,
-  MenuItem,
-  MenuList,
-  useToast,
-} from "@chakra-ui/react";
-import { formatItineraryAsIcs } from "@/modules/itinerary/services/itinerary-ics.service";
-import { FiCalendar, FiChevronDown, FiCopy, FiDownload, FiPrinter } from "react-icons/fi";
+import { Button, Menu, MenuButton, MenuItem, MenuList } from "@chakra-ui/react";
+import { LuCalendar, LuChevronDown, LuCopy, LuDownload, LuPrinter } from "react-icons/lu";
 import type { Itinerary } from "@/modules/itinerary/types";
 import type { Trip } from "@/modules/trips/types/trip.types";
-import {
-  formatItineraryAsMarkdown,
-  formatItineraryAsText,
-  getItineraryExportFilename,
-} from "@/modules/itinerary/services/itinerary-export.service";
+import { useItineraryExport, type ItineraryExportActions } from "./useItineraryExport";
 
 interface ItineraryExportMenuProps {
   trip: Trip;
   itinerary: Itinerary;
   printTargetId?: string;
+  size?: "sm" | "md";
 }
 
-function downloadFile(filename: string, content: string, mimeType: string) {
-  const blob = new Blob([content], { type: mimeType });
-  const url = URL.createObjectURL(blob);
-  const anchor = document.createElement("a");
-  anchor.href = url;
-  anchor.download = filename;
-  anchor.click();
-  URL.revokeObjectURL(url);
-}
-
-export function ItineraryExportMenu({
-  trip,
-  itinerary,
-  printTargetId = "itinerary-print-area",
-}: ItineraryExportMenuProps) {
-  const toast = useToast();
-
-  const handleCopyMarkdown = async () => {
-    const markdown = formatItineraryAsMarkdown(trip, itinerary);
-    try {
-      await navigator.clipboard.writeText(markdown);
-      toast({ title: "Markdown copied to clipboard", status: "success", duration: 3000 });
-    } catch {
-      toast({ title: "Could not copy to clipboard", status: "error" });
-    }
-  };
-
-  const handleDownloadText = () => {
-    const text = formatItineraryAsText(trip, itinerary);
-    downloadFile(getItineraryExportFilename(trip, "txt"), text, "text/plain;charset=utf-8");
-    toast({ title: "Itinerary downloaded", status: "success", duration: 3000 });
-  };
-
-  const handleDownloadMarkdown = () => {
-    const markdown = formatItineraryAsMarkdown(trip, itinerary);
-    downloadFile(getItineraryExportFilename(trip, "md"), markdown, "text/markdown;charset=utf-8");
-    toast({ title: "Markdown file downloaded", status: "success", duration: 3000 });
-  };
-
-  const handleDownloadIcs = () => {
-    downloadFile(getItineraryExportFilename(trip, "ics"), formatItineraryAsIcs(trip, itinerary), "text/calendar;charset=utf-8");
-    toast({ title: "Calendar file downloaded", description: "Open it to add every stop to your calendar.", status: "success", duration: 3000 });
-  };
-
-  const handlePrint = () => {
-    if (!document.getElementById(printTargetId)) {
-      toast({ title: "Nothing to print", status: "warning" });
-      return;
-    }
-    window.print();
-  };
-
+/** The export actions as menu items, for any <MenuList>. */
+export function ItineraryExportItems({ actions }: { actions: ItineraryExportActions }) {
   return (
-    <Menu>
-      <MenuButton as={Button} rightIcon={<FiChevronDown />} size="sm" variant="outline">
+    <>
+      <MenuItem icon={<LuCalendar />} onClick={actions.downloadIcs}>
+        Add to calendar (.ics)
+      </MenuItem>
+      <MenuItem icon={<LuCopy />} onClick={() => void actions.copyMarkdown()}>
+        Copy as Markdown
+      </MenuItem>
+      <MenuItem icon={<LuDownload />} onClick={actions.downloadMarkdown}>
+        Download Markdown
+      </MenuItem>
+      <MenuItem icon={<LuDownload />} onClick={actions.downloadText}>
+        Download text
+      </MenuItem>
+      <MenuItem icon={<LuPrinter />} onClick={actions.print}>
+        Print / Save PDF
+      </MenuItem>
+    </>
+  );
+}
+
+export function ItineraryExportMenu({ trip, itinerary, printTargetId = "itinerary-print-area", size = "md" }: ItineraryExportMenuProps) {
+  const actions = useItineraryExport(trip, itinerary, printTargetId);
+  return (
+    <Menu placement="bottom-end">
+      <MenuButton as={Button} leftIcon={<LuPrinter />} rightIcon={<LuChevronDown />} size={size} variant="outline">
         Export
       </MenuButton>
-      <MenuList>
-        <MenuItem icon={<FiCalendar />} onClick={handleDownloadIcs}>
-          Add to calendar (.ics)
-        </MenuItem>
-        <MenuItem icon={<FiCopy />} onClick={handleCopyMarkdown}>
-          Copy as Markdown
-        </MenuItem>
-        <MenuItem icon={<FiDownload />} onClick={handleDownloadMarkdown}>
-          Download Markdown
-        </MenuItem>
-        <MenuItem icon={<FiDownload />} onClick={handleDownloadText}>
-          Download Text
-        </MenuItem>
-        <MenuItem icon={<FiPrinter />} onClick={handlePrint}>
-          Print / Save PDF
-        </MenuItem>
+      <MenuList fontSize="13px">
+        <ItineraryExportItems actions={actions} />
       </MenuList>
     </Menu>
   );
 }
+
 
 export function ItineraryPrintContent({
   trip,

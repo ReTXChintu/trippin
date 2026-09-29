@@ -68,7 +68,7 @@ export function StayFormModal({ leg, initial, isSaving, onClose, onSave }: StayF
   return (
     <Modal isOpen={Boolean(initial)} onClose={onClose} size="lg" scrollBehavior="inside">
       <ModalOverlay />
-      <ModalContent>
+      <ModalContent mx={{ base: 3, md: "auto" }}>
         <ModalHeader>{isEdit ? "Edit stay" : "Add a stay"}</ModalHeader>
         <ModalCloseButton />
         <ModalBody>
@@ -91,17 +91,15 @@ export function StayFormModal({ leg, initial, isSaving, onClose, onSave }: StayF
               onClear={() => patch({ name: "", address: undefined, googlePlaceId: undefined, coordinates: undefined })}
             />
             {draft.name && !draft.coordinates && (
-              <Text fontSize="xs" color="orange.500">
+              <Text fontSize="xs" color="warn">
                 Pick it from the search list so days can start and end there on the map.
               </Text>
             )}
 
             <SimpleGrid columns={2} spacing={3}>
               <FormControl>
-                <FormLabel fontSize="sm">Check-in</FormLabel>
-                <Input
-                  size="sm"
-                  type="date"
+                <FormLabel>Check-in</FormLabel>
+                <Input type="date"
                   value={draft.checkInDate ?? ""}
                   min={leg.startDate}
                   max={leg.endDate}
@@ -116,10 +114,8 @@ export function StayFormModal({ leg, initial, isSaving, onClose, onSave }: StayF
                 />
               </FormControl>
               <FormControl>
-                <FormLabel fontSize="sm">Check-out</FormLabel>
-                <Input
-                  size="sm"
-                  type="date"
+                <FormLabel>Check-out</FormLabel>
+                <Input type="date"
                   value={draft.checkOutDate ?? ""}
                   min={draft.checkInDate ? addDays(draft.checkInDate, 1) : leg.startDate}
                   max={addDays(leg.endDate, 1)}
@@ -127,12 +123,12 @@ export function StayFormModal({ leg, initial, isSaving, onClose, onSave }: StayF
                 />
               </FormControl>
               <FormControl>
-                <FormLabel fontSize="sm">Check-in time</FormLabel>
-                <Input size="sm" type="time" value={draft.checkInTime ?? ""} onChange={(e) => patch({ checkInTime: e.target.value })} />
+                <FormLabel>Check-in time</FormLabel>
+                <Input type="time" value={draft.checkInTime ?? ""} onChange={(e) => patch({ checkInTime: e.target.value })} />
               </FormControl>
               <FormControl>
-                <FormLabel fontSize="sm">Check-out time</FormLabel>
-                <Input size="sm" type="time" value={draft.checkOutTime ?? ""} onChange={(e) => patch({ checkOutTime: e.target.value })} />
+                <FormLabel>Check-out time</FormLabel>
+                <Input type="time" value={draft.checkOutTime ?? ""} onChange={(e) => patch({ checkOutTime: e.target.value })} />
               </FormControl>
             </SimpleGrid>
             {nights > 0 && (
@@ -143,14 +139,12 @@ export function StayFormModal({ leg, initial, isSaving, onClose, onSave }: StayF
 
             <SimpleGrid columns={{ base: 1, md: 3 }} spacing={3}>
               <FormControl gridColumn={{ md: "span 2" }}>
-                <FormLabel fontSize="sm">Confirmation number</FormLabel>
-                <Input size="sm" value={draft.confirmationNumber ?? ""} onChange={(e) => patch({ confirmationNumber: e.target.value })} />
+                <FormLabel>Confirmation number</FormLabel>
+                <Input value={draft.confirmationNumber ?? ""} onChange={(e) => patch({ confirmationNumber: e.target.value })} />
               </FormControl>
               <FormControl>
-                <FormLabel fontSize="sm">Price / night</FormLabel>
-                <Input
-                  size="sm"
-                  type="number"
+                <FormLabel>Price / night</FormLabel>
+                <Input type="number"
                   min={0}
                   value={draft.pricePerNight ?? ""}
                   onChange={(e) => patch({ pricePerNight: e.target.value === "" ? undefined : Number(e.target.value) })}
@@ -159,17 +153,17 @@ export function StayFormModal({ leg, initial, isSaving, onClose, onSave }: StayF
             </SimpleGrid>
             <SimpleGrid columns={{ base: 1, md: 3 }} spacing={3}>
               <FormControl>
-                <FormLabel fontSize="sm">Currency</FormLabel>
-                <Input size="sm" placeholder="INR" value={draft.currency ?? ""} onChange={(e) => patch({ currency: e.target.value.toUpperCase() })} />
+                <FormLabel>Currency</FormLabel>
+                <Input placeholder="INR" value={draft.currency ?? ""} onChange={(e) => patch({ currency: e.target.value.toUpperCase() })} />
               </FormControl>
               <FormControl gridColumn={{ md: "span 2" }}>
-                <FormLabel fontSize="sm">Booking link</FormLabel>
-                <Input size="sm" placeholder="https://" value={draft.bookingUrl ?? ""} onChange={(e) => patch({ bookingUrl: e.target.value })} />
+                <FormLabel>Booking link</FormLabel>
+                <Input placeholder="https://" value={draft.bookingUrl ?? ""} onChange={(e) => patch({ bookingUrl: e.target.value })} />
               </FormControl>
             </SimpleGrid>
             <FormControl>
-              <FormLabel fontSize="sm">Notes</FormLabel>
-              <Textarea size="sm" rows={2} value={draft.notes ?? ""} onChange={(e) => patch({ notes: e.target.value })} placeholder="Breakfast included, early check-in requested…" />
+              <FormLabel>Notes</FormLabel>
+              <Textarea rows={2} value={draft.notes ?? ""} onChange={(e) => patch({ notes: e.target.value })} placeholder="Breakfast included, early check-in requested…" />
             </FormControl>
           </Stack>
         </ModalBody>
@@ -177,7 +171,7 @@ export function StayFormModal({ leg, initial, isSaving, onClose, onSave }: StayF
           <Button variant="ghost" mr={2} onClick={onClose}>
             Cancel
           </Button>
-          <Button colorScheme="brand" onClick={handleSave} isDisabled={!isValid} isLoading={isSaving}>
+          <Button onClick={handleSave} isDisabled={!isValid} isLoading={isSaving}>
             {isEdit ? "Save" : "Add stay"}
           </Button>
         </ModalFooter>

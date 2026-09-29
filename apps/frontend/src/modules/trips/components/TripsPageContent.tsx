@@ -1,14 +1,19 @@
-import { Box, Button, Flex, Heading, Tab, TabList, Tabs, Text } from "@chakra-ui/react";
-import { Link } from "react-router-dom";
-import { FiPlus } from "react-icons/fi";
+import { Box, Button, Flex, Grid, Heading, HStack, Skeleton, Stack } from "@chakra-ui/react";
 import { useMemo, useState } from "react";
+import { FiBriefcase, FiGrid, FiList, FiPlus, FiSearch } from "react-icons/fi";
+import { Link as RouterLink } from "react-router-dom";
+import { ChoiceChip, EmptyState, Segmented, SurfaceCard } from "@/components/ui";
+import { IconInput } from "@/components/ui/app";
+import { tripRouteLabel, tripStatusInfo } from "@/components/ui/app-format";
 import { TripCard } from "@/components/trips/TripCard";
-import { EmptyState } from "@/components/ui/EmptyState";
-import { LoadingState } from "@/components/ui/LoadingState";
 import { useTripsQuery } from "@/modules/trips/hooks/useTrips";
+import { useAuthStore } from "@/store/authStore";
 import type { TripStatus } from "@/types";
 
-const TABS: { label: string; value: TripStatus | "all" }[] = [
+type Filter = TripStatus | "all";
+type View = "grid" | "list";
+
+const FILTERS: { label: string; value: Filter }[] = [
   { label: "All", value: "all" },
   { label: "Draft", value: "draft" },
   { label: "Active", value: "active" },
@@ -16,75 +21,138 @@ const TABS: { label: string; value: TripStatus | "all" }[] = [
   { label: "Archived", value: "archived" },
 ];
 
+const VIEW_KEY = "trippin.tripsView";
+
+function readView(): View {
+  try {
+    return localStorage.getItem(VIEW_KEY) === "list" ? "list" : "grid";
+  } catch {
+    return "grid";
+  }
+}
+
 export function TripsPageContent() {
-  const [activeTab, setActiveTab] = useState(0);
+  const user = useAuthStore((s) => s.user);
+  const [filter, setFilter] = useState<Filter>("all");
+  const [query, setQuery] = useState("");
+  const [view, setViewState] = useState<View>(readView);
   const { data: trips = [], isLoading } = useTripsQuery();
 
-  const filteredTrips = useMemo(() => {
-    const tab = TABS[activeTab];
-    if (tab.value === "all") return trips;
-    return trips.filter((t) => t.status === tab.value);
-  }, [trips, activeTab]);
+  const setView = (v: View) => {
+    setViewState(v);
+    try {
+      localStorage.setItem(VIEW_KEY, v);
+    } catch {
+      /* remembered for this visit only */
+    }
+  };
 
-  if (isLoading) return <LoadingState />;
+  const counts = useMemo(() => {
+    const c: Record<Filter, number> = { all: trips.length, draft: 0, active: 0, completed: 0, archived: 0 };
+    trips.forEach((t) => {
+      c[t.status] += 1;
+    });
+    return c;
+  }, [trips]);
+
+  const shown = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return trips
+      .filter((t) => filter === "all" || t.status === filter)
+      .filter((t) => !q || [t.title, t.destinationCity, t.destinationCountry, tripRouteLabel(t)].some((s) => s?.toLowerCase().includes(q)))
+      .sort((a, b) => {
+        const oa = tripStatusInfo(a).order;
+        const ob = tripStatusInfo(b).order;
+        if (oa !== ob) return oa - ob;
+        // Finished trips newest first, everything else soonest first.
+        return oa >= 3 ? b.startDate.localeCompare(a.startDate) : a.startDate.localeCompare(b.startDate);
+      });
+  }, [trips, filter, query]);
+
+  const filterLabel = FILTERS.find((f) => f.value === filter)?.label.toLowerCase();
 
   return (
-    <Box>
-      <Flex justify="space-between" align="center" mb={6} flexWrap="wrap" gap={4}>
-        <Box>
-          <Heading size="lg" mb={1}>
-            My Trips
-          </Heading>
-          <Text color="fg.muted">
-            {trips.length} trip{trips.length !== 1 ? "s" : ""} total
-          </Text>
-        </Box>
-        <Button as={Link} to="/trips/new" leftIcon={<FiPlus />} colorScheme="brand">
-          New Trip
+    <Stack spacing="20px">
+      <Flex justify="space-between" align="center" gap="16px">
+        <Heading as="h1" fontSize={{ base: "28px", md: "34px" }} lineHeight={1.15}>
+          My trips
+        </Heading>
+        <Button as={RouterLink} to="/trips/new" size="lg" leftIcon={<FiPlus />} flexShrink={0}>
+          New trip
         </Button>
       </Flex>
 
-      <Tabs index={activeTab} onChange={setActiveTab} mb={6} variant="enclosed">
-        <TabList flexWrap="wrap">
-          {TABS.map((tab) => (
-            <Tab key={tab.value}>{tab.label}</Tab>
+      <Flex justify="space-between" align={{ base: "stretch", lg: "center" }} gap="12px" direction={{ base: "column", lg: "row" }}>
+        <HStack spacing="8px" overflowX="auto" mx={{ base: "-16px", md: 0 }} px={{ base: "16px", md: 0 }} pb={{ base: "2px", md: 0 }} role="group" aria-label="Filter by status" sx={{ scrollbarWidth: "none" }}>
+          {FILTERS.map((f) => (
+            <ChoiceChip key={f.value} selected={filter === f.value} onClick={() => setFilter(f.value)} flexShrink={0}>
+              {f.label} · {counts[f.value]}
+            </ChoiceChip>
           ))}
-        </TabList>
-      </Tabs>
+        </HStack>
+        <HStack spacing="8px">
+          <Box flex={{ base: 1, lg: "none" }} w={{ lg: "260px" }}>
+            <IconInput icon={FiSearch} value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search trips" aria-label="Search trips" type="search" />
+          </Box>
+          <Segmented<View>
+            value={view}
+            onChange={setView}
+            options={[
+              { value: "grid", label: "Grid", icon: FiGrid },
+              { value: "list", label: "List", icon: FiList },
+            ]}
+            flexShrink={0}
+            aria-label="Layout"
+          />
+        </HStack>
+      </Flex>
 
-      {filteredTrips.length === 0 ? (
-        <EmptyState
-          title="No trips found"
-          description={
-            activeTab === 0
-              ? "Create your first trip to start planning."
-              : `No ${TABS[activeTab].label.toLowerCase()} trips yet.`
-          }
-          actionLabel="Create Trip"
-          onAction={() => {
-            window.location.href = "/trips/new";
-          }}
-        />
-      ) : (
-        <Box
-          display="grid"
-          gridTemplateColumns={{ base: "1fr", md: "repeat(2, 1fr)", xl: "repeat(3, 1fr)" }}
-          gap={4}
-        >
-          {filteredTrips.map((trip) => (
-            <TripCard
-              key={trip.id}
-              id={trip.id}
-              title={trip.title}
-              destinationCity={trip.destinationCity}
-              destinationCountry={trip.destinationCountry}
-              startDate={trip.startDate}
-              endDate={trip.endDate}
-              status={trip.status}
-            />
+      {isLoading ? (
+        <Grid templateColumns={{ base: "1fr", md: "repeat(2, minmax(0, 1fr))", xl: "repeat(3, minmax(0, 1fr))" }} gap="20px">
+          {[0, 1, 2].map((i) => (
+            <Skeleton key={i} h="254px" borderRadius="xl" />
           ))}
-        </Box>
+        </Grid>
+      ) : shown.length === 0 ? (
+        <SurfaceCard borderStyle="dashed" bg="transparent">
+          <EmptyState
+            icon={FiBriefcase}
+            title={trips.length === 0 ? "No trips yet" : query ? "No trips match your search" : `No ${filterLabel} trips`}
+            text={trips.length === 0 ? "Describe a trip in a sentence or set one up step by step." : "Try another filter or search."}
+            action={
+              trips.length === 0 ? (
+                <Button as={RouterLink} to="/trips/new" leftIcon={<FiPlus />}>
+                  New trip
+                </Button>
+              ) : (
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setFilter("all");
+                    setQuery("");
+                  }}
+                >
+                  Show all trips
+                </Button>
+              )
+            }
+          />
+        </SurfaceCard>
+      ) : view === "grid" ? (
+        <Grid templateColumns={{ base: "1fr", md: "repeat(2, minmax(0, 1fr))", xl: "repeat(3, minmax(0, 1fr))" }} gap="20px">
+          {shown.map((trip) => (
+            <TripCard key={trip.id} trip={trip} isOwner={trip.userId === user?.id} />
+          ))}
+        </Grid>
+      ) : (
+        <SurfaceCard>
+          {shown.map((trip, i) => (
+            <Box key={trip.id} borderTopWidth={i === 0 ? 0 : "1px"} borderColor="border.line">
+              <TripCard trip={trip} isOwner={trip.userId === user?.id} variant="row" />
+            </Box>
+          ))}
+        </SurfaceCard>
       )}
-    </Box>
+    </Stack>
   );
 }

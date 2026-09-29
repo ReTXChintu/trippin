@@ -1,35 +1,25 @@
-import {
-  Alert,
-  AlertIcon,
-  Box,
-  Button,
-  FormControl,
-  FormErrorMessage,
-  FormLabel,
-  Heading,
-  Input,
-  Link,
-  Stack,
-  Text,
-  VStack,
-} from "@chakra-ui/react";
+import { Button, Link, Stack, Text } from "@chakra-ui/react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Link as RouterLink, useNavigate, useSearchParams } from "react-router-dom";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { FiArrowRight, FiMail } from "react-icons/fi";
+import { LuKeyRound } from "react-icons/lu";
 import { loginSchema, type LoginInput } from "@/modules/auth/validators/auth.validator";
 import { useLogin } from "@/modules/auth/hooks/useAuth";
 import { getApiErrorMessage } from "@/lib/api";
+import { IconInput } from "@/components/ui/app";
+import { AuthField, AuthIntro, AuthNotice } from "./AuthIntro";
+import { authLinkProps, callbackQuery, isInviteCallback, useCallbackUrl } from "./auth-callback";
 
 export function LoginForm() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const callbackUrl = searchParams.get("callbackUrl") ?? "/dashboard";
+  const callback = useCallbackUrl();
+  const callbackUrl = callback ?? "/dashboard";
+  const invited = isInviteCallback(callback);
   const [error, setError] = useState<string | null>(null);
   const login = useLogin();
-
-  const bg = "bg.surface";
-  const borderColor = "border.line";
 
   const {
     register,
@@ -49,61 +39,48 @@ export function LoginForm() {
     }
   };
 
+  const notice = error ? (
+    <AuthNotice tone="danger">{error}</AuthNotice>
+  ) : searchParams.get("registered") ? (
+    <AuthNotice tone="success">Account created — log in to continue.</AuthNotice>
+  ) : searchParams.get("reset") ? (
+    <AuthNotice tone="success">Password updated — log in with your new password.</AuthNotice>
+  ) : null;
+
   return (
-    <Box w="full" maxW="md" p={8} bg={bg} borderWidth="1px" borderColor={borderColor} borderRadius="xl" shadow="sm">
-      <VStack spacing={6} align="stretch">
-        <Box textAlign="center">
-          <Heading size="lg" mb={2}>
-            Welcome back
-          </Heading>
-          <Text color="fg.muted">Sign in to plan your next adventure</Text>
-        </Box>
+    <Stack spacing="20px">
+      <AuthIntro title="Welcome back" subtitle="Log in to continue planning." mode="login" notice={notice} />
 
-        {error && (
-          <Alert status="error" borderRadius="md">
-            <AlertIcon />
-            {error}
-          </Alert>
-        )}
+      <form onSubmit={handleSubmit(onSubmit)} noValidate>
+        <Stack spacing="20px">
+          <AuthField label="Email" error={errors.email?.message}>
+            <IconInput icon={FiMail} type="email" autoComplete="email" placeholder="you@example.com" {...register("email")} />
+          </AuthField>
 
-        <form onSubmit={handleSubmit(onSubmit)}>
-          <Stack spacing={4}>
-            <FormControl isInvalid={!!errors.email}>
-              <FormLabel>Email</FormLabel>
-              <Input type="email" placeholder="you@example.com" {...register("email")} />
-              <FormErrorMessage>{errors.email?.message}</FormErrorMessage>
-            </FormControl>
-
-            <FormControl isInvalid={!!errors.password}>
-              <FormLabel>Password</FormLabel>
-              <Input type="password" placeholder="••••••••" {...register("password")} />
-              <FormErrorMessage>{errors.password?.message}</FormErrorMessage>
-            </FormControl>
-
-            <Box textAlign="right">
-              <Link as={RouterLink} to="/forgot-password" fontSize="sm" color="brand.500">
+          <AuthField
+            label="Password"
+            error={errors.password?.message}
+            labelAction={
+              <Link as={RouterLink} to="/forgot-password" fontSize="12px" {...authLinkProps}>
                 Forgot password?
               </Link>
-            </Box>
-
-            <Button type="submit" colorScheme="brand" size="lg" isLoading={login.isPending}>
-              Sign In
-            </Button>
-          </Stack>
-        </form>
-
-        <Text textAlign="center" fontSize="sm" color="fg.muted">
-          Don&apos;t have an account?{" "}
-          <Link
-            as={RouterLink}
-            to={callbackUrl !== "/dashboard" ? `/register?callbackUrl=${encodeURIComponent(callbackUrl)}` : "/register"}
-            color="brand.500"
-            fontWeight="medium"
+            }
           >
-            Create one
-          </Link>
-        </Text>
-      </VStack>
-    </Box>
+            <IconInput icon={LuKeyRound} type="password" autoComplete="current-password" placeholder="Your password" {...register("password")} />
+          </AuthField>
+
+          <Button type="submit" size="xl" w="full" leftIcon={<FiArrowRight />} isLoading={login.isPending}>
+            {invited ? "Log in and join trip" : "Log in"}
+          </Button>
+        </Stack>
+      </form>
+
+      <Text fontSize="12px" color="fg.muted">
+        New here?{" "}
+        <Link as={RouterLink} to={`/register${callbackQuery(callback)}`} {...authLinkProps}>
+          Create an account
+        </Link>
+      </Text>
+    </Stack>
   );
 }

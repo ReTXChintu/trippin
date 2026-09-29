@@ -1,13 +1,10 @@
 import {
-  Avatar,
   Box,
   Button,
   Drawer,
   DrawerBody,
-  DrawerCloseButton,
   DrawerContent,
   DrawerFooter,
-  DrawerHeader,
   DrawerOverlay,
   Flex,
   HStack,
@@ -19,7 +16,9 @@ import {
 } from "@chakra-ui/react";
 import { formatDistanceToNow, parseISO } from "date-fns";
 import { useEffect, useRef, useState } from "react";
-import { FiTrash2 } from "react-icons/fi";
+import { LuSend, LuTrash2 } from "react-icons/lu";
+import { PanelHeader } from "@/components/ui/plan";
+import { dayToken } from "@/components/ui/day";
 import { getApiErrorMessage } from "@/lib/api";
 import { useAuthStore } from "@/store/authStore";
 import { useAddComment, useCommentsQuery, useDeleteComment } from "@/modules/trips/hooks/useTrips";
@@ -40,11 +39,37 @@ function ago(iso: string): string {
   }
 }
 
+function initials(name: string): string {
+  const parts = name.trim().split(/\s+/);
+  return ((parts[0]?.[0] ?? "") + (parts.length > 1 ? parts[parts.length - 1][0] : "")).toUpperCase() || "?";
+}
+
+function hashIndex(seed: string): number {
+  let h = 0;
+  for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) | 0;
+  return (Math.abs(h) % 8) + 1;
+}
+
 function CommentItem({ comment, canDelete, onDelete }: { comment: TripComment; canDelete: boolean; onDelete: () => void }) {
   const muted = "fg.muted";
   return (
     <Flex gap={3} role="group">
-      <Avatar size="xs" name={comment.userName} mt={1} />
+      <Flex
+        w="30px"
+        h="30px"
+        mt="2px"
+        borderRadius="full"
+        bg={dayToken(hashIndex(comment.userId))}
+        color="pin.fg"
+        fontSize="12px"
+        fontWeight={700}
+        align="center"
+        justify="center"
+        flexShrink={0}
+        aria-hidden
+      >
+        {initials(comment.userName)}
+      </Flex>
       <Box flex={1} minW={0}>
         <HStack spacing={2}>
           <Text fontSize="sm" fontWeight="semibold">
@@ -59,7 +84,16 @@ function CommentItem({ comment, canDelete, onDelete }: { comment: TripComment; c
         </Text>
       </Box>
       {canDelete && (
-        <IconButton aria-label="Delete comment" icon={<FiTrash2 />} size="xs" variant="ghost" opacity={0} _groupHover={{ opacity: 1 }} onClick={onDelete} />
+        <IconButton
+          aria-label="Delete comment"
+          icon={<LuTrash2 />}
+          size="xs"
+          variant="ghost"
+          opacity={0}
+          _groupHover={{ opacity: 1 }}
+          _focusVisible={{ opacity: 1 }}
+          onClick={onDelete}
+        />
       )}
     </Flex>
   );
@@ -99,15 +133,13 @@ export function CommentsDrawer({ trip, target, onClose }: { trip: Trip; target: 
   return (
     <Drawer isOpen={Boolean(target)} onClose={onClose} placement="right" size="sm">
       <DrawerOverlay />
-      <DrawerContent>
-        <DrawerCloseButton />
-        <DrawerHeader borderBottomWidth="1px">
-          {target?.type === "trip" ? "Trip discussion" : target?.label}
-          <Text fontSize="xs" fontWeight="normal" color={muted}>
-            {target?.type === "trip" ? "Everyone on the trip sees this" : "Comments on this stop"}
-          </Text>
-        </DrawerHeader>
-        <DrawerBody py={4}>
+      <DrawerContent maxW={{ base: "100vw", md: "440px" }} bg="bg.surface">
+        <PanelHeader
+          title={target?.type === "trip" ? "Discussion" : target?.label}
+          subtitle={target?.type === "trip" ? "Everyone on the trip sees this" : "Comments on this stop"}
+          onClose={onClose}
+        />
+        <DrawerBody px={6} py={5}>
           <Stack spacing={4}>
             {thread.length === 0 && (
               <Text fontSize="sm" color={muted}>
@@ -125,7 +157,7 @@ export function CommentsDrawer({ trip, target, onClose }: { trip: Trip; target: 
             <div ref={endRef} />
             {elsewhere.length > 0 && (
               <Box pt={4} borderTopWidth="1px" borderColor={border}>
-                <Text fontSize="xs" color={muted} mb={3}>
+                <Text fontSize="12px" fontWeight={600} textTransform="uppercase" letterSpacing="0.06em" color={muted} mb={3}>
                   Recent comments on places & stops
                 </Text>
                 <Stack spacing={3}>
@@ -142,10 +174,10 @@ export function CommentsDrawer({ trip, target, onClose }: { trip: Trip; target: 
             )}
           </Stack>
         </DrawerBody>
-        <DrawerFooter borderTopWidth="1px" flexDirection="column" alignItems="stretch" gap={2}>
+        <DrawerFooter borderTopWidth="1px" borderColor={border} px={6} py={4} flexDirection="column" alignItems="stretch" gap={2}>
           <Textarea
-            size="sm"
             rows={2}
+            aria-label="Write a comment"
             value={text}
             onChange={(e) => setText(e.target.value)}
             placeholder="Write a comment…"
@@ -153,9 +185,14 @@ export function CommentsDrawer({ trip, target, onClose }: { trip: Trip; target: 
               if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) void send();
             }}
           />
-          <Button colorScheme="brand" size="sm" alignSelf="flex-end" onClick={send} isLoading={add.isPending} isDisabled={!text.trim()}>
-            Post
-          </Button>
+          <HStack justify="space-between">
+            <Text fontSize="12px" color={muted}>
+              Ctrl + Enter to post
+            </Text>
+            <Button leftIcon={<LuSend size={15} />} onClick={send} isLoading={add.isPending} isDisabled={!text.trim()}>
+              Post
+            </Button>
+          </HStack>
         </DrawerFooter>
       </DrawerContent>
     </Drawer>

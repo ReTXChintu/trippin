@@ -1,86 +1,150 @@
-import { Badge, Box, Flex, Heading, HStack, Icon, Text, useColorModeValue } from "@chakra-ui/react";
-import { Link } from "react-router-dom";
-import { FiCalendar, FiMapPin } from "react-icons/fi";
-import { format, parseISO } from "date-fns";
-import type { TripStatus } from "@/types";
+import { Box, Flex, HStack, Icon, LinkBox, LinkOverlay, Text } from "@chakra-ui/react";
+import { FiArrowRight, FiCalendar, FiMap } from "react-icons/fi";
+import { Link as RouterLink } from "react-router-dom";
+import { PhotoFallback } from "@/components/ui";
+import { MemberCount, ProgressBar, RouteArt, TripStatusPill } from "@/components/ui/app";
+import { formatDateRange, tripRouteLabel, tripWhenLabel } from "@/components/ui/app-format";
+import { TripActionsMenu } from "@/modules/trips/components/TripActionsMenu";
+import type { Trip } from "@/modules/trips/types/trip.types";
+import { getTripStages } from "@/modules/trips/utils/trip-stage";
 
 interface TripCardProps {
-  id: string;
-  title: string;
-  destinationCity: string;
-  destinationCountry: string;
-  startDate: string;
-  endDate: string;
-  status: TripStatus;
+  trip: Trip;
+  /** Owner gets Delete; members get Leave. */
+  isOwner: boolean;
+  /** grid: route-art card · compact: phone row with a tile · row: list row. */
+  variant?: "grid" | "compact" | "row";
+  /** What the footer line says: the suggested next step, or just "Open trip →". */
+  footer?: "next" | "open";
+  /** Hide the ⋯ menu (e.g. the dashboard's Recent list). */
+  hideActions?: boolean;
 }
 
-const statusColors: Record<TripStatus, string> = {
-  draft: "gray",
-  active: "green",
-  archived: "orange",
-  completed: "blue",
-};
+function lowerFirst(s: string) {
+  return s ? s[0].toLowerCase() + s.slice(1) : s;
+}
 
-export function TripCard({
-  id,
-  title,
-  destinationCity,
-  destinationCountry,
-  startDate,
-  endDate,
-  status,
-}: TripCardProps) {
-  const bg = "bg.surface";
-  const borderColor = "border.line";
-  const hoverBorder = useColorModeValue("brand.300", "brand.600");
-
-  const formatDate = (date: string) => {
+function tripProgress(trip: Trip) {
+  const finished = trip.status === "completed";
+  let pct = 100;
+  let next: string | null = null;
+  if (!finished) {
     try {
-      return format(parseISO(date), "MMM d, yyyy");
+      const summary = getTripStages(trip);
+      pct = (summary.doneCount / summary.stages.length) * 100;
+      next = summary.next ? summary.next.text : null;
     } catch {
-      return date;
+      pct = 0;
     }
-  };
+  }
+  return { pct, next, finished };
+}
 
+/** The ⋯ menu sits above the card-wide link; styled like the design's ghost square button. */
+function Actions({ trip, isOwner }: { trip: Trip; isOwner: boolean }) {
   return (
     <Box
-      as={Link}
-      to={`/trips/${id}`}
-      display="block"
-      p={5}
-      bg={bg}
-      borderWidth="1px"
-      borderColor={borderColor}
-      borderRadius="xl"
-      transition="all 0.2s"
-      _hover={{
-        borderColor: hoverBorder,
-        transform: "translateY(-2px)",
-        shadow: "md",
-      }}
+      position="relative"
+      zIndex={1}
+      flexShrink={0}
+      mr="-6px"
+      sx={{ "& > button": { bg: "transparent", borderColor: "transparent", w: "30px", h: "30px", minW: "30px" }, "& > button:hover": { bg: "bg.subtle" } }}
     >
-      <Flex justify="space-between" align="start" mb={3}>
-        <Heading size="sm" noOfLines={1}>
-          {title}
-        </Heading>
-        <Badge colorScheme={statusColors[status]} textTransform="capitalize">
-          {status}
-        </Badge>
-      </Flex>
-
-      <HStack spacing={2} color="fg.muted" fontSize="sm" mb={2}>
-        <Icon as={FiMapPin} />
-        <Text>
-          {destinationCity}, {destinationCountry}
-        </Text>
-      </HStack>
-
-      <HStack spacing={2} color="fg.muted" fontSize="sm">
-        <Icon as={FiCalendar} />
-        <Text>
-          {formatDate(startDate)} – {formatDate(endDate)}
-        </Text>
-      </HStack>
+      <TripActionsMenu trip={trip} isOwner={isOwner} />
     </Box>
+  );
+}
+
+export function TripCard({ trip, isOwner, variant = "grid", footer = "open", hideActions }: TripCardProps) {
+  const { pct, next, finished } = tripProgress(trip);
+  const route = tripRouteLabel(trip);
+  const href = `/trips/${trip.id}`;
+  const footerText = finished ? "Trip finished" : footer === "next" && next ? `Next: ${lowerFirst(next)}` : null;
+
+  if (variant === "compact") {
+    return (
+      <LinkBox as="article" display="flex" gap="12px" p="12px" bg="bg.surface" borderWidth="1px" borderColor="border.line" borderRadius="xl" _hover={{ borderColor: "gray.300", _dark: { borderColor: "gray.600" } }}>
+        <PhotoFallback seed={trip.id} icon={FiMap} iconSize={20} w="64px" h="64px" borderRadius="12px" flexShrink={0} />
+        <Flex direction="column" gap="4px" flex={1} minW={0}>
+          <LinkOverlay as={RouterLink} to={href} fontWeight={600} noOfLines={1}>
+            {trip.title}
+          </LinkOverlay>
+          <Text fontSize="12px" color="fg.muted" noOfLines={1}>
+            {[tripWhenLabel(trip), route].filter(Boolean).join(" · ")}
+          </Text>
+          <ProgressBar value={pct} label={`${trip.title} progress`} />
+          <Text fontSize="12px" color="fg.muted" noOfLines={1}>
+            {footerText ?? "Open trip →"}
+          </Text>
+        </Flex>
+      </LinkBox>
+    );
+  }
+
+  if (variant === "row") {
+    return (
+      <LinkBox as="article" display="flex" alignItems="center" gap="12px" px="16px" py="12px" _hover={{ bg: "bg.subtle" }}>
+        <PhotoFallback seed={trip.id} icon={FiMap} iconSize={18} w="44px" h="44px" borderRadius="10px" flexShrink={0} />
+        <Flex direction="column" flex={1} minW={0}>
+          <LinkOverlay as={RouterLink} to={href} fontWeight={600} noOfLines={1}>
+            {trip.title}
+          </LinkOverlay>
+          <Text fontSize="12px" color="fg.muted" noOfLines={1}>
+            {formatDateRange(trip.startDate, trip.endDate)}
+            {route ? ` · ${route}` : ""}
+          </Text>
+        </Flex>
+        {!hideActions && (
+          <Box w="120px" display={{ base: "none", md: "block" }} flexShrink={0}>
+            <ProgressBar value={pct} label={`${trip.title} progress`} />
+          </Box>
+        )}
+        <TripStatusPill trip={trip} />
+        {!hideActions && <Actions trip={trip} isOwner={isOwner} />}
+      </LinkBox>
+    );
+  }
+
+  return (
+    <LinkBox
+      as="article"
+      display="flex"
+      flexDirection="column"
+      bg="bg.surface"
+      borderWidth="1px"
+      borderColor="border.line"
+      borderRadius="xl"
+      transition="box-shadow .15s, border-color .15s"
+      _hover={{ boxShadow: "raised" }}
+    >
+      {/* No overflow:hidden on the card — it would clip the ⋯ menu — so the art rounds itself. */}
+      <RouteArt seed={trip.id} label={route} borderTopRadius="13px" />
+      <Flex direction="column" gap="8px" pt="14px" px="16px" pb="16px">
+        <Flex justify="space-between" align="center" gap="8px" minH="30px">
+          <LinkOverlay as={RouterLink} to={href} fontFamily="heading" fontWeight={600} fontSize="18px" letterSpacing="-0.01em" noOfLines={1}>
+            {trip.title}
+          </LinkOverlay>
+          {!hideActions && <Actions trip={trip} isOwner={isOwner} />}
+        </Flex>
+        <HStack spacing="8px" fontSize="12px" color="fg.muted" flexWrap="wrap" rowGap="4px">
+          <HStack spacing="6px">
+            <Icon as={FiCalendar} boxSize="14px" />
+            <Text>{tripWhenLabel(trip)}</Text>
+          </HStack>
+          <TripStatusPill trip={trip} />
+        </HStack>
+        <ProgressBar value={pct} label={`${trip.title} progress`} />
+        <Flex justify="space-between" align="center" gap="8px" fontSize="12px" minH="30px">
+          <Text color="fg.muted" noOfLines={1}>
+            {footerText ?? (
+              <>
+                Open trip <Icon as={FiArrowRight} boxSize="12px" verticalAlign="-1px" />
+              </>
+            )}
+          </Text>
+          <MemberCount trip={trip} />
+        </Flex>
+      </Flex>
+    </LinkBox>
   );
 }

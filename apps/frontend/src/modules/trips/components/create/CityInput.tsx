@@ -1,7 +1,9 @@
 import {
   Box,
+  Icon,
   Input,
   InputGroup,
+  InputLeftElement,
   InputRightElement,
   List,
   ListItem,
@@ -9,6 +11,7 @@ import {
   Text,
 } from "@chakra-ui/react";
 import { useEffect, useRef, useState } from "react";
+import type { IconType } from "react-icons";
 import { searchCities, type CityMatch } from "@/modules/places/api/places.api";
 
 export interface CityValue {
@@ -29,6 +32,13 @@ export function CityInput({
   autoFocus,
   isInvalid,
   size = "md",
+  icon,
+  dashed,
+  height,
+  ariaLabel = "City",
+  onPick,
+  clearOnPick,
+  onEnterText,
 }: {
   value: CityValue;
   onChange: (value: CityValue) => void;
@@ -36,6 +46,18 @@ export function CityInput({
   autoFocus?: boolean;
   isInvalid?: boolean;
   size?: "sm" | "md";
+  /** Leading icon inside the field. */
+  icon?: IconType;
+  /** Dashed border — the "add another" field. */
+  dashed?: boolean;
+  height?: string;
+  ariaLabel?: string;
+  /** Called only when a city is chosen from the list. */
+  onPick?: (value: CityValue) => void;
+  /** Empty the field after a pick (used to add cities one after another). */
+  clearOnPick?: boolean;
+  /** Enter with no list open — lets a typed name be used as is. */
+  onEnterText?: (text: string) => void;
 }) {
   const [query, setQuery] = useState(value.city);
   const [results, setResults] = useState<CityMatch[]>([]);
@@ -82,21 +104,32 @@ export function CityInput({
   };
 
   const pick = (c: CityMatch) => {
-    onChange({ city: c.name, state: c.state, country: c.country, lat: c.lat, lng: c.lng });
-    setQuery(c.name);
+    const picked = { city: c.name, state: c.state, country: c.country, lat: c.lat, lng: c.lng };
+    onChange(picked);
+    onPick?.(picked);
+    setQuery(clearOnPick ? "" : c.name);
+    setResults([]);
     setOpen(false);
   };
 
   return (
     <Box ref={box} position="relative" w="full">
       <InputGroup size={size}>
+        {icon && (
+          <InputLeftElement pointerEvents="none" color="fg.muted" h={height}>
+            <Icon as={icon} boxSize="16px" />
+          </InputLeftElement>
+        )}
         <Input
           value={query}
+          h={height}
+          pl={icon ? "38px" : undefined}
+          borderStyle={dashed ? "dashed" : undefined}
           autoFocus={autoFocus}
           isInvalid={isInvalid}
           placeholder={placeholder}
           autoComplete="off"
-          aria-label="City"
+          aria-label={ariaLabel}
           onChange={(e) => {
             setQuery(e.target.value);
             // Typing a new name forgets the old pick until one is chosen (or typed in full).
@@ -105,7 +138,13 @@ export function CityInput({
           }}
           onFocus={() => results.length > 0 && setOpen(true)}
           onKeyDown={(e) => {
-            if (!open) return;
+            if (!open) {
+              if (e.key === "Enter" && onEnterText) {
+                e.preventDefault();
+                if (query.trim().length >= 2) onEnterText(query.trim());
+              }
+              return;
+            }
             if (e.key === "ArrowDown") {
               e.preventDefault();
               setActive((a) => Math.min(a + 1, results.length - 1));
@@ -119,7 +158,7 @@ export function CityInput({
           }}
         />
         {loading && (
-          <InputRightElement>
+          <InputRightElement h={height}>
             <Spinner size="xs" />
           </InputRightElement>
         )}
@@ -135,7 +174,7 @@ export function CityInput({
           borderWidth="1px"
           borderColor={border}
           borderRadius="md"
-          boxShadow="lg"
+          boxShadow="raised"
           py={1}
           role="listbox"
         >

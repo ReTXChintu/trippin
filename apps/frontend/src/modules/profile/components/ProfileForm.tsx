@@ -1,50 +1,30 @@
-import {
-  Avatar,
-  Box,
-  Button,
-  Divider,
-  FormControl,
-  FormErrorMessage,
-  FormHelperText,
-  FormLabel,
-  Heading,
-  Input,
-  Link,
-  Stack,
-  Text,
-  useToast,
-  VStack,
-} from "@chakra-ui/react";
+import { Avatar, Box, Button, Collapse, Flex, FormControl, FormErrorMessage, FormLabel, Heading, HStack, Icon, SimpleGrid, Skeleton, Stack, Text, useToast } from "@chakra-ui/react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
-import { useProfileQuery, useUpdateApiKeys, useUpdateProfile } from "@/modules/profile/hooks/useProfile";
+import type { IconType } from "react-icons";
+import { FiImage, FiLink, FiMapPin, FiShield, FiUser } from "react-icons/fi";
+import { LuSparkles } from "react-icons/lu";
+import { SurfaceCard } from "@/components/ui";
+import { IconInput } from "@/components/ui/app";
+import { useProfileQuery, useUpdateProfile } from "@/modules/profile/hooks/useProfile";
 import { getApiErrorMessage } from "@/lib/api";
-import {
-  apiKeysSchema,
-  profileSchema,
-  type ApiKeysInput,
-  type ProfileInput,
-} from "@/modules/auth/validators/auth.validator";
+import { profileSchema, type ProfileInput } from "@/modules/auth/validators/auth.validator";
 import { AiSettingsCard } from "@/modules/profile/components/AiSettingsCard";
+import { ApiKeyCard } from "@/modules/profile/components/ApiKeyCard";
 
-function SharedKeyNote() {
-  return (
-    <Text fontSize="sm" color="green.500" mb={1}>
-      Using the shared key from this server — add your own to use it instead.
-    </Text>
-  );
-}
+const UNLOCKS: { icon: IconType; title: string; text: string }[] = [
+  { icon: LuSparkles, title: "OpenAI or Gemini", text: "Describe-a-trip, Ask AI, guides, summaries, compare" },
+  { icon: FiMapPin, title: "Google Maps", text: "Rich place search, photos, ratings, opening hours" },
+  { icon: FiShield, title: "Neither", text: "City search, manual stops, plan generation still work" },
+];
 
 export function ProfileForm() {
   const toast = useToast();
   const { data, isLoading: isFetching } = useProfileQuery();
   const profile = data?.profile;
   const updateProfile = useUpdateProfile();
-  const updateApiKeys = useUpdateApiKeys();
-
-  const bg = "bg.surface";
-  const borderColor = "border.line";
+  const [photoOpen, setPhotoOpen] = useState(false);
 
   const {
     register,
@@ -56,24 +36,8 @@ export function ProfileForm() {
     resolver: zodResolver(profileSchema),
   });
 
-  const {
-    register: registerKeys,
-    handleSubmit: handleKeysSubmit,
-    reset: resetKeys,
-    formState: { errors: keyErrors },
-  } = useForm<ApiKeysInput>({
-    resolver: zodResolver(apiKeysSchema),
-    defaultValues: {
-      openaiApiKey: "",
-      geminiApiKey: "",
-      googleMapsApiKey: "",
-      clearOpenai: false,
-      clearGemini: false,
-      clearGoogleMaps: false,
-    },
-  });
-
   const avatarUrl = watch("avatar");
+  const nameValue = watch("name");
 
   useEffect(() => {
     if (profile) {
@@ -84,242 +48,130 @@ export function ProfileForm() {
   const onSubmit = async (data: ProfileInput) => {
     try {
       await updateProfile.mutateAsync({ name: data.name, avatar: data.avatar || undefined });
+      setPhotoOpen(false);
       toast({ title: "Profile updated", status: "success", duration: 3000 });
     } catch (err) {
       toast({ title: getApiErrorMessage(err), status: "error", duration: 4000 });
     }
   };
 
-  const onKeysSubmit = async (data: ApiKeysInput) => {
-    try {
-      await updateApiKeys.mutateAsync(data);
-      resetKeys({
-        openaiApiKey: "",
-        geminiApiKey: "",
-        googleMapsApiKey: "",
-        clearOpenai: false,
-        clearGemini: false,
-        clearGoogleMaps: false,
-      });
-      toast({ title: "API keys updated", status: "success", duration: 3000 });
-    } catch (err) {
-      toast({ title: getApiErrorMessage(err), status: "error", duration: 4000 });
-    }
-  };
-
-  const handleClearOpenai = async () => {
-    try {
-      await updateApiKeys.mutateAsync({ clearOpenai: true });
-      toast({ title: "OpenAI key removed", status: "success", duration: 3000 });
-    } catch (err) {
-      toast({ title: getApiErrorMessage(err), status: "error", duration: 4000 });
-    }
-  };
-
-  const handleClearGemini = async () => {
-    try {
-      await updateApiKeys.mutateAsync({ clearGemini: true });
-      toast({ title: "Gemini key removed", status: "success", duration: 3000 });
-    } catch (err) {
-      toast({ title: getApiErrorMessage(err), status: "error", duration: 4000 });
-    }
-  };
-
-  const handleClearGoogleMaps = async () => {
-    try {
-      await updateApiKeys.mutateAsync({ clearGoogleMaps: true });
-      toast({ title: "Google Maps key removed", status: "success", duration: 3000 });
-    } catch (err) {
-      toast({ title: getApiErrorMessage(err), status: "error", duration: 4000 });
-    }
-  };
-
   if (isFetching || !profile) {
-    return null;
+    return (
+      <Stack spacing="20px">
+        <Skeleton h="104px" borderRadius="xl" />
+        <Skeleton h="180px" borderRadius="xl" />
+        <Skeleton h="150px" borderRadius="xl" />
+      </Stack>
+    );
   }
 
   return (
-    <VStack spacing={6} align="stretch" maxW="2xl">
-      <Box p={6} bg={bg} borderWidth="1px" borderColor={borderColor} borderRadius="xl">
-        <VStack spacing={6} align="stretch">
-          <Box>
-            <Heading size="md" mb={1}>
-              Profile Settings
-            </Heading>
-            <Text color="fg.muted" fontSize="sm">
-              {profile.email}
+    <Stack spacing="20px">
+      <SurfaceCard as="form" id="profile" onSubmit={handleSubmit(onSubmit)} p="20px" scrollMarginTop="80px" aria-label="Your profile">
+        <Flex gap="16px" align={{ base: "flex-start", md: "center" }} direction={{ base: "column", md: "row" }}>
+          <Avatar
+            w="64px"
+            h="64px"
+            fontSize="22px"
+            name={nameValue || profile.name}
+            src={avatarUrl || profile.avatar || undefined}
+            bg="day.1"
+            color="pin.fg"
+            flexShrink={0}
+          />
+          <FormControl isInvalid={!!errors.name} flex={1}>
+            <FormLabel htmlFor="profile-name" m={0} mb="4px">
+              Name
+            </FormLabel>
+            <IconInput id="profile-name" icon={FiUser} autoComplete="name" {...register("name")} />
+            <FormErrorMessage>{errors.name?.message}</FormErrorMessage>
+            <Text fontSize="12px" color="fg.muted" mt="4px">
+              Signed in as {profile.email}
             </Text>
-          </Box>
-
-          <Stack direction="row" align="center" spacing={4}>
-            <Avatar size="lg" name={watch("name") || profile.name} src={avatarUrl || profile.avatar || undefined} />
-          </Stack>
-
-          <form onSubmit={handleSubmit(onSubmit)}>
-            <Stack spacing={4}>
-              <FormControl isInvalid={!!errors.name}>
-                <FormLabel>Display Name</FormLabel>
-                <Input {...register("name")} />
-                <FormErrorMessage>{errors.name?.message}</FormErrorMessage>
-              </FormControl>
-
-              <FormControl isInvalid={!!errors.avatar}>
-                <FormLabel>Avatar URL</FormLabel>
-                <Input placeholder="https://..." {...register("avatar")} />
-                <FormErrorMessage>{errors.avatar?.message}</FormErrorMessage>
-              </FormControl>
-
-              <Button
-                type="submit"
-                colorScheme="brand"
-                isLoading={updateProfile.isPending}
-                isDisabled={!isDirty}
-                alignSelf="flex-start"
-              >
-                Save Changes
+          </FormControl>
+          <HStack spacing="8px" alignSelf={{ base: "stretch", md: "center" }}>
+            <Button variant="outline" leftIcon={<FiImage />} onClick={() => setPhotoOpen((o) => !o)} aria-expanded={photoOpen} flex={{ base: 1, md: "none" }}>
+              Change photo
+            </Button>
+            {isDirty && (
+              <Button type="submit" isLoading={updateProfile.isPending} flex={{ base: 1, md: "none" }}>
+                Save
               </Button>
-            </Stack>
-          </form>
-        </VStack>
-      </Box>
-
-      <AiSettingsCard profile={profile} />
-
-      <Box p={6} bg={bg} borderWidth="1px" borderColor={borderColor} borderRadius="xl">
-        <VStack spacing={4} align="stretch">
-          <Box>
-            <Heading size="md" mb={1}>
-              API Keys
-            </Heading>
-            <Text color="fg.muted" fontSize="sm">
-              Your keys are encrypted and used for trips you own. Trip members use the owner&apos;s keys for
-              discovery and AI features.
+            )}
+          </HStack>
+        </Flex>
+        <Collapse in={photoOpen || !!errors.avatar} animateOpacity>
+          <FormControl isInvalid={!!errors.avatar} mt="16px">
+            <FormLabel htmlFor="profile-avatar" m={0} mb="4px">
+              Photo URL
+            </FormLabel>
+            <IconInput id="profile-avatar" icon={FiLink} placeholder="https://…" {...register("avatar")} />
+            <FormErrorMessage>{errors.avatar?.message}</FormErrorMessage>
+            <Text fontSize="12px" color="fg.muted" mt="4px">
+              Paste a link to an image, then Save. Leave empty to use your initials.
             </Text>
-          </Box>
+          </FormControl>
+        </Collapse>
+      </SurfaceCard>
 
-          <form onSubmit={handleKeysSubmit(onKeysSubmit)}>
-            <Stack spacing={4}>
-              <FormControl isInvalid={!!keyErrors.openaiApiKey}>
-                <FormLabel>OpenAI API Key</FormLabel>
-                {profile.hasOpenaiKey && (
-                  <Text fontSize="sm" color="green.500" mb={1}>
-                    Configured ···{profile.openaiApiKeyLast4}
-                  </Text>
-                )}
-                <Input
-                  type="password"
-                  placeholder={profile.hasOpenaiKey ? "Enter new key to replace" : "sk-..."}
-                  autoComplete="off"
-                  {...registerKeys("openaiApiKey")}
-                />
-                {!profile.hasOpenaiKey && profile.serverKeys?.openai && <SharedKeyNote />}
-                <FormHelperText>
-                  One of OpenAI or Gemini powers AI guides, summaries and plan comparison — choose which above.{" "}
-                  <Link href="https://platform.openai.com/api-keys" isExternal color="brand.500">
-                    Get an OpenAI key
-                  </Link>
-                </FormHelperText>
-                {profile.hasOpenaiKey && (
-                  <Button
-                    mt={2}
-                    size="sm"
-                    variant="ghost"
-                    colorScheme="red"
-                    type="button"
-                    isLoading={updateApiKeys.isPending}
-                    onClick={handleClearOpenai}
-                  >
-                    Remove OpenAI key
-                  </Button>
-                )}
-              </FormControl>
-
-              <Divider />
-
-              <FormControl isInvalid={!!keyErrors.geminiApiKey}>
-                <FormLabel>Google Gemini API Key</FormLabel>
-                {profile.hasGeminiKey && (
-                  <Text fontSize="sm" color="green.500" mb={1}>
-                    Configured ···{profile.geminiApiKeyLast4}
-                  </Text>
-                )}
-                <Input
-                  type="password"
-                  placeholder={profile.hasGeminiKey ? "Enter new key to replace" : "AIza..."}
-                  autoComplete="off"
-                  {...registerKeys("geminiApiKey")}
-                />
-                {!profile.hasGeminiKey && profile.serverKeys?.gemini && <SharedKeyNote />}
-                <FormHelperText>
-                  An alternative to OpenAI with a generous free tier.{" "}
-                  <Link href="https://aistudio.google.com/app/apikey" isExternal color="brand.500">
-                    Get a Gemini key
-                  </Link>
-                </FormHelperText>
-                {profile.hasGeminiKey && (
-                  <Button
-                    mt={2}
-                    size="sm"
-                    variant="ghost"
-                    colorScheme="red"
-                    type="button"
-                    isLoading={updateApiKeys.isPending}
-                    onClick={handleClearGemini}
-                  >
-                    Remove Gemini key
-                  </Button>
-                )}
-              </FormControl>
-
-              <Divider />
-
-              <FormControl isInvalid={!!keyErrors.googleMapsApiKey}>
-                <FormLabel>Google Maps API Key</FormLabel>
-                {profile.hasGoogleMapsKey && (
-                  <Text fontSize="sm" color="green.500" mb={1}>
-                    Configured ···{profile.googleMapsApiKeyLast4}
-                  </Text>
-                )}
-                <Input
-                  type="password"
-                  placeholder={profile.hasGoogleMapsKey ? "Enter new key to replace" : "AIza..."}
-                  autoComplete="off"
-                  {...registerKeys("googleMapsApiKey")}
-                />
-                {!profile.hasGoogleMapsKey && profile.serverKeys?.googleMaps && <SharedKeyNote />}
-                <FormHelperText>
-                  Used for place search, discovery, and photos. Enable Places API (New) and Geocoding in Google
-                  Cloud.{" "}
-                  <Link
-                    href="https://developers.google.com/maps/documentation/places/web-service/get-api-key"
-                    isExternal
-                    color="brand.500"
-                  >
-                    Get a Google Maps key
-                  </Link>
-                </FormHelperText>
-                {profile.hasGoogleMapsKey && (
-                  <Button
-                    mt={2}
-                    size="sm"
-                    variant="ghost"
-                    colorScheme="red"
-                    type="button"
-                    isLoading={updateApiKeys.isPending}
-                    onClick={handleClearGoogleMaps}
-                  >
-                    Remove Google Maps key
-                  </Button>
-                )}
-              </FormControl>
-
-              <Button type="submit" colorScheme="brand" isLoading={updateApiKeys.isPending} alignSelf="flex-start">
-                Save API Keys
-              </Button>
-            </Stack>
-          </form>
-        </VStack>
+      <Box pt="4px" id="api-keys" scrollMarginTop="80px">
+        <Heading as="h2" fontSize="22px">
+          What each key unlocks
+        </Heading>
+        <Text color="fg.muted" mt="4px">
+          You can use the whole planner with no keys. Keys add shortcuts. They&rsquo;re used for trips you own — members use the owner&rsquo;s keys.
+        </Text>
       </Box>
-    </VStack>
+      <SimpleGrid columns={{ base: 1, md: 3 }} spacing="12px">
+        {UNLOCKS.map((u) => (
+          <SurfaceCard key={u.title} p="14px">
+            <HStack spacing="6px" fontWeight={600}>
+              <Icon as={u.icon} boxSize="15px" />
+              <Text>{u.title}</Text>
+            </HStack>
+            <Text fontSize="12px" color="fg.muted" mt="4px">
+              {u.text}
+            </Text>
+          </SurfaceCard>
+        ))}
+      </SimpleGrid>
+
+      <ApiKeyCard
+        name="OpenAI"
+        description="Powers AI drafting and editing"
+        field="openaiApiKey"
+        clearField="clearOpenai"
+        hasKey={profile.hasOpenaiKey}
+        last4={profile.openaiApiKeyLast4}
+        serverKey={profile.serverKeys?.openai}
+        placeholder="sk-…"
+        link={{ href: "https://platform.openai.com/api-keys", label: "Get a key at platform.openai.com" }}
+      />
+      <ApiKeyCard
+        name="Gemini"
+        description="Alternative AI provider, with a generous free tier"
+        field="geminiApiKey"
+        clearField="clearGemini"
+        hasKey={profile.hasGeminiKey}
+        last4={profile.geminiApiKeyLast4}
+        serverKey={profile.serverKeys?.gemini}
+        placeholder="Paste your key"
+        link={{ href: "https://aistudio.google.com/app/apikey", label: "Get a key at aistudio.google.com" }}
+      />
+      <ApiKeyCard
+        name="Google Maps Places"
+        description="Place search, photos and reviews"
+        field="googleMapsApiKey"
+        clearField="clearGoogleMaps"
+        hasKey={profile.hasGoogleMapsKey}
+        last4={profile.googleMapsApiKeyLast4}
+        serverKey={profile.serverKeys?.googleMaps}
+        placeholder="AIza…"
+        extraNote="Enable Places API (New) and Geocoding."
+        link={{ href: "https://developers.google.com/maps/documentation/places/web-service/get-api-key", label: "Get a key in Google Cloud console" }}
+      />
+
+      <AiSettingsCard profile={profile} id="ai-settings" />
+    </Stack>
   );
 }

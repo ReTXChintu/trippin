@@ -1,11 +1,8 @@
 import {
-  Alert,
-  AlertIcon,
-  Badge,
   Box,
   Button,
   Flex,
-  Heading,
+  Grid,
   HStack,
   Icon,
   IconButton,
@@ -13,71 +10,63 @@ import {
   MenuButton,
   MenuItem,
   MenuList,
-  Progress,
-  Select,
   Stack,
   Text,
   useToast,
 } from "@chakra-ui/react";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
-import { FiArrowLeft, FiCheck, FiClock, FiMoreVertical, FiNavigation, FiSkipForward } from "react-icons/fi";
-import { MdHotel, MdRestaurant, MdTrain } from "react-icons/md";
+import { formatDistanceToNowStrict } from "date-fns";
+import {
+  FiArrowLeft,
+  FiCheck,
+  FiCheckCircle,
+  FiClock,
+  FiInfo,
+  FiList,
+  FiMap,
+  FiMoreHorizontal,
+  FiWifiOff,
+} from "react-icons/fi";
+import { LuMap } from "react-icons/lu";
 import { getApiErrorMessage } from "@/lib/api";
-import { LoadingState } from "@/components/ui/LoadingState";
-import { EmptyState } from "@/components/ui/EmptyState";
+import { canEditTrip } from "@/lib/trip-access";
+import { useAuthStore } from "@/store/authStore";
+import { Banner, ChoiceChip, EmptyState, Overline, SurfaceCard } from "@/components/ui";
+import {
+  ChecklistEmptyState,
+  ErrorState,
+  LoadingSkeleton,
+  ScrollRow,
+  ViewOnlyBanner,
+  hasOfflineCache,
+  useOnlineStatus,
+} from "@/components/states";
 import { useItineraryQuery, useReplanFromNow, useSetStopStatus } from "@/modules/itinerary/hooks/useItinerary";
 import type { ItineraryDay, ItineraryStop } from "@/modules/itinerary/types";
-import { formatDayDate, formatDuration, toMinutes, transportIcon } from "@/modules/itinerary/utils/plan.utils";
+import { dayGoogleMapsUrl, formatDayDate, toMinutes } from "@/modules/itinerary/utils/plan.utils";
 import { useTripQuery, useWeatherQuery } from "@/modules/trips/hooks/useTrips";
+import { getTripStages } from "@/modules/trips/utils/trip-stage";
 import { BOOKING_META } from "@/modules/trips/components/bookings/bookingMeta";
-import type { TransportationMode } from "@/types";
+import { NowCard } from "./today/NowCard";
+import { TodayStopRow } from "./today/TodayStopRow";
+import { GOOGLE_MODE, focusStateFor, isActionable, localToday, nowHHMM } from "./today/today.utils";
 
-const GOOGLE_MODE: Record<TransportationMode, string> = {
-  Walking: "walking",
-  Cab: "driving",
-  "Self Drive": "driving",
-  Bike: "bicycling",
-  "Public Transport": "transit",
-};
-
-function nowHHMM(): string {
-  const d = new Date();
-  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
-}
-
-function localToday(): string {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-}
-
-/** Stops you actually go to / do — structural ones (travel, back to hotel) are shown but not actionable. */
-function isActionable(stop: ItineraryStop): boolean {
-  return stop.stopType !== "transfer" && stop.stopType !== "return";
-}
-
-function stopIcon(stop: ItineraryStop) {
-  if (stop.stopType === "meal") return MdRestaurant;
-  if (stop.stopType === "transfer") return MdTrain;
-  if (stop.stopType === "return") return MdHotel;
-  return undefined;
-}
-
+/** The on-trip "Today" screen: what's now/next, what's coming, and a one-tap re-plan when running late. */
 export function TodayView() {
   const { id = "" } = useParams();
   const [params, setParams] = useSearchParams();
   const toast = useToast();
-  const { data: trip, isLoading: tripLoading } = useTripQuery(id);
-  const { data, isLoading } = useItineraryQuery(id);
+  const currentUserId = useAuthStore((s) => s.user?.id ?? "");
+  const tripQuery = useTripQuery(id);
+  const itineraryQuery = useItineraryQuery(id);
+  const { data: trip } = tripQuery;
+  const { data } = itineraryQuery;
   const { data: weather } = useWeatherQuery(id);
   const setStatus = useSetStopStatus(id);
   const replan = useReplanFromNow(id);
+  const online = useOnlineStatus();
   const [clock, setClock] = useState(nowHHMM);
-
-  const cardBg = "bg.surface";
-  const border = "border.line";
-  const muted = "fg.muted";
-  const focusBg = "accent.soft";
 
   // Tick every 30s so "now / next" follows the clock. `?at=HH:mm` pins the time (handy for previewing).
   useEffect(() => {
@@ -87,7 +76,7 @@ export function TodayView() {
   const now = params.get("at") ?? clock;
   const nowMin = toMinutes(now);
 
-  const days = data?.itinerary?.days ?? [];
+  const days = useMemo(() => data?.itinerary?.days ?? [], [data]);
   const today = localToday();
   const requestedDay = Number(params.get("day"));
   const day: ItineraryDay | undefined =
@@ -99,13 +88,62 @@ export function TodayView() {
   const focus = pending[0];
   const doneCount = actionable.filter((s) => s.status).length;
 
-  if (tripLoading || isLoading) return <LoadingState />;
-  if (!trip || !day) return <EmptyState title="No plan yet" description="Generate the day-by-day plan first." />;
+  if (tripQuery.isLoading || itineraryQuery.isLoading) {
+    return (
+      <Box maxW="1080px" mx="auto">
+        <LoadingSkeleton variant="page" label="Loading today" />
+      </Box>
+    );
+  }
 
-  const mode = GOOGLE_MODE[trip.transportationMode] ?? "driving";
-  const ModeIcon = transportIcon(trip.transportationMode);
+  if (tripQuery.isError || itineraryQuery.isError || !trip) {
+    return (
+      <Box maxW="560px" mx="auto">
+        <ErrorState
+          title="Couldn't load today"
+          onRetry={() => {
+            void tripQuery.refetch();
+            void itineraryQuery.refetch();
+          }}
+          retrying={tripQuery.isFetching || itineraryQuery.isFetching}
+        />
+      </Box>
+    );
+  }
+
+  const planHref = (legId?: string) => `/trips/${trip.id}?tab=plan${legId ? `&city=${legId}` : ""}`;
+
+  if (!day) {
+    const { stages } = getTripStages(trip, { hasPlan: false, edits: 0 });
+    const done = (key: string) => stages.find((s) => s.key === key)?.status === "done";
+    return (
+      <Box maxW="560px" mx="auto">
+        <ChecklistEmptyState
+          icon={LuMap}
+          title="No plan for today yet"
+          text="Today follows your day-by-day plan. Make the plan first and it'll show up here."
+          steps={[
+            { label: "Pick places", done: done("places") },
+            { label: "Add stays", done: done("stays") },
+            { label: "Generate plan", done: false },
+          ]}
+          action={
+            <Button as={Link} to={planHref()} w="full" mt={1}>
+              Go to the plan
+            </Button>
+          }
+        />
+      </Box>
+    );
+  }
+
+  const canEdit = canEditTrip(trip, currentUserId);
+  const mode = trip.transportationMode;
+  const googleMode = GOOGLE_MODE[mode] ?? "driving";
   const dayWeather = weather?.days.find((w) => w.date === day.date);
   const bookings = trip.bookings.filter((b) => b.startDate === day.date);
+  const leg = trip.legs.find((l) => l.id === day.legId);
+  const dayRouteUrl = dayGoogleMapsUrl(day, leg?.hotelCoordinates ?? trip.hotelCoordinates, mode);
 
   const run = async (fn: () => Promise<unknown>, success?: string) => {
     try {
@@ -121,243 +159,255 @@ export function TodayView() {
 
   const navigateUrl = (stop: ItineraryStop) =>
     stop.coordinates
-      ? `https://www.google.com/maps/dir/?api=1&destination=${stop.coordinates.lat},${stop.coordinates.lng}&travelmode=${mode}`
+      ? `https://www.google.com/maps/dir/?api=1&destination=${stop.coordinates.lat},${stop.coordinates.lng}&travelmode=${googleMode}`
       : stop.stopType === "meal"
         ? `https://www.google.com/maps/search/restaurants+near+me`
         : undefined;
 
-  let focusState: { label: string; tone: "next" | "now" | "late"; detail?: string } | null = null;
-  if (focus && isToday) {
-    const arrive = toMinutes(focus.arrivalTime);
-    const leave = toMinutes(focus.departureTime);
-    if (nowMin < arrive) {
-      const leaveBy = arrive - focus.travelDurationMinutes;
-      focusState = {
-        tone: "next",
-        label: `Next · ${focus.arrivalTime}`,
-        detail:
-          focus.travelDurationMinutes > 0
-            ? nowMin >= leaveBy
-              ? `Head out now — ${formatDuration(focus.travelDurationMinutes)} to get there`
-              : `Leave by ${String(Math.floor(leaveBy / 60)).padStart(2, "0")}:${String(leaveBy % 60).padStart(2, "0")} · ${formatDuration(focus.travelDurationMinutes)} away`
-            : undefined,
-      };
-    } else if (nowMin <= leave) {
-      focusState = { tone: "now", label: `Now · until ${focus.departureTime}` };
-    } else {
-      focusState = { tone: "late", label: `Planned ${focus.arrivalTime}–${focus.departureTime}`, detail: `You're ${formatDuration(nowMin - leave)} behind the plan` };
-    }
-  } else if (focus) {
-    focusState = { tone: "next", label: `First up · ${focus.arrivalTime}` };
-  }
+  const focusIndex = focus ? day.stops.findIndex((s) => s.id === focus.id) : day.stops.length;
+  const comingUp = day.stops.filter((s, i) => i > focusIndex && !s.status);
+  const earlier = day.stops.filter((s, i) => i < focusIndex || (i > focusIndex && s.status));
+  const nextActionable = pending[1];
+  const focusState = focus ? focusStateFor(focus, nextActionable, nowMin, isToday) : null;
+  const late = focusState?.tone === "late";
+  const showReplan = canEdit && isToday && pending.length > 0;
+
+  const setDay = (n: number) => {
+    const next = new URLSearchParams(params);
+    next.set("day", String(n));
+    setParams(next, { replace: true });
+  };
+
+  const subtitle = [
+    isToday && `Day ${day.dayNumber}`,
+    day.legName,
+    dayWeather &&
+      `${dayWeather.tempMaxC}° ${dayWeather.summary}${(dayWeather.rainChance ?? 0) >= 30 ? ` · ${dayWeather.rainChance}% rain` : ""}`,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+
+  const syncedAgo = itineraryQuery.dataUpdatedAt
+    ? formatDistanceToNowStrict(itineraryQuery.dataUpdatedAt, { addSuffix: true })
+    : undefined;
+
+  const replanButton = (
+    <Button
+      w="full"
+      size="xl"
+      h="52px"
+      borderRadius="lg"
+      bg={late ? "warn" : "warn.soft"}
+      color={late ? "bg.surface" : "warn"}
+      _hover={{ filter: "brightness(.97)" }}
+      _active={{ filter: "brightness(.94)" }}
+      leftIcon={<FiClock />}
+      onClick={() => run(() => replan.mutateAsync({ dayNumber: day.dayNumber, time: now }), `Re-planned from ${now}`)}
+      isLoading={replan.isPending}
+      isDisabled={!online}
+      title={online ? `Re-time the rest of the day from ${now}` : "Needs a connection"}
+    >
+      Running late? Re-plan from now
+    </Button>
+  );
 
   return (
-    <Stack spacing={5} maxW="560px" mx="auto" pb={10}>
-      <Flex justify="space-between" align="center" gap={2}>
-        <Button as={Link} to={`/trips/${trip.id}?tab=plan`} variant="ghost" size="sm" leftIcon={<FiArrowLeft />}>
-          Full plan
-        </Button>
-        <Select
-          size="sm"
-          w="auto"
-          value={day.dayNumber}
-          onChange={(e) => {
-            const next = new URLSearchParams(params);
-            next.set("day", e.target.value);
-            setParams(next, { replace: true });
-          }}
-        >
-          {days.map((d) => (
-            <option key={d.dayNumber} value={d.dayNumber}>
-              Day {d.dayNumber} · {formatDayDate(d.date, "EEE d MMM")}
-              {d.date === today ? " (today)" : ""}
-            </option>
-          ))}
-        </Select>
-      </Flex>
+    <Box maxW="1080px" mx="auto">
+      <Stack spacing={{ base: "14px", md: 5 }}>
+        {/* Header: back to the plan, date, day · city · weather, options */}
+        <Flex align="center" justify="space-between" gap={2}>
+          <HStack spacing={1} minW={0}>
+            <IconButton
+              as={Link}
+              to={planHref(day.legId)}
+              aria-label="Back to the plan"
+              title="Back to the plan"
+              icon={<FiArrowLeft />}
+              variant="ghost"
+              size="lg"
+              ml={-2}
+            />
+            <Box minW={0}>
+              <Text
+                as="h1"
+                fontFamily={{ base: "body", md: "heading" }}
+                fontWeight={{ base: 700, md: 600 }}
+                fontSize={{ base: "16px", md: "28px" }}
+                lineHeight={1.2}
+                letterSpacing={{ md: "-0.01em" }}
+                noOfLines={1}
+              >
+                {isToday ? "Today" : `Day ${day.dayNumber}`} · {formatDayDate(day.date, "EEE d MMM")}
+              </Text>
+              <Text fontSize={{ base: "12px", md: "13px" }} color="fg.muted" noOfLines={1}>
+                {subtitle}
+                {actionable.length > 0 && ` · ${doneCount} of ${actionable.length} done`}
+              </Text>
+            </Box>
+          </HStack>
+          <Menu isLazy placement="bottom-end">
+            <MenuButton as={IconButton} icon={<FiMoreHorizontal />} variant="ghost" size="lg" aria-label="Options" title="Options" />
+            <MenuList fontSize="sm">
+              <MenuItem as={Link} to={planHref(day.legId)} icon={<FiList />}>
+                Full plan
+              </MenuItem>
+              {dayRouteUrl && (
+                <MenuItem as="a" href={dayRouteUrl} target="_blank" rel="noopener noreferrer" icon={<FiMap />}>
+                  Whole day in Google Maps
+                </MenuItem>
+              )}
+            </MenuList>
+          </Menu>
+        </Flex>
 
-      <Box>
-        <Text fontSize="sm" color={muted}>
-          {trip.title}
-        </Text>
-        <Heading size="lg">{formatDayDate(day.date, "EEEE, d MMM")}</Heading>
-        <HStack spacing={2} mt={1} flexWrap="wrap">
-          {day.legName && <Badge>{day.legName}</Badge>}
-          {dayWeather && (
-            <Badge variant="outline" textTransform="none" fontWeight="normal">
-              {dayWeather.icon} {dayWeather.tempMaxC}°/{dayWeather.tempMinC}°
-              {(dayWeather.rainChance ?? 0) >= 30 ? ` · ${dayWeather.rainChance}% rain` : ""}
-            </Badge>
-          )}
-          {isToday && (
-            <Badge colorScheme="brand" variant="subtle">
-              {now}
-            </Badge>
-          )}
-        </HStack>
-        {actionable.length > 0 && (
-          <Box mt={3}>
-            <Text fontSize="xs" color={muted} mb={1}>
-              {doneCount} of {actionable.length} done
-            </Text>
-            <Progress value={(doneCount / actionable.length) * 100} size="sm" colorScheme="brand" borderRadius="full" />
-          </Box>
+        {/* Offline readiness (only claimed when the offline cache is really active) */}
+        {!online ? (
+          <Flex align="center" gap={2} px={4} py={2} borderRadius="md" bg="warn.soft" color="warn" fontSize="12px" fontWeight={600}>
+            <Icon as={FiWifiOff} boxSize="14px" />
+            <Text flex={1}>Offline · showing the copy saved {syncedAgo ?? "earlier"}</Text>
+          </Flex>
+        ) : (
+          hasOfflineCache() &&
+          syncedAgo && (
+            <Flex align="center" gap={2} px={4} py={2} borderRadius="md" bg="success.soft" color="success" fontSize="12px" fontWeight={600}>
+              <Icon as={FiCheck} boxSize="14px" />
+              <Text flex={1}>Saved for offline · synced {syncedAgo}</Text>
+            </Flex>
+          )
         )}
-      </Box>
 
-      {!isToday && (
-        <Alert status="info" borderRadius="md" fontSize="sm">
-          <AlertIcon />
-          This isn't today — you're previewing Day {day.dayNumber}. On the day, this screen follows the clock.
-        </Alert>
-      )}
-
-      {focus && focusState ? (
-        <Box p={5} bg={focusState.tone === "late" ? "orange.50" : focusBg} _dark={{ bg: "whiteAlpha.100" }} borderRadius="2xl" borderWidth="1px" borderColor={focusState.tone === "late" ? "orange.200" : "brand.200"}>
-          <Text fontSize="sm" fontWeight="semibold" color={focusState.tone === "late" ? "orange.600" : "brand.600"}>
-            {focusState.label}
-          </Text>
-          <Heading size="md" mt={1}>
-            {focus.stopType === "meal" && !focus.placeId ? `${focus.placeName} — pick somewhere nearby` : focus.placeName}
-          </Heading>
-          <Text fontSize="sm" color={muted} mt={1}>
-            {[focus.category, formatDuration(focus.visitDurationMinutes), focus.openingHoursToday && `Open ${focus.openingHoursToday}`]
-              .filter(Boolean)
-              .join(" · ")}
-          </Text>
-          {focusState.detail && (
-            <HStack mt={3} spacing={2} fontSize="sm">
-              <Icon as={focusState.tone === "late" ? FiClock : ModeIcon} />
-              <Text fontWeight="medium">{focusState.detail}</Text>
-            </HStack>
-          )}
-          {focus.warnings?.map((w) => (
-            <Text key={w} fontSize="xs" color="orange.600" mt={1}>
-              ⚠ {w}
-            </Text>
-          ))}
-          {focus.notes && (
-            <Text fontSize="sm" mt={2}>
-              📝 {focus.notes}
-            </Text>
-          )}
-          <Stack direction={{ base: "column", sm: "row" }} spacing={2} mt={4}>
-            {navigateUrl(focus) && (
-              <Button as="a" href={navigateUrl(focus)} target="_blank" rel="noopener noreferrer" colorScheme="brand" leftIcon={<FiNavigation />} flex={1}>
-                Navigate
-              </Button>
-            )}
-            <Button leftIcon={<FiCheck />} onClick={() => mark(focus, "done")} isLoading={setStatus.isPending} flex={1} variant="outline" colorScheme="brand">
-              Done
-            </Button>
-            <Button leftIcon={<FiSkipForward />} onClick={() => mark(focus, "skipped")} isLoading={setStatus.isPending} variant="ghost">
-              Skip
-            </Button>
-          </Stack>
-        </Box>
-      ) : (
-        <Box p={5} bg={cardBg} borderRadius="2xl" borderWidth="1px" borderColor={border} textAlign="center">
-          <Heading size="md">🎉 That's the day done</Heading>
-          <Text fontSize="sm" color={muted} mt={1}>
-            Everything's marked. Rest up for tomorrow.
-          </Text>
-        </Box>
-      )}
-
-      {isToday && pending.length > 0 && (
-        <Button
-          variant={focusState?.tone === "late" ? "solid" : "outline"}
-          colorScheme="orange"
-          leftIcon={<FiClock />}
-          onClick={() => run(() => replan.mutateAsync({ dayNumber: day.dayNumber, time: now }), `Re-planned from ${now}`)}
-          isLoading={replan.isPending}
-        >
-          Running late? Re-plan the rest from {now}
-        </Button>
-      )}
-
-      {bookings.length > 0 && (
-        <Box p={4} bg={cardBg} borderRadius="xl" borderWidth="1px" borderColor={border}>
-          <Text fontSize="sm" fontWeight="semibold" mb={2}>
-            Booked today
-          </Text>
-          <Stack spacing={2}>
-            {bookings.map((b) => (
-              <HStack key={b.id} fontSize="sm" spacing={2} align="start">
-                <Icon as={BOOKING_META[b.type].icon} mt={0.5} color={`${BOOKING_META[b.type].color}.500`} />
-                <Box>
-                  <Text fontWeight="medium">
-                    {b.startTime ? `${b.startTime} · ` : ""}
-                    {b.title}
-                  </Text>
-                  {b.confirmationNumber && (
-                    <Text fontSize="xs" color={muted}>
-                      Conf. <b>{b.confirmationNumber}</b>
-                      {b.provider ? ` · ${b.provider}` : ""}
-                    </Text>
-                  )}
-                </Box>
-              </HStack>
-            ))}
-          </Stack>
-        </Box>
-      )}
-
-      <Box p={4} bg={cardBg} borderRadius="xl" borderWidth="1px" borderColor={border}>
-        <Text fontSize="sm" fontWeight="semibold" mb={3}>
-          The whole day
-        </Text>
-        <Stack spacing={0}>
-          {day.stops.map((stop) => {
-            const StopIcon = stopIcon(stop);
-            const isFocus = stop.id === focus?.id;
-            return (
-              <Flex key={stop.id} py={2} gap={3} align="center" opacity={stop.status ? 0.55 : 1} borderBottomWidth="1px" borderColor={border} _last={{ borderBottomWidth: 0 }}>
-                <Text w="44px" fontSize="sm" fontWeight={isFocus ? "bold" : "semibold"} sx={{ fontVariantNumeric: "tabular-nums" }}>
-                  {stop.arrivalTime}
-                </Text>
-                <Flex w="22px" justify="center">
-                  {stop.status === "done" ? (
-                    <Icon as={FiCheck} color="green.500" />
-                  ) : stop.status === "skipped" ? (
-                    <Icon as={FiSkipForward} color={muted} />
-                  ) : StopIcon ? (
-                    <Icon as={StopIcon} color={muted} />
-                  ) : (
-                    <Box w="8px" h="8px" borderRadius="full" bg={isFocus ? "brand.500" : "gray.300"} />
-                  )}
-                </Flex>
-                <Text flex={1} fontSize="sm" fontWeight={isFocus ? "semibold" : "normal"} textDecoration={stop.status === "skipped" ? "line-through" : undefined} noOfLines={1}>
-                  {stop.placeName}
-                </Text>
-                {isActionable(stop) && (
-                  <Menu isLazy placement="bottom-end">
-                    <MenuButton as={IconButton} icon={<FiMoreVertical />} size="xs" variant="ghost" aria-label="Stop options" />
-                    <MenuList fontSize="sm">
-                      {navigateUrl(stop) && (
-                        <MenuItem as="a" href={navigateUrl(stop)} target="_blank" icon={<FiNavigation />}>
-                          Navigate
-                        </MenuItem>
-                      )}
-                      {stop.status !== "done" && (
-                        <MenuItem icon={<FiCheck />} onClick={() => mark(stop, "done")}>
-                          Mark done
-                        </MenuItem>
-                      )}
-                      {stop.status !== "skipped" && (
-                        <MenuItem icon={<FiSkipForward />} onClick={() => mark(stop, "skipped")}>
-                          Skip
-                        </MenuItem>
-                      )}
-                      {stop.status && <MenuItem onClick={() => mark(stop, null)}>Back to planned</MenuItem>}
-                    </MenuList>
-                  </Menu>
+        {days.length > 1 && (
+          <ScrollRow label="Choose a day">
+            {days.map((d) => (
+              <ChoiceChip key={d.dayNumber} selected={d.dayNumber === day.dayNumber} onClick={() => setDay(d.dayNumber)} aria-label={`Day ${d.dayNumber}, ${formatDayDate(d.date, "EEEE d MMMM")}${d.date === today ? ", today" : ""}`}>
+                Day {d.dayNumber} · {formatDayDate(d.date, "EEE d")}
+                {d.date === today && (
+                  <Box as="span" w="6px" h="6px" borderRadius="full" bg={d.dayNumber === day.dayNumber ? "accent.fg" : "accent"} aria-hidden />
                 )}
-              </Flex>
-            );
-          })}
-        </Stack>
-      </Box>
-    </Stack>
+              </ChoiceChip>
+            ))}
+          </ScrollRow>
+        )}
+
+        {!canEdit && <ViewOnlyBanner>You can view this trip. Only editors can mark stops done or re-plan the day.</ViewOnlyBanner>}
+
+        {!isToday && (
+          <Banner tone="accent" icon={FiInfo}>
+            This isn't today — you're previewing Day {day.dayNumber}. On the day, this screen follows the clock.
+          </Banner>
+        )}
+
+        <Grid templateColumns={{ base: "minmax(0,1fr)", lg: "minmax(0,1.05fr) minmax(0,1fr)" }} gap={{ base: "14px", lg: 6 }} alignItems="start">
+          <Stack spacing="14px">
+            {focus && focusState ? (
+              <NowCard
+                key={focus.id}
+                stop={focus}
+                state={focusState}
+                directionsUrl={navigateUrl(focus)}
+                canEdit={canEdit}
+                busy={setStatus.isPending}
+                disabled={!online}
+                onDone={() => mark(focus, "done")}
+                onSkip={() => mark(focus, "skipped")}
+              />
+            ) : (
+              <SurfaceCard raised>
+                <EmptyState
+                  compact
+                  icon={FiCheckCircle}
+                  title="That's the day done"
+                  text={actionable.length > 0 ? "Everything's marked. Rest up for tomorrow." : "Nothing to visit on this day."}
+                />
+              </SurfaceCard>
+            )}
+
+            {showReplan && <Box display={{ base: "none", lg: "block" }}>{replanButton}</Box>}
+
+            {bookings.length > 0 && (
+              <SurfaceCard p={4}>
+                <Overline mb={3}>Booked today</Overline>
+                <Stack spacing={3}>
+                  {bookings.map((b) => (
+                    <HStack key={b.id} fontSize="sm" spacing={3} align="start">
+                      <Flex w="32px" h="32px" borderRadius="md" bg="bg.subtle" align="center" justify="center" flexShrink={0}>
+                        <Icon as={BOOKING_META[b.type].icon} boxSize="16px" color="fg.muted" />
+                      </Flex>
+                      <Box minW={0}>
+                        <Text fontWeight={600} noOfLines={1}>
+                          {b.startTime ? `${b.startTime} · ` : ""}
+                          {b.title}
+                        </Text>
+                        {b.confirmationNumber && (
+                          <Text fontSize="12px" color="fg.muted">
+                            Conf. <b>{b.confirmationNumber}</b>
+                            {b.provider ? ` · ${b.provider}` : ""}
+                          </Text>
+                        )}
+                      </Box>
+                    </HStack>
+                  ))}
+                </Stack>
+              </SurfaceCard>
+            )}
+          </Stack>
+
+          <Stack spacing="14px">
+            {comingUp.length > 0 && (
+              <Stack spacing={2} as="section" aria-label="Coming up">
+                <Overline>Coming up</Overline>
+                {comingUp.map((stop) => (
+                  <TodayStopRow
+                    key={stop.id}
+                    stop={stop}
+                    mode={mode}
+                    directionsUrl={navigateUrl(stop)}
+                    canEdit={canEdit && online}
+                    planHref={planHref(day.legId)}
+                    onMark={(status) => mark(stop, status)}
+                  />
+                ))}
+              </Stack>
+            )}
+
+            {earlier.length > 0 && (
+              <Stack spacing={2} as="section" aria-label="Earlier">
+                <Overline>{focus ? "Earlier" : "The whole day"}</Overline>
+                {earlier.map((stop) => (
+                  <TodayStopRow
+                    key={stop.id}
+                    stop={stop}
+                    mode={mode}
+                    directionsUrl={navigateUrl(stop)}
+                    canEdit={canEdit && online}
+                    planHref={planHref(day.legId)}
+                    onMark={(status) => mark(stop, status)}
+                  />
+                ))}
+              </Stack>
+            )}
+          </Stack>
+        </Grid>
+      </Stack>
+
+      {/* Phone: the re-plan action sits in a bar pinned just above the trip tab bar. */}
+      {showReplan && (
+        <Box
+          display={{ base: "block", lg: "none" }}
+          position="fixed"
+          left={0}
+          right={0}
+          bottom="68px"
+          zIndex={20}
+          px={4}
+          py={3}
+          bg="bg.surface"
+          borderTopWidth="1px"
+          borderColor="border.line"
+        >
+          {replanButton}
+        </Box>
+      )}
+    </Box>
   );
 }

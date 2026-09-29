@@ -4,13 +4,16 @@ import {
   FormLabel,
   Input,
   InputGroup,
+  InputLeftElement,
   InputRightElement,
   List,
   ListItem,
   Spinner,
   Text,
+  visuallyHiddenStyle,
 } from "@chakra-ui/react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { FiSearch } from "react-icons/fi";
 import { SEARCH_DEBOUNCE_MS, SEARCH_MIN_QUERY_LENGTH } from "@/constants/google-places";
 import { searchPlaces, getPlaceDetails } from "@/modules/places/api/places.api";
 import type { PlaceSearchResult } from "@/modules/places/types/place.types";
@@ -32,6 +35,9 @@ interface PlaceSearchInputProps {
   value?: string;
   onSelect: (selection: PlaceSelection) => void;
   onClear?: () => void;
+  /** Keep the label for screen readers only (the design shows a bare search field). */
+  hideLabel?: boolean;
+  autoFocus?: boolean;
 }
 
 function generateSessionToken(): string {
@@ -47,6 +53,8 @@ export function PlaceSearchInput({
   value,
   onSelect,
   onClear,
+  hideLabel,
+  autoFocus,
 }: PlaceSearchInputProps) {
   const [query, setQuery] = useState(value ?? "");
   const [results, setResults] = useState<PlaceSearchResult[]>([]);
@@ -157,9 +165,13 @@ export function PlaceSearchInput({
   return (
     <Box ref={containerRef} position="relative">
       <FormControl>
-        <FormLabel>{label}</FormLabel>
+        <FormLabel sx={hideLabel ? visuallyHiddenStyle : undefined}>{label}</FormLabel>
         <InputGroup>
+          <InputLeftElement pointerEvents="none" color="fg.muted">
+            <FiSearch />
+          </InputLeftElement>
           <Input
+            autoFocus={autoFocus}
             value={query}
             onChange={(e) => handleChange(e.target.value)}
             placeholder={placeholder}
@@ -181,8 +193,9 @@ export function PlaceSearchInput({
             bg={listBg}
             borderWidth="1px"
             borderColor={borderColor}
-            borderRadius="md"
-            shadow="md"
+            borderRadius="lg"
+            boxShadow="raised"
+            py={1}
             maxH="240px"
             overflowY="auto"
           >
@@ -194,9 +207,17 @@ export function PlaceSearchInput({
                   py={2}
                   cursor="pointer"
                   _hover={{ bg: hoverBg }}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      void handleSelect(r);
+                    }
+                  }}
                   onClick={() => handleSelect(r)}
                 >
-                  <Text fontWeight="medium" fontSize="sm">
+                  <Text fontWeight={600} fontSize="13px">
                     {r.name}
                   </Text>
                   {r.address && (

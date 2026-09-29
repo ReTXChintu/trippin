@@ -12,11 +12,20 @@ export interface MoveTarget {
 export interface PlanActions {
   trip: Trip;
   readOnly: boolean;
+  /** Phone layout: compact rows. */
+  compact: boolean;
   highlightedStopId: string | null;
   setHighlightedStopId: (id: string | null) => void;
+  /** The stop opened in the list (shows its action row and the map card). */
+  selectedStopId: string | null;
+  selectStop: (stop: ItineraryStop | null, day?: ItineraryDay) => void;
   openDetails: (stop: ItineraryStop, day: ItineraryDay) => void;
   openEdit: (stop: ItineraryStop, day: ItineraryDay) => void;
-  openMealPicker: (stop: ItineraryStop, day: ItineraryDay) => void;
+  openMealPicker: (stop: ItineraryStop, day: ItineraryDay, tab?: "nearby" | "saved") => void;
+  /** Assign a restaurant to a meal slot straight from a suggestion chip. */
+  chooseMeal: (stop: ItineraryStop, day: ItineraryDay, placeId: string, name: string) => void;
+  /** Whether meal slots of this day may fetch inline suggestions (selected day, Maps key present). */
+  mealHints: (day: ItineraryDay) => boolean;
   openAddStop: (day: ItineraryDay) => void;
   toggleLock: (stop: ItineraryStop, day: ItineraryDay) => void;
   removeStop: (stop: ItineraryStop, day: ItineraryDay) => void;
@@ -28,6 +37,10 @@ export interface PlanActions {
   openComments: (stop: ItineraryStop) => void;
   commentCount: (stopId: string) => number;
   busyStopId: string | null;
+  /** Jump to another tab (e.g. Stays when a night has no stay). */
+  goTo: (tab: "stays" | "places" | "bookings", legId?: string) => void;
+  replanCity: (legId: string) => void;
+  showDayOnMap: (day: ItineraryDay) => void;
 }
 
 const PlanContext = createContext<PlanActions | null>(null);

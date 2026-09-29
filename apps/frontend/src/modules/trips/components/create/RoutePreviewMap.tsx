@@ -13,9 +13,9 @@ export interface RoutePoint {
 function pin(n: number): L.DivIcon {
   return L.divIcon({
     className: "",
-    html: `<div style="background:#0F9F8F;color:white;width:26px;height:26px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;border:2px solid white;box-shadow:0 1px 5px rgba(0,0,0,.35)">${n}</div>`,
-    iconSize: [26, 26],
-    iconAnchor: [13, 13],
+    html: `<div style="background:var(--chakra-colors-accent);color:var(--chakra-colors-accent-fg);width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font:700 12px 'DM Sans',sans-serif;border:2.5px solid var(--chakra-colors-bg-surface);box-shadow:0 2px 6px rgba(0,0,0,.3);box-sizing:border-box">${n}</div>`,
+    iconSize: [28, 28],
+    iconAnchor: [14, 14],
   });
 }
 
@@ -36,16 +36,16 @@ function Fit({ points }: { points: [number, number][] }) {
 }
 
 /** The cities picked so far, numbered in visiting order and joined by the route. */
-export function RoutePreviewMap({ points, height = "240px" }: { points: RoutePoint[]; height?: string }) {
+export function RoutePreviewMap({ points, height = "240px", borderRadius = "lg" }: { points: RoutePoint[]; height?: string; borderRadius?: string | number }) {
   const latLngs = useMemo(() => points.map((p) => [p.lat, p.lng] as [number, number]), [points]);
   return (
-    <Box h={height} borderRadius="lg" overflow="hidden" position="relative" zIndex={0}>
+    <Box h={height} borderRadius={borderRadius} overflow="hidden" position="relative" zIndex={0}>
       <MapContainer center={[25, 10]} zoom={1} style={{ height: "100%", width: "100%" }} scrollWheelZoom={false}>
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
-        {latLngs.length > 1 && <Polyline positions={latLngs} pathOptions={{ color: "#0F9F8F", weight: 3, dashArray: "6 8" }} />}
+        {latLngs.length > 1 && <Polyline positions={latLngs} pathOptions={{ color: "var(--chakra-colors-accent)", weight: 4, opacity: 0.9, lineCap: "round", lineJoin: "round" }} />}
         {points.map((p, i) => (
           <Marker key={`${p.label}-${i}`} position={[p.lat, p.lng]} icon={pin(i + 1)}>
             <Tooltip direction="top" offset={[0, -12]}>

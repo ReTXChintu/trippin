@@ -10,15 +10,7 @@ import {
   useToast,
 } from "@chakra-ui/react";
 import { useState } from "react";
-import {
-  FiArchive,
-  FiCopy,
-  FiExternalLink,
-  FiLogOut,
-  FiMoreVertical,
-  FiShare2,
-  FiTrash2,
-} from "react-icons/fi";
+import { LuArchive, LuCopy, LuEllipsis, LuExternalLink, LuLink, LuLogOut, LuShare2, LuTrash2 } from "react-icons/lu";
 import { useNavigate } from "react-router-dom";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { getApiErrorMessage } from "@/lib/api";
@@ -31,13 +23,19 @@ import {
   useUnshareTrip,
 } from "@/modules/trips/hooks/useTrips";
 import type { Trip } from "@/modules/trips/types/trip.types";
+import { ItineraryExportItems } from "@/modules/itinerary/components/ItineraryExportMenu";
+import type { ItineraryExportActions } from "@/modules/itinerary/components/useItineraryExport";
 
 interface TripActionsMenuProps {
   trip: Trip;
   isOwner: boolean;
+  /** When given, the plan's export actions are listed too. */
+  exportActions?: ItineraryExportActions;
+  variant?: "outline" | "ghost";
+  size?: "md" | "lg";
 }
 
-export function TripActionsMenu({ trip, isOwner }: TripActionsMenuProps) {
+export function TripActionsMenu({ trip, isOwner, exportActions, variant = "outline", size = "md" }: TripActionsMenuProps) {
   const navigate = useNavigate();
   const toast = useToast();
   const { isOpen: isDeleteOpen, onOpen: onDeleteOpen, onClose: onDeleteClose } = useDisclosure();
@@ -122,41 +120,55 @@ export function TripActionsMenu({ trip, isOwner }: TripActionsMenuProps) {
 
   return (
     <>
-      <Menu>
-        <MenuButton as={IconButton} icon={<FiMoreVertical />} size="sm" variant="outline" aria-label="More trip actions" />
-        <MenuList>
-          <MenuItem icon={<FiCopy />} onClick={handleDuplicate}>
+      <Menu placement="bottom-end">
+        <MenuButton
+          as={IconButton}
+          icon={<LuEllipsis size={18} />}
+          variant={variant}
+          size={size}
+          color="fg.default"
+          aria-label="More: share, export, archive, delete"
+          title="More: share, export, archive, delete"
+        />
+        <MenuList fontSize="13px">
+          {exportActions?.available && (
+            <>
+              <ItineraryExportItems actions={exportActions} />
+              <MenuDivider />
+            </>
+          )}
+          <MenuItem icon={<LuCopy />} onClick={handleDuplicate}>
             Duplicate
           </MenuItem>
           {trip.status !== "archived" && (
-            <MenuItem icon={<FiArchive />} onClick={handleArchive}>
+            <MenuItem icon={<LuArchive />} onClick={handleArchive}>
               Archive
             </MenuItem>
           )}
           <MenuDivider />
           {trip.isPublic ? (
             <>
-              <MenuItem icon={<FiCopy />} onClick={onCopy}>
+              <MenuItem icon={<LuLink />} onClick={onCopy}>
                 {hasCopied ? "Copied!" : "Copy share link"}
               </MenuItem>
-              <MenuItem as="a" href={shareUrl} target="_blank" icon={<FiExternalLink />}>
+              <MenuItem as="a" href={shareUrl} target="_blank" icon={<LuExternalLink />}>
                 View public page
               </MenuItem>
-              <MenuItem onClick={handleUnshare}>Unshare</MenuItem>
+              <MenuItem icon={<LuShare2 />} onClick={handleUnshare}>Stop sharing publicly</MenuItem>
             </>
           ) : (
-            <MenuItem icon={<FiShare2 />} onClick={handleShare}>
-              Share
+            <MenuItem icon={<LuShare2 />} onClick={handleShare}>
+              Share a public link
             </MenuItem>
           )}
           <MenuDivider />
           {!isOwner && (
-            <MenuItem icon={<FiLogOut />} color="orange.500" onClick={onLeaveOpen}>
+            <MenuItem icon={<LuLogOut />} color="warn" onClick={onLeaveOpen}>
               Leave trip
             </MenuItem>
           )}
           {isOwner && (
-            <MenuItem icon={<FiTrash2 />} color="red.500" onClick={onDeleteOpen}>
+            <MenuItem icon={<LuTrash2 />} color="danger" onClick={onDeleteOpen}>
               Delete
             </MenuItem>
           )}

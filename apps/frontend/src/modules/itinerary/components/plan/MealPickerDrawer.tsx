@@ -1,15 +1,10 @@
 import {
-  Alert,
-  AlertIcon,
-  Badge,
   Box,
   Button,
   Drawer,
   DrawerBody,
-  DrawerCloseButton,
   DrawerContent,
   DrawerFooter,
-  DrawerHeader,
   DrawerOverlay,
   Flex,
   HStack,
@@ -20,15 +15,16 @@ import {
   Text,
   useToast,
 } from "@chakra-ui/react";
-import { useState } from "react";
-import { FiMapPin, FiStar, FiX } from "react-icons/fi";
-import { MdRestaurant } from "react-icons/md";
+import { useEffect, useState } from "react";
+import { LuClock, LuStar, LuUtensils, LuX } from "react-icons/lu";
 import { getApiErrorMessage } from "@/lib/api";
 import { useMealSuggestionsQuery, useUpdateMealSlot } from "@/modules/itinerary/hooks/useItinerary";
 import type { MealSuggestion } from "@/modules/itinerary/api/itinerary.api";
 import type { ItineraryDay, ItineraryStop } from "@/modules/itinerary/types";
 import { formatDayDate } from "@/modules/itinerary/utils/plan.utils";
 import { PlaceSearchInput } from "@/modules/places/components/PlaceSearchInput";
+import { Banner, PhotoFallback, Pill, Segmented } from "@/components/ui";
+import { PanelHeader } from "@/components/ui/plan";
 
 const MEAL_TITLES: Record<string, string> = {
   breakfast: "Breakfast",
@@ -42,100 +38,102 @@ interface MealPickerDrawerProps {
   target: { stop: ItineraryStop; day: ItineraryDay } | null;
   city?: string;
   country?: string;
+  /** Which list to open on. */
+  initialTab?: "nearby" | "saved";
+  /** Drops the meal from this day (the "Skip lunch" link). */
+  onSkip?: () => void;
   onClose: () => void;
+}
+
+function distance(s: MealSuggestion): string | null {
+  if (s.distanceKm === undefined) return null;
+  const d = s.distanceKm < 1 ? `${Math.round(s.distanceKm * 1000)} m` : `${s.distanceKm} km`;
+  return s.walkMinutes !== undefined && s.walkMinutes <= 25 ? `${d} · ${s.walkMinutes} min walk` : d;
 }
 
 function SuggestionCard({
   suggestion,
+  time,
   onChoose,
   isBusy,
 }: {
   suggestion: MealSuggestion;
+  time?: string;
   onChoose: () => void;
   isBusy: boolean;
 }) {
-  const border = "border.line";
-  const muted = "fg.muted";
-  const placeholderBg = "warn.soft";
-
+  const s = suggestion;
+  const dist = distance(s);
   return (
-    <Flex gap={3} p={3} borderWidth="1px" borderColor={border} borderRadius="lg" align="center">
-      {suggestion.photoUrl ? (
+    <Flex gap={3} px="14px" py={3} bg="bg.surface" borderWidth="1px" borderColor="border.line" borderRadius="xl" align="center">
+      {s.photoUrl ? (
         <Image
-          src={suggestion.photoUrl}
+          src={s.photoUrl}
           alt=""
-          boxSize="64px"
+          boxSize="52px"
           objectFit="cover"
-          borderRadius="md"
+          borderRadius="10px"
           flexShrink={0}
-          fallback={<Box boxSize="64px" borderRadius="md" bg={placeholderBg} flexShrink={0} />}
+          fallback={<PhotoFallback seed={s.name} icon={LuUtensils} w="52px" h="52px" borderRadius="10px" flexShrink={0} />}
         />
       ) : (
-        <Flex boxSize="64px" borderRadius="md" bg={placeholderBg} align="center" justify="center" flexShrink={0}>
-          <Icon as={MdRestaurant} color="orange.400" boxSize={6} />
-        </Flex>
+        <PhotoFallback seed={s.name} icon={LuUtensils} w="52px" h="52px" borderRadius="10px" flexShrink={0} aria-hidden />
       )}
       <Box flex={1} minW={0}>
-        <Text fontWeight="semibold" fontSize="sm" noOfLines={1}>
-          {suggestion.name}
+        <Text fontWeight={600} noOfLines={1}>
+          {s.name}
         </Text>
-        <HStack spacing={1.5} fontSize="xs" color={muted} flexWrap="wrap">
-          {suggestion.rating !== undefined && (
-            <HStack spacing={0.5}>
-              <Icon as={FiStar} color="yellow.500" />
-              <Text>
-                {suggestion.rating.toFixed(1)}
-                {suggestion.userRatingCount ? ` (${suggestion.userRatingCount.toLocaleString()})` : ""}
-              </Text>
-            </HStack>
+        <Text fontSize="12px" color="fg.muted">
+          {s.cuisine ? `${s.cuisine} · ` : ""}
+          {s.rating !== undefined && (
+            <>
+              <Icon as={LuStar} boxSize="11px" color="warn" verticalAlign="-1px" /> {s.rating.toFixed(1)}
+              {s.userRatingCount ? ` (${s.userRatingCount.toLocaleString()})` : ""}
+            </>
           )}
-          {suggestion.cuisine && <Text>· {suggestion.cuisine}</Text>}
-          {suggestion.priceLevel && <Text>· {suggestion.priceLevel}</Text>}
-        </HStack>
-        <HStack spacing={2} mt={1} fontSize="xs" flexWrap="wrap">
-          {suggestion.walkMinutes !== undefined && (
-            <HStack spacing={1} color={muted}>
-              <Icon as={FiMapPin} boxSize={3} />
-              <Text>
-                {suggestion.walkMinutes <= 25
-                  ? `${suggestion.walkMinutes} min walk`
-                  : `${suggestion.distanceKm} km away`}
-              </Text>
-            </HStack>
-          )}
-          {suggestion.openAtMealTime ? (
-            <Badge colorScheme="green" variant="subtle" fontSize="2xs">
-              Open then
-            </Badge>
-          ) : (
-            <Badge variant="subtle" fontSize="2xs">
-              Hours unknown
-            </Badge>
-          )}
-          {suggestion.source === "saved" && (
-            <Badge colorScheme="brand" variant="subtle" fontSize="2xs">
-              On your list
-            </Badge>
-          )}
-        </HStack>
+          {s.priceLevel ? ` · ${s.priceLevel}` : ""}
+          {dist ? ` · ${dist}` : ""}
+        </Text>
+        {s.source === "saved" && (
+          <Text fontSize="12px" color="accent.text" fontWeight={600}>
+            On your list
+          </Text>
+        )}
       </Box>
-      <Button size="sm" colorScheme="brand" variant="outline" onClick={onChoose} isLoading={isBusy} flexShrink={0}>
+      <Box flexShrink={0} display={{ base: "none", sm: "block" }}>
+        {s.openAtMealTime === true ? (
+          <Pill tone="success">Open at {time}</Pill>
+        ) : s.openAtMealTime === false ? (
+          <Pill tone="danger">Closed at {time}</Pill>
+        ) : (
+          <Pill>Hours unknown</Pill>
+        )}
+      </Box>
+      <Button onClick={onChoose} isLoading={isBusy} flexShrink={0}>
         Choose
       </Button>
     </Flex>
   );
 }
 
-export function MealPickerDrawer({ tripId, target, city, country, onClose }: MealPickerDrawerProps) {
+export function MealPickerDrawer({ tripId, target, city, country, initialTab = "nearby", onSkip, onClose }: MealPickerDrawerProps) {
   const toast = useToast();
   const updateMealSlot = useUpdateMealSlot(tripId);
   const [choosingId, setChoosingId] = useState<string | null>(null);
-  const muted = "fg.muted";
+  const [tab, setTab] = useState<"nearby" | "saved">(initialTab);
 
   const stop = target?.stop;
   const day = target?.day;
   const suggestions = useMealSuggestionsQuery(tripId, day?.dayNumber ?? 0, stop?.id ?? "", Boolean(target));
   const mealTitle = MEAL_TITLES[stop?.mealType ?? "lunch"];
+  const all = suggestions.data?.suggestions ?? [];
+  const saved = all.filter((s) => s.source === "saved");
+  const nearby = all.filter((s) => s.source !== "saved");
+  const shown = tab === "saved" ? saved : nearby;
+
+  useEffect(() => {
+    if (target) setTab(initialTab);
+  }, [target, initialTab]);
 
   const choose = async (placeId: string) => {
     if (!target) return;
@@ -164,86 +162,101 @@ export function MealPickerDrawer({ tripId, target, city, country, onClose }: Mea
   return (
     <Drawer isOpen={Boolean(target)} onClose={onClose} placement="right" size="md">
       <DrawerOverlay />
-      <DrawerContent>
-        <DrawerCloseButton />
-        <DrawerHeader borderBottomWidth="1px">
-          {mealTitle} · {stop?.arrivalTime}
-          <Text fontSize="sm" fontWeight="normal" color={muted}>
-            {day && formatDayDate(day.date, "EEEE, d MMM")}
-            {suggestions.data ? ` · places ${suggestions.data.anchorLabel}, open then` : ""}
-          </Text>
-        </DrawerHeader>
+      <DrawerContent maxW={{ base: "100vw", md: "520px" }} bg="bg.surface">
+        <PanelHeader
+          title={`Pick ${mealTitle.toLowerCase()} · Day ${day?.dayNumber ?? ""}`}
+          subtitle={day ? `${formatDayDate(day.date, "EEE d MMM")}${day.legName ? ` · ${day.legName}` : ""}` : undefined}
+          onClose={onClose}
+        />
 
-        <DrawerBody py={5}>
-          <Stack spacing={5}>
+        <DrawerBody px={6} py={5}>
+          <Stack spacing={4}>
             {stop?.placeId && (
-              <Flex p={3} borderRadius="lg" bg="orange.50" _dark={{ bg: "whiteAlpha.100" }} justify="space-between" align="center">
-                <Box>
-                  <Text fontSize="xs" color={muted}>
-                    Currently planned
-                  </Text>
-                  <Text fontWeight="semibold" fontSize="sm">
+              <Flex px="14px" py={3} borderRadius="xl" bg="accent.soft" color="accent.text" justify="space-between" align="center" gap={3}>
+                <Box minW={0}>
+                  <Text fontSize="12px">Currently planned</Text>
+                  <Text fontWeight={600} noOfLines={1}>
                     {stop.placeName}
                   </Text>
                 </Box>
-                <Button size="xs" variant="ghost" colorScheme="red" leftIcon={<FiX />} onClick={clear} isLoading={updateMealSlot.isPending && !choosingId}>
+                <Button size="sm" variant="danger" leftIcon={<LuX />} onClick={clear} isLoading={updateMealSlot.isPending && !choosingId}>
                   Remove
                 </Button>
               </Flex>
             )}
 
-            <PlaceSearchInput
-              label="Know where you want to go?"
-              placeholder="Search restaurants, cafés…"
-              mode="place"
-              city={city}
-              country={country}
-              onSelect={(selection) => choose(selection.googlePlaceId)}
+            <Segmented
+              value={tab}
+              onChange={setTab}
+              alignSelf="flex-start"
+              options={[
+                { value: "nearby", label: "Suggested nearby" },
+                { value: "saved", label: `Saved · ${saved.length}` },
+              ]}
             />
 
-            <Box>
-              <Text fontSize="sm" fontWeight="semibold" mb={3}>
-                Suggestions nearby
-              </Text>
-              {suggestions.isLoading ? (
-                <Stack spacing={3}>
-                  {[0, 1, 2, 3].map((i) => (
-                    <Skeleton key={i} h="90px" borderRadius="lg" />
-                  ))}
-                </Stack>
-              ) : suggestions.isError ? (
-                <Alert status="warning" borderRadius="md" fontSize="sm">
-                  <AlertIcon />
-                  {getApiErrorMessage(suggestions.error)}
-                </Alert>
-              ) : (suggestions.data?.suggestions.length ?? 0) === 0 ? (
-                <Text fontSize="sm" color={muted}>
-                  Nothing open nearby at {stop?.arrivalTime}. Try searching above, or change the time via the stop's
-                  menu.
+            {stop && (
+              <HStack spacing={2} fontSize="12px" color="fg.muted">
+                <Icon as={LuClock} boxSize="14px" />
+                <Text>
+                  Around <b>{stop.arrivalTime}</b>
+                  {suggestions.data ? ` · ${suggestions.data.anchorLabel}, walking distance shown` : ""}
                 </Text>
-              ) : (
-                <Stack spacing={3}>
-                  {suggestions.data!.suggestions.map((s) => (
-                    <SuggestionCard
-                      key={s.googlePlaceId}
-                      suggestion={s}
-                      onChoose={() => choose(s.googlePlaceId)}
-                      isBusy={choosingId === s.googlePlaceId}
-                    />
-                  ))}
-                </Stack>
-              )}
+              </HStack>
+            )}
+
+            {suggestions.isLoading ? (
+              <Stack spacing={3}>
+                {[0, 1, 2, 3].map((i) => (
+                  <Skeleton key={i} h="78px" borderRadius="xl" startColor="bg.subtle" endColor="border.line" />
+                ))}
+              </Stack>
+            ) : suggestions.isError ? (
+              <Banner tone="warn">{getApiErrorMessage(suggestions.error)}</Banner>
+            ) : shown.length === 0 ? (
+              <Text fontSize="13px" color="fg.muted">
+                {tab === "saved"
+                  ? "No saved restaurants for this city yet — save some from the Food tab."
+                  : `Nothing open nearby at ${stop?.arrivalTime}. Search below, or change the time from the stop's menu.`}
+              </Text>
+            ) : (
+              <Stack spacing={3}>
+                {shown.map((s) => (
+                  <SuggestionCard
+                    key={s.googlePlaceId}
+                    suggestion={s}
+                    time={stop?.arrivalTime}
+                    onChoose={() => choose(s.googlePlaceId)}
+                    isBusy={choosingId === s.googlePlaceId}
+                  />
+                ))}
+              </Stack>
+            )}
+
+            <Box pt={2}>
+              <PlaceSearchInput
+                label="Know where you want to go?"
+                placeholder="Search restaurants, cafés…"
+                mode="place"
+                city={city}
+                country={country}
+                onSelect={(selection) => choose(selection.googlePlaceId)}
+              />
             </Box>
           </Stack>
         </DrawerBody>
 
-        <DrawerFooter borderTopWidth="1px">
-          <Text fontSize="xs" color={muted} mr="auto">
-            Ranked by rating, reviews and distance.
+        <DrawerFooter borderTopWidth="1px" borderColor="border.line" px={6} py={4} justifyContent="space-between" gap={3} flexWrap="wrap">
+          {onSkip ? (
+            <Button variant="link" size="sm" color="accent.text" textDecoration="underline" onClick={onSkip}>
+              Skip {mealTitle.toLowerCase()} on this day
+            </Button>
+          ) : (
+            <span />
+          )}
+          <Text fontSize="12px" color="fg.muted">
+            Saved restaurants can be assigned from the Food tab
           </Text>
-          <Button variant="ghost" onClick={onClose}>
-            Close
-          </Button>
         </DrawerFooter>
       </DrawerContent>
     </Drawer>

@@ -1,34 +1,21 @@
-import {
-  Alert,
-  AlertIcon,
-  Box,
-  Button,
-  FormControl,
-  FormErrorMessage,
-  FormLabel,
-  Heading,
-  Input,
-  Link,
-  Stack,
-  Text,
-  VStack,
-} from "@chakra-ui/react";
+import { Box, Button, Link, Stack, Text } from "@chakra-ui/react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Link as RouterLink } from "react-router-dom";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { FiArrowLeft, FiMail, FiSend } from "react-icons/fi";
 import { useForgotPassword } from "@/modules/auth/hooks/useAuth";
 import { getApiErrorMessage } from "@/lib/api";
 import { forgotPasswordSchema, type ForgotPasswordInput } from "@/modules/auth/validators/auth.validator";
+import { IconInput } from "@/components/ui/app";
+import { AuthField, AuthIntro, AuthNotice } from "./AuthIntro";
+import { authLinkProps } from "./auth-callback";
 
 export function ForgotPasswordForm() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [devResetUrl, setDevResetUrl] = useState<string | null>(null);
   const forgotPassword = useForgotPassword();
-
-  const bg = "bg.surface";
-  const borderColor = "border.line";
 
   const {
     register,
@@ -52,64 +39,42 @@ export function ForgotPasswordForm() {
     }
   };
 
+  const notice = (
+    <>
+      {error && <AuthNotice tone="danger">{error}</AuthNotice>}
+      {success && <AuthNotice tone="success">{success}</AuthNotice>}
+      {devResetUrl && (
+        <AuthNotice tone="accent">
+          <Box>
+            <Text fontWeight={600}>Dev reset link:</Text>
+            <Link href={devResetUrl} wordBreak="break-all" textDecoration="underline">
+              {devResetUrl}
+            </Link>
+          </Box>
+        </AuthNotice>
+      )}
+    </>
+  );
+
   return (
-    <Box w="full" maxW="md" p={8} bg={bg} borderWidth="1px" borderColor={borderColor} borderRadius="xl" shadow="sm">
-      <VStack spacing={6} align="stretch">
-        <Box textAlign="center">
-          <Heading size="lg" mb={2}>
-            Forgot password
-          </Heading>
-          <Text color="fg.muted">Enter your email and we&apos;ll send you a reset link</Text>
-        </Box>
+    <Stack spacing="20px">
+      <AuthIntro title="Forgot password" subtitle="Enter your email and we’ll send you a reset link." notice={notice} />
 
-        {error && (
-          <Alert status="error" borderRadius="md">
-            <AlertIcon />
-            {error}
-          </Alert>
-        )}
+      <form onSubmit={handleSubmit(onSubmit)} noValidate>
+        <Stack spacing="20px">
+          <AuthField label="Email" error={errors.email?.message}>
+            <IconInput icon={FiMail} type="email" autoComplete="email" placeholder="you@example.com" {...register("email")} />
+          </AuthField>
 
-        {success && (
-          <Alert status="success" borderRadius="md">
-            <AlertIcon />
-            {success}
-          </Alert>
-        )}
+          <Button type="submit" size="xl" w="full" leftIcon={<FiSend />} isLoading={forgotPassword.isPending}>
+            Send reset link
+          </Button>
+        </Stack>
+      </form>
 
-        {devResetUrl && (
-          <Alert status="info" borderRadius="md">
-            <AlertIcon />
-            <Box>
-              <Text fontSize="sm" fontWeight="medium">
-                Dev reset link:
-              </Text>
-              <Link href={devResetUrl} fontSize="sm" wordBreak="break-all">
-                {devResetUrl}
-              </Link>
-            </Box>
-          </Alert>
-        )}
-
-        <form onSubmit={handleSubmit(onSubmit)}>
-          <Stack spacing={4}>
-            <FormControl isInvalid={!!errors.email}>
-              <FormLabel>Email</FormLabel>
-              <Input type="email" placeholder="you@example.com" {...register("email")} />
-              <FormErrorMessage>{errors.email?.message}</FormErrorMessage>
-            </FormControl>
-
-            <Button type="submit" colorScheme="brand" size="lg" isLoading={forgotPassword.isPending}>
-              Send Reset Link
-            </Button>
-          </Stack>
-        </form>
-
-        <Text textAlign="center" fontSize="sm" color="fg.muted">
-          <Link as={RouterLink} to="/login" color="brand.500" fontWeight="medium">
-            Back to sign in
-          </Link>
-        </Text>
-      </VStack>
-    </Box>
+      <Link as={RouterLink} to="/login" fontSize="12px" display="inline-flex" alignItems="center" gap={1.5} alignSelf="flex-start" {...authLinkProps}>
+        <FiArrowLeft /> Back to log in
+      </Link>
+    </Stack>
   );
 }

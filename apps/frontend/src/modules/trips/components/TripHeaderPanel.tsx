@@ -1,35 +1,46 @@
 import {
-  Badge,
   Box,
   Button,
   Checkbox,
   CheckboxGroup,
+  Divider,
   Flex,
   FormControl,
+  FormHelperText,
   FormLabel,
-  HStack,
+  IconButton,
   Input,
+  InputGroup,
+  InputLeftElement,
   Select,
   SimpleGrid,
   Stack,
   Tag,
+  Text,
   Textarea,
+  Tooltip,
   Wrap,
   WrapItem,
+  useClipboard,
   useToast,
 } from "@chakra-ui/react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
+import { LuCopy, LuExternalLink, LuGlobe } from "react-icons/lu";
 import { INTEREST_CATEGORIES } from "@/constants/interests";
 import { getApiErrorMessage } from "@/lib/api";
+import { canEditTrip } from "@/lib/trip-access";
 import { TripActionsMenu } from "@/modules/trips/components/TripActionsMenu";
 import { TripMembersPanel } from "@/modules/trips/components/TripMembersPanel";
-import { useUpdateTrip } from "@/modules/trips/hooks/useTrips";
+import { useShareTrip, useUnshareTrip, useUpdateTrip } from "@/modules/trips/hooks/useTrips";
 import type { Trip } from "@/modules/trips/types/trip.types";
 import { tripToFormValues } from "@/modules/trips/utils/trip-form.utils";
 import { tripFormSchema, type TripFormValues } from "@/modules/trips/validators/trip.validator";
 import { parseCommaSeparated } from "@/utils/trip.utils";
+import { formatDayDate } from "@/modules/itinerary/utils/plan.utils";
+import { Segmented } from "@/components/ui";
+import { SectionLabel } from "@/components/ui/plan";
 
 interface TripHeaderPanelProps {
   trip: Trip;
@@ -40,18 +51,72 @@ interface TripHeaderPanelProps {
   onSaved?: () => void;
 }
 
-const statusColors: Record<Trip["status"], string> = {
-  draft: "gray",
-  active: "green",
-  completed: "blue",
-  archived: "orange",
-};
+/** "Public share link" — On/Off plus the link to copy. */
+function PublicShare({ trip, canEdit }: { trip: Trip; canEdit: boolean }) {
+  const toast = useToast();
+  const share = useShareTrip(trip.id);
+  const unshare = useUnshareTrip(trip.id);
+  const url = trip.publicSlug ? `${window.location.origin}/share/${trip.publicSlug}` : "";
+  const { hasCopied, onCopy } = useClipboard(url);
+
+  const set = async (on: "on" | "off") => {
+    if ((on === "on") === trip.isPublic) return;
+    try {
+      if (on === "on") await share.mutateAsync();
+      else await unshare.mutateAsync();
+      toast({ title: on === "on" ? "Share link created" : "Sharing turned off", status: "success", duration: 2500 });
+    } catch (err) {
+      toast({ title: getApiErrorMessage(err), status: "error" });
+    }
+  };
+
+  return (
+    <Stack as="section" spacing="10px" aria-label="Public share link">
+      <Flex justify="space-between" align="center">
+        <SectionLabel>Public share link</SectionLabel>
+        {canEdit ? (
+          <Segmented
+            value={trip.isPublic ? "on" : "off"}
+            onChange={(v) => void set(v)}
+            options={[
+              { value: "on", label: "On" },
+              { value: "off", label: "Off" },
+            ]}
+            opacity={share.isPending || unshare.isPending ? 0.6 : 1}
+          />
+        ) : (
+          <Text fontSize="13px" color="fg.muted">
+            {trip.isPublic ? "On" : "Off"}
+          </Text>
+        )}
+      </Flex>
+      {trip.isPublic && url && (
+        <Flex gap={2}>
+          <InputGroup>
+            <InputLeftElement pointerEvents="none" color="fg.muted">
+              <LuGlobe size={15} />
+            </InputLeftElement>
+            <Input value={url} isReadOnly aria-label="Public link" onFocus={(e) => e.target.select()} />
+          </InputGroup>
+          <Tooltip label={hasCopied ? "Copied" : "Copy link"} hasArrow>
+            <IconButton aria-label="Copy public link" icon={<LuCopy size={16} />} h="40px" w="40px" onClick={onCopy} />
+          </Tooltip>
+          <Tooltip label="Open the public page" hasArrow>
+            <IconButton as="a" href={url} target="_blank" rel="noopener noreferrer" aria-label="Open the public page" icon={<LuExternalLink size={16} />} h="40px" w="40px" />
+          </Tooltip>
+        </Flex>
+      )}
+      <Text fontSize="12px" color="fg.muted">
+        Anyone with the link can view the plan — no login. They cannot edit, vote or comment.
+      </Text>
+    </Stack>
+  );
+}
 
 export function TripHeaderPanel({ trip, currentUserId, isOwner, embedded = false, onSaved }: TripHeaderPanelProps) {
   const toast = useToast();
-  const bg = "bg.surface";
-  const borderColor = "border.line";
   const updateTrip = useUpdateTrip(trip.id);
+  const canEdit = canEditTrip(trip, currentUserId);
 
   const {
     register,
@@ -85,148 +150,184 @@ export function TripHeaderPanel({ trip, currentUserId, isOwner, embedded = false
     }
   };
 
+  const dates = `${formatDayDate(trip.startDate.slice(0, 10), "d MMM yyyy")} – ${formatDayDate(trip.endDate.slice(0, 10), "d MMM yyyy")}`;
+
   return (
     <Box
       as="form"
       onSubmit={handleSubmit(onSubmit)}
       p={embedded ? 0 : 5}
-      bg={embedded ? undefined : bg}
+      bg={embedded ? undefined : "bg.surface"}
       borderWidth={embedded ? 0 : "1px"}
-      borderColor={borderColor}
+      borderColor="border.line"
       borderRadius="xl"
     >
-      <Flex justify="space-between" align="flex-start" gap={3} flexWrap="wrap" mb={4}>
-        <HStack spacing={3} flex={1} minW="240px">
-          <Input
-            {...register("title")}
-            fontSize="lg"
-            fontWeight="bold"
-            variant="flushed"
-            placeholder="Trip title"
-          />
-          <Badge colorScheme={statusColors[trip.status]}>{trip.status}</Badge>
-        </HStack>
-        <HStack spacing={2}>
-          {isDirty && (
-            <Button type="submit" size="sm" colorScheme="brand" isLoading={isSubmitting}>
-              Save changes
-            </Button>
-          )}
-          {!embedded && <TripActionsMenu trip={trip} isOwner={isOwner} />}
-        </HStack>
-      </Flex>
+      <Stack spacing={4}>
+        <Stack as="section" spacing="10px" aria-label="Trip details">
+          <Flex justify="space-between" align="center">
+            <SectionLabel>Trip details</SectionLabel>
+            {!embedded && <TripActionsMenu trip={trip} isOwner={isOwner} />}
+          </Flex>
+          <fieldset disabled={!canEdit} style={{ display: "contents" }}>
+            <FormControl>
+              <FormLabel>Trip name</FormLabel>
+              <Input {...register("title")} placeholder="Trip title" />
+            </FormControl>
+            <SimpleGrid columns={2} spacing="10px">
+              <FormControl>
+                <FormLabel>Dates</FormLabel>
+                <Input value={dates} isReadOnly tabIndex={-1} color="fg.muted" />
+                <FormHelperText fontSize="12px" color="fg.muted">
+                  Change per city (edit a city chip)
+                </FormHelperText>
+              </FormControl>
+              <FormControl>
+                <FormLabel>Status</FormLabel>
+                <Select {...register("status")}>
+                  <option value="draft">Draft</option>
+                  <option value="active">Active</option>
+                  <option value="completed">Completed</option>
+                  <option value="archived">Archived</option>
+                </Select>
+              </FormControl>
+            </SimpleGrid>
+          </fieldset>
+        </Stack>
 
-      <Stack spacing={5}>
+        <Divider borderColor="border.line" />
+
+        <Stack as="section" spacing="10px" aria-label="Planning preferences">
+          <SectionLabel>Planning preferences</SectionLabel>
+          <fieldset disabled={!canEdit} style={{ display: "contents" }}>
+            <SimpleGrid columns={2} spacing="10px">
+              <FormControl>
+                <FormLabel>Day starts</FormLabel>
+                <Input type="time" {...register("dailyStartTime")} />
+              </FormControl>
+              <FormControl>
+                <FormLabel>Day ends</FormLabel>
+                <Input type="time" {...register("dailyEndTime")} />
+              </FormControl>
+              <FormControl>
+                <FormLabel>Getting around</FormLabel>
+                <Select {...register("transportationMode")}>
+                  <option value="Walking">Walking</option>
+                  <option value="Cab">Taxi / cab</option>
+                  <option value="Self Drive">Self-drive</option>
+                  <option value="Bike">Bike</option>
+                  <option value="Public Transport">Public transport</option>
+                </Select>
+              </FormControl>
+              <FormControl>
+                <FormLabel>Pace</FormLabel>
+                <Select {...register("travelStyle")}>
+                  <option value="Relaxed">Relaxed</option>
+                  <option value="Balanced">Balanced</option>
+                  <option value="Fast Paced">Fast paced</option>
+                </Select>
+              </FormControl>
+              <FormControl>
+                <FormLabel>Budget level</FormLabel>
+                <Select {...register("budgetLevel")} placeholder="Not set">
+                  <option value="budget">Budget</option>
+                  <option value="moderate">Moderate</option>
+                  <option value="luxury">Luxury</option>
+                </Select>
+              </FormControl>
+              <SimpleGrid columns={2} spacing="10px">
+                <FormControl>
+                  <FormLabel>Currency</FormLabel>
+                  <Input maxLength={3} textTransform="uppercase" placeholder="INR" {...register("currency")} />
+                </FormControl>
+                <FormControl>
+                  <FormLabel>Total budget</FormLabel>
+                  <Input type="number" min={0} placeholder="Optional" {...register("budgetAmount")} />
+                </FormControl>
+              </SimpleGrid>
+            </SimpleGrid>
+            <Checkbox {...register("useFlexibleSchedule")} colorScheme="brand">
+              <Text fontSize="13px">Plan by each place's best time of day</Text>
+            </Checkbox>
+
+            <FormControl>
+              <FormLabel>Interests</FormLabel>
+              <CheckboxGroup value={selectedInterests} onChange={(vals) => setValue("interests", vals as string[], { shouldDirty: true })}>
+                <Wrap spacing={2}>
+                  {INTEREST_CATEGORIES.map((interest) => (
+                    <WrapItem key={interest}>
+                      <Checkbox size="sm" value={interest} colorScheme="brand">
+                        {interest}
+                      </Checkbox>
+                    </WrapItem>
+                  ))}
+                </Wrap>
+              </CheckboxGroup>
+            </FormControl>
+
+            <FormControl>
+              <FormLabel>Must-visit places</FormLabel>
+              <Wrap>
+                {(watch("mustVisitPlaces") ?? []).map((place) => (
+                  <WrapItem key={place}>
+                    <Tag size="sm">{place}</Tag>
+                  </WrapItem>
+                ))}
+                {(watch("mustVisitPlaces") ?? []).length === 0 && (
+                  <Text fontSize="12px" color="fg.muted">
+                    None yet — add them from the Places tab.
+                  </Text>
+                )}
+              </Wrap>
+            </FormControl>
+
+            <FormControl>
+              <FormLabel>Excluded places</FormLabel>
+              <Textarea
+                size="sm"
+                rows={2}
+                placeholder="Places to skip (comma-separated)"
+                value={excludedText}
+                onChange={(e) => setValue("excludedPlaces", parseCommaSeparated(e.target.value), { shouldDirty: true })}
+              />
+            </FormControl>
+
+            <FormControl>
+              <FormLabel>Notes</FormLabel>
+              <Textarea size="sm" rows={2} placeholder="Additional preferences…" {...register("notes")} />
+            </FormControl>
+          </fieldset>
+        </Stack>
+
+        <Divider borderColor="border.line" />
         <TripMembersPanel trip={trip} currentUserId={currentUserId} />
 
-        <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} spacing={4}>
-          <FormControl>
-            <FormLabel fontSize="sm">Daily Start</FormLabel>
-            <Input size="sm" type="time" {...register("dailyStartTime")} />
-          </FormControl>
-          <FormControl>
-            <FormLabel fontSize="sm">Daily End</FormLabel>
-            <Input size="sm" type="time" {...register("dailyEndTime")} />
-          </FormControl>
-          <FormControl>
-            <FormLabel fontSize="sm">Transportation</FormLabel>
-            <Select size="sm" {...register("transportationMode")}>
-              <option value="Walking">Walking</option>
-              <option value="Cab">Cab</option>
-              <option value="Self Drive">Self Drive</option>
-              <option value="Bike">Bike</option>
-              <option value="Public Transport">Public Transport</option>
-            </Select>
-          </FormControl>
-          <FormControl>
-            <FormLabel fontSize="sm">Travel Style</FormLabel>
-            <Select size="sm" {...register("travelStyle")}>
-              <option value="Relaxed">Relaxed</option>
-              <option value="Balanced">Balanced</option>
-              <option value="Fast Paced">Fast Paced</option>
-            </Select>
-          </FormControl>
-          <FormControl>
-            <FormLabel fontSize="sm">Budget Level</FormLabel>
-            <Select size="sm" {...register("budgetLevel")} placeholder="Not set">
-              <option value="budget">Budget</option>
-              <option value="moderate">Moderate</option>
-              <option value="luxury">Luxury</option>
-            </Select>
-          </FormControl>
-          <FormControl>
-            <FormLabel fontSize="sm">Currency</FormLabel>
-            <Input size="sm" maxLength={3} textTransform="uppercase" placeholder="INR" {...register("currency")} />
-          </FormControl>
-          <FormControl>
-            <FormLabel fontSize="sm">Total budget</FormLabel>
-            <Input size="sm" type="number" min={0} placeholder="Optional" {...register("budgetAmount")} />
-          </FormControl>
-          <FormControl>
-            <FormLabel fontSize="sm">Status</FormLabel>
-            <Select size="sm" {...register("status")}>
-              <option value="draft">Draft</option>
-              <option value="active">Active</option>
-              <option value="completed">Completed</option>
-              <option value="archived">Archived</option>
-            </Select>
-          </FormControl>
-          <FormControl gridColumn={{ md: "span 2" }} display="flex" alignItems="center" pt={5}>
-            <Checkbox {...register("useFlexibleSchedule")} fontSize="sm">
-              Plan by place best times
-            </Checkbox>
-          </FormControl>
-        </SimpleGrid>
-
-        <FormControl>
-          <FormLabel fontSize="sm">Interests</FormLabel>
-          <CheckboxGroup value={selectedInterests} onChange={(vals) => setValue("interests", vals as string[], { shouldDirty: true })}>
-            <Wrap spacing={2}>
-              {INTEREST_CATEGORIES.map((interest) => (
-                <WrapItem key={interest}>
-                  <Checkbox size="sm" value={interest}>
-                    {interest}
-                  </Checkbox>
-                </WrapItem>
-              ))}
-            </Wrap>
-          </CheckboxGroup>
-        </FormControl>
-
-        <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
-          <FormControl>
-            <FormLabel fontSize="sm">Must-Visit Places</FormLabel>
-            <Wrap>
-              {(watch("mustVisitPlaces") ?? []).map((place) => (
-                <WrapItem key={place}>
-                  <Tag size="sm">{place}</Tag>
-                </WrapItem>
-              ))}
-              {(watch("mustVisitPlaces") ?? []).length === 0 && (
-                <Tag size="sm" variant="outline" color="fg.muted">
-                  None yet — add from a leg's Places tab
-                </Tag>
-              )}
-            </Wrap>
-          </FormControl>
-
-          <FormControl>
-            <FormLabel fontSize="sm">Excluded Places</FormLabel>
-            <Textarea
-              size="sm"
-              rows={2}
-              placeholder="Places to skip (comma-separated)"
-              value={excludedText}
-              onChange={(e) => setValue("excludedPlaces", parseCommaSeparated(e.target.value), { shouldDirty: true })}
-            />
-          </FormControl>
-        </SimpleGrid>
-
-        <FormControl>
-          <FormLabel fontSize="sm">Notes</FormLabel>
-          <Textarea size="sm" rows={2} placeholder="Additional preferences..." {...register("notes")} />
-        </FormControl>
+        <Divider borderColor="border.line" />
+        <PublicShare trip={trip} canEdit={canEdit} />
       </Stack>
+
+      {isDirty && (
+        <Flex
+          position="sticky"
+          bottom={embedded ? "-20px" : 0}
+          mt={5}
+          mx={embedded ? -6 : 0}
+          px={embedded ? 6 : 0}
+          py={3}
+          bg="bg.surface"
+          borderTopWidth="1px"
+          borderColor="border.line"
+          justify="flex-end"
+          gap={2}
+          zIndex={2}
+        >
+          <Button variant="ghost" onClick={() => reset(tripToFormValues(trip))}>
+            Discard
+          </Button>
+          <Button type="submit" isLoading={isSubmitting}>
+            Save changes
+          </Button>
+        </Flex>
+      )}
     </Box>
   );
 }

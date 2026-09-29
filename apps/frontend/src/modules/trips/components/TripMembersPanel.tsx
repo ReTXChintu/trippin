@@ -1,8 +1,7 @@
 import {
-  Avatar,
   Box,
   Button,
-  ButtonGroup,
+  Divider,
   Flex,
   FormControl,
   FormLabel,
@@ -10,16 +9,15 @@ import {
   IconButton,
   Input,
   InputGroup,
-  InputRightElement,
+  InputLeftElement,
   Select,
   Stack,
-  Tag,
   Text,
   useClipboard,
   useToast,
 } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
-import { FiCopy, FiRefreshCw, FiUserMinus, FiUserPlus } from "react-icons/fi";
+import { LuCopy, LuLink, LuMail, LuPencil, LuRefreshCw, LuTrash2 } from "react-icons/lu";
 import {
   useAddTripMember,
   useInviteLink,
@@ -31,13 +29,31 @@ import { getApiErrorMessage } from "@/lib/api";
 import { getTripRole } from "@/lib/trip-access";
 import type { Trip } from "@/modules/trips/types/trip.types";
 import type { InviteLink } from "@/modules/trips/types/trip-collab.types";
+import { Pill, Segmented } from "@/components/ui";
+import { dayToken } from "@/components/ui/day";
+import { SectionLabel } from "@/components/ui/plan";
+import { differenceInCalendarDays, parseISO } from "date-fns";
 
 interface TripMembersPanelProps {
   trip: Trip;
   currentUserId: string;
 }
 
-const ROLE_LABEL = { owner: "Owner", editor: "Can edit", viewer: "View only" } as const;
+const ROLE_LABEL = { owner: "Owner", editor: "Editor", viewer: "Viewer" } as const;
+
+function initials(name: string): string {
+  const parts = name.trim().split(/\s+/);
+  return ((parts[0]?.[0] ?? "") + (parts.length > 1 ? parts[parts.length - 1][0] : "")).toUpperCase() || "?";
+}
+
+function expiresIn(iso: string): string {
+  try {
+    const days = differenceInCalendarDays(parseISO(iso), new Date());
+    return days <= 0 ? "Expires today" : `Expires in ${days} day${days === 1 ? "" : "s"}`;
+  } catch {
+    return "";
+  }
+}
 
 function InviteLinkBox({ trip }: { trip: Trip }) {
   const toast = useToast();
@@ -62,44 +78,47 @@ function InviteLinkBox({ trip }: { trip: Trip }) {
   }, [role]);
 
   return (
-    <Box>
-      <FormLabel fontSize="sm">Invite with a link</FormLabel>
-      <HStack mb={2} spacing={2}>
-        <ButtonGroup size="xs" isAttached variant="outline">
-          <Button colorScheme={role === "editor" ? "brand" : "gray"} variant={role === "editor" ? "solid" : "outline"} onClick={() => setRole("editor")}>
-            Can edit
-          </Button>
-          <Button colorScheme={role === "viewer" ? "brand" : "gray"} variant={role === "viewer" ? "solid" : "outline"} onClick={() => setRole("viewer")}>
-            View only
-          </Button>
-        </ButtonGroup>
-        {!link && (
-          <Button size="xs" onClick={() => void load()} isLoading={inviteLink.isPending}>
-            Get link
-          </Button>
+    <Stack spacing={2} p={3} borderWidth="1px" borderColor="border.line" borderRadius="xl">
+      <Flex justify="space-between" align="center" gap={2} flexWrap="wrap">
+        <Segmented
+          size="sm"
+          value={role}
+          onChange={setRole}
+          options={[
+            { value: "editor", label: "Can edit", icon: LuPencil },
+            { value: "viewer", label: "View only" },
+          ]}
+        />
+        {link && (
+          <Text fontSize="12px" color="fg.muted">
+            {expiresIn(link.expiresAt)} · used {link.uses}×
+          </Text>
         )}
-      </HStack>
-      {link && (
-        <>
-          <InputGroup size="sm">
-            <Input value={link.url} isReadOnly pr="72px" fontSize="xs" />
-            <InputRightElement width="72px">
-              <Button size="xs" leftIcon={<FiCopy />} onClick={onCopy}>
-                {hasCopied ? "Copied" : "Copy"}
-              </Button>
-            </InputRightElement>
+      </Flex>
+      {link ? (
+        <Flex gap={2} flexWrap={{ base: "wrap", sm: "nowrap" }}>
+          <InputGroup>
+            <InputLeftElement pointerEvents="none" color="fg.muted">
+              <LuLink size={15} />
+            </InputLeftElement>
+            <Input value={link.url} isReadOnly aria-label="Invite link" onFocus={(e) => e.target.select()} />
           </InputGroup>
-          <HStack justify="space-between" mt={1}>
-            <Text fontSize="xs" color="fg.muted">
-              Anyone with this link can join after signing in · expires {new Date(link.expiresAt).toLocaleDateString()} · used {link.uses}×
-            </Text>
-            <Button size="xs" variant="link" leftIcon={<FiRefreshCw />} onClick={() => void load(true)}>
-              Reset
-            </Button>
-          </HStack>
-        </>
+          <Button variant="outline" leftIcon={<LuCopy size={16} />} onClick={onCopy} h="40px" flexShrink={0}>
+            {hasCopied ? "Copied" : "Copy"}
+          </Button>
+          <Button variant="outline" leftIcon={<LuRefreshCw size={16} />} onClick={() => void load(true)} h="40px" flexShrink={0} isLoading={inviteLink.isPending}>
+            Reset
+          </Button>
+        </Flex>
+      ) : (
+        <Button variant="outline" leftIcon={<LuLink size={16} />} onClick={() => void load()} isLoading={inviteLink.isPending} alignSelf="flex-start">
+          Get a {role === "editor" ? "“can edit”" : "“view only”"} link
+        </Button>
       )}
-    </Box>
+      <Text fontSize="12px" color="fg.muted">
+        Anyone with this link can join after signing in.
+      </Text>
+    </Stack>
   );
 }
 
@@ -114,9 +133,6 @@ export function TripMembersPanel({ trip, currentUserId }: TripMembersPanelProps)
   const [busyId, setBusyId] = useState<string | null>(null);
   const myRole = getTripRole(trip, currentUserId);
   const isOwner = myRole === "owner";
-
-  const bg = "bg.surface";
-  const borderColor = "border.line";
 
   const run = async (id: string, fn: () => Promise<unknown>, success: string) => {
     setBusyId(id);
@@ -137,90 +153,112 @@ export function TripMembersPanel({ trip, currentUserId }: TripMembersPanelProps)
   };
 
   return (
-    <Box p={5} bg={bg} borderWidth="1px" borderColor={borderColor} borderRadius="xl">
-      <Text fontWeight="semibold" fontSize="sm" mb={1}>
-        Who's going
-      </Text>
-      <Text fontSize="xs" color="fg.muted" mb={4}>
-        Editors can change the plan. View-only members can see everything, vote on places and comment.
-      </Text>
-
-      <Stack spacing={3} mb={5}>
-        {members.map((member) => (
-          <Flex key={member.id} align="center" justify="space-between" gap={3}>
-            <HStack spacing={3} minW={0}>
-              <Avatar size="sm" name={member.name} />
-              <Box minW={0}>
-                <Text fontSize="sm" fontWeight="medium" noOfLines={1}>
-                  {member.name}
-                  {member.id === currentUserId ? " (you)" : ""}
-                </Text>
-                <Text fontSize="xs" color="fg.muted" noOfLines={1}>
-                  {member.email}
-                </Text>
-              </Box>
-            </HStack>
-            <HStack spacing={1} flexShrink={0}>
-              {isOwner && member.role !== "owner" ? (
+    <Stack spacing={4}>
+      <Stack as="section" spacing="10px" aria-label="Members and roles">
+        <SectionLabel>Members & roles</SectionLabel>
+        {members.map((member, i) => (
+          <Flex key={member.id} align="center" gap="10px">
+            <Flex
+              w="30px"
+              h="30px"
+              borderRadius="full"
+              bg={dayToken(i + 1)}
+              color="pin.fg"
+              fontSize="12px"
+              fontWeight={700}
+              align="center"
+              justify="center"
+              flexShrink={0}
+              aria-hidden
+            >
+              {initials(member.name)}
+            </Flex>
+            <Box flex={1} minW={0}>
+              <Text fontWeight={600} noOfLines={1}>
+                {member.name}
+                {member.id === currentUserId ? " (you)" : ""}
+              </Text>
+              <Text fontSize="12px" color="fg.muted" noOfLines={1}>
+                {member.email}
+              </Text>
+            </Box>
+            {isOwner && member.role !== "owner" ? (
+              <>
                 <Select
-                  size="xs"
-                  w="100px"
+                  size="sm"
+                  h="32px"
+                  w="112px"
+                  borderRadius="md"
+                  fontWeight={600}
+                  fontSize="13px"
                   value={member.role}
                   isDisabled={busyId === member.id}
+                  aria-label={`Role for ${member.name}`}
                   onChange={(e) =>
                     void run(member.id, () => setRole.mutateAsync({ userId: member.id, role: e.target.value as "editor" | "viewer" }), "Role updated")
                   }
                 >
-                  <option value="editor">Can edit</option>
-                  <option value="viewer">View only</option>
+                  <option value="editor">Editor</option>
+                  <option value="viewer">Viewer</option>
                 </Select>
-              ) : (
-                <Tag size="sm" colorScheme={member.role === "owner" ? "purple" : member.role === "viewer" ? "gray" : "brand"}>
-                  {ROLE_LABEL[member.role]}
-                </Tag>
-              )}
-              {isOwner && member.role !== "owner" && (
                 <IconButton
                   aria-label={`Remove ${member.name}`}
-                  icon={<FiUserMinus />}
-                  size="sm"
+                  title={`Remove ${member.name}`}
+                  icon={<LuTrash2 size={18} />}
                   variant="ghost"
-                  colorScheme="red"
                   isLoading={busyId === member.id && removeMember.isPending}
                   onClick={() => void run(member.id, () => removeMember.mutateAsync(member.id), "Member removed")}
                 />
-              )}
-            </HStack>
+              </>
+            ) : (
+              <Pill tone={member.role === "owner" ? "accent" : "neutral"}>{ROLE_LABEL[member.role]}</Pill>
+            )}
           </Flex>
         ))}
+        <Text fontSize="12px" color="fg.muted">
+          Editors change the plan. Viewers see everything and can vote and comment. Only the owner changes roles or removes members.
+        </Text>
       </Stack>
 
       {myRole !== "viewer" && (
-        <Stack spacing={5}>
-          <InviteLinkBox trip={trip} />
-          <FormControl>
-            <FormLabel fontSize="sm">Or add someone who already has an account</FormLabel>
-            <HStack>
-              <Input
-                size="sm"
-                type="email"
-                placeholder="friend@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    void handleAdd();
-                  }
-                }}
-              />
-              <Button size="sm" leftIcon={<FiUserPlus />} colorScheme="brand" onClick={() => void handleAdd()} isLoading={busyId === "add"} flexShrink={0}>
-                Add
+        <>
+          <Divider borderColor="border.line" />
+          <Stack as="section" spacing="10px" aria-label="Invite links">
+            <SectionLabel>Invite links</SectionLabel>
+            <InviteLinkBox trip={trip} />
+            <Flex gap={2} align="flex-end">
+              <FormControl>
+                <FormLabel>Invite by email (someone who already has an account)</FormLabel>
+                <InputGroup>
+                  <InputLeftElement pointerEvents="none" color="fg.muted">
+                    <LuMail size={16} />
+                  </InputLeftElement>
+                  <Input
+                    type="email"
+                    placeholder="name@example.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        void handleAdd();
+                      }
+                    }}
+                  />
+                </InputGroup>
+              </FormControl>
+              <Button h="40px" onClick={() => void handleAdd()} isLoading={busyId === "add"} flexShrink={0} isDisabled={!email.trim()}>
+                Invite
               </Button>
-            </HStack>
-          </FormControl>
-        </Stack>
+            </Flex>
+          </Stack>
+        </>
       )}
-    </Box>
+      {myRole === "viewer" && (
+        <HStack fontSize="12px" color="fg.muted">
+          <Text>You're a viewer on this trip.</Text>
+        </HStack>
+      )}
+    </Stack>
   );
 }

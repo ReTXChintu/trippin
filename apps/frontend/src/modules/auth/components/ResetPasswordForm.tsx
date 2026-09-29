@@ -1,25 +1,16 @@
-import {
-  Alert,
-  AlertIcon,
-  Box,
-  Button,
-  FormControl,
-  FormErrorMessage,
-  FormLabel,
-  Heading,
-  Input,
-  Link,
-  Stack,
-  Text,
-  VStack,
-} from "@chakra-ui/react";
+import { Button, Link, Stack, Text } from "@chakra-ui/react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Link as RouterLink, useNavigate, useSearchParams } from "react-router-dom";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { FiArrowLeft, FiCheck, FiLock } from "react-icons/fi";
+import { LuKeyRound } from "react-icons/lu";
 import { useResetPassword } from "@/modules/auth/hooks/useAuth";
 import { getApiErrorMessage } from "@/lib/api";
 import { resetPasswordSchema, type ResetPasswordInput } from "@/modules/auth/validators/auth.validator";
+import { IconInput } from "@/components/ui/app";
+import { AuthField, AuthIntro, AuthNotice } from "./AuthIntro";
+import { authLinkProps } from "./auth-callback";
 
 export function ResetPasswordForm() {
   const [searchParams] = useSearchParams();
@@ -27,9 +18,6 @@ export function ResetPasswordForm() {
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
   const resetPassword = useResetPassword();
-
-  const bg = "bg.surface";
-  const borderColor = "border.line";
 
   const {
     register,
@@ -50,51 +38,40 @@ export function ResetPasswordForm() {
     }
   };
 
+  const notice = error ? (
+    <AuthNotice tone="danger">{error}</AuthNotice>
+  ) : !token ? (
+    <AuthNotice tone="danger">This reset link is missing its token — open the link from your email again.</AuthNotice>
+  ) : null;
+
   return (
-    <Box w="full" maxW="md" p={8} bg={bg} borderWidth="1px" borderColor={borderColor} borderRadius="xl" shadow="sm">
-      <VStack spacing={6} align="stretch">
-        <Box textAlign="center">
-          <Heading size="lg" mb={2}>
-            Reset password
-          </Heading>
-          <Text color="fg.muted">Enter your new password below</Text>
-        </Box>
+    <Stack spacing="20px">
+      <AuthIntro title="Set a new password" subtitle="Choose a new password for your account." notice={notice} />
 
-        {error && (
-          <Alert status="error" borderRadius="md">
-            <AlertIcon />
-            {error}
-          </Alert>
-        )}
+      <form onSubmit={handleSubmit(onSubmit)} noValidate>
+        <Stack spacing="16px">
+          <input type="hidden" {...register("token")} />
 
-        <form onSubmit={handleSubmit(onSubmit)}>
-          <Stack spacing={4}>
-            <input type="hidden" {...register("token")} />
+          <AuthField label="New password" error={errors.password?.message}>
+            <IconInput icon={LuKeyRound} type="password" autoComplete="new-password" placeholder="8+ characters" {...register("password")} />
+          </AuthField>
 
-            <FormControl isInvalid={!!errors.password}>
-              <FormLabel>New Password</FormLabel>
-              <Input type="password" placeholder="••••••••" {...register("password")} />
-              <FormErrorMessage>{errors.password?.message}</FormErrorMessage>
-            </FormControl>
+          <AuthField label="Confirm password" error={errors.confirmPassword?.message}>
+            <IconInput icon={FiLock} type="password" autoComplete="new-password" placeholder="Same again" {...register("confirmPassword")} />
+          </AuthField>
+          <Text fontSize="12px" color="fg.muted" mt={-1}>
+            At least 8 characters, with an uppercase letter and a number.
+          </Text>
 
-            <FormControl isInvalid={!!errors.confirmPassword}>
-              <FormLabel>Confirm Password</FormLabel>
-              <Input type="password" placeholder="••••••••" {...register("confirmPassword")} />
-              <FormErrorMessage>{errors.confirmPassword?.message}</FormErrorMessage>
-            </FormControl>
+          <Button type="submit" size="xl" w="full" mt={1} leftIcon={<FiCheck />} isLoading={resetPassword.isPending}>
+            Update password
+          </Button>
+        </Stack>
+      </form>
 
-            <Button type="submit" colorScheme="brand" size="lg" isLoading={resetPassword.isPending}>
-              Update Password
-            </Button>
-          </Stack>
-        </form>
-
-        <Text textAlign="center" fontSize="sm" color="fg.muted">
-          <Link as={RouterLink} to="/login" color="brand.500" fontWeight="medium">
-            Back to sign in
-          </Link>
-        </Text>
-      </VStack>
-    </Box>
+      <Link as={RouterLink} to="/login" fontSize="12px" display="inline-flex" alignItems="center" gap={1.5} alignSelf="flex-start" {...authLinkProps}>
+        <FiArrowLeft /> Back to log in
+      </Link>
+    </Stack>
   );
 }
