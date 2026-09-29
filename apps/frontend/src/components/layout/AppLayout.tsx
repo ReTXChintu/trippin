@@ -20,7 +20,7 @@ function pageTitle(pathname: string): string {
   if (/\/today$/.test(pathname)) return "Today";
   if (/\/itinerary\/compare/.test(pathname)) return "Compare with AI plan";
   if (TRIP_WORKSPACE.test(pathname)) return "Trip workspace";
-  return "Trippin";
+  return "Trippin'";
 }
 
 export function AppLayout({ children }: AppLayoutProps) {

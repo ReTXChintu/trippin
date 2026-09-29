@@ -1,10 +1,10 @@
 import { Box, HStack, Image, Text } from "@chakra-ui/react";
 
-/** The one place the Trippin logo is used — every screen (sidebar, rail, auth, landing, share page)
+/** The one place the Trippin' logo is used — every screen (sidebar, rail, auth, landing, share page)
  * renders `BrandMark` / `BrandLogo`. Source artwork: `logo.png` at the repo root; the web copies in
  * `public/brand/` (and the favicon / PWA icons) are generated from it with transparent corners. */
 
-export const BRAND_NAME = "Trippin";
+export const BRAND_NAME = "Trippin'";
 
 export function BrandMark({ size = 34 }: { size?: number }) {
   return (

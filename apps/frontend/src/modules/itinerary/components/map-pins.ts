@@ -65,7 +65,7 @@ export function mealPin(highlighted: boolean): L.DivIcon {
 }
 
 
-/** Map chrome in the Trippin style: warm tiles (dimmed in dark mode), square zoom buttons, quiet
+/** Map chrome in the Trippin' style: warm tiles (dimmed in dark mode), square zoom buttons, quiet
  * attribution. Spread onto the Box that wraps a MapContainer. */
 export const mapChromeSx = {
   ".leaflet-container": { bg: "map.land", fontFamily: "body" },

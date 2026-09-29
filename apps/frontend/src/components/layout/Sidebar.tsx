@@ -124,7 +124,7 @@ export function Rail() {
   const { pathname } = useLocation();
   return (
     <Flex as="nav" aria-label="Main" direction="column" align="center" w="76px" h="full" bg="bg.surface" borderRightWidth="1px" borderColor="border.line" px="10px" py="14px" gap="6px">
-      <Box as={Link} to="/dashboard" mb="10px" aria-label="Trippin home">
+      <Box as={Link} to="/dashboard" mb="10px" aria-label="Trippin' home">
         <BrandMark size={36} />
       </Box>
       <RailLink to="/trips/new" icon={FiPlus} label="New" solid />

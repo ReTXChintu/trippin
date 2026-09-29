@@ -1,4 +1,4 @@
-# Trippin' — Brand Guidelines
+# Trippin'' — Brand Guidelines
 **Smart AI Travel Planner**  
 Version 1.0 · June 2026
 
@@ -7,9 +7,9 @@ Version 1.0 · June 2026
 ## 1. Logo Concept
 
 ### The Mark
-The Trippin' icon is a **geometric route-path T** — a single cohesive mark that simultaneously reads as:
+The Trippin'' icon is a **geometric route-path T** — a single cohesive mark that simultaneously reads as:
 
-- The letter **"T"** (for Trippin') in its overall silhouette
+- The letter **"T"** (for Trippin'') in its overall silhouette
 - A **travel route with waypoints**: a vertical journey stem ending in a destination dot, crossed by a horizontal path with two hollow ring waypoints at each end
 - A **modern map pin** abstracted and elevated — no literal teardrops or cheesy location clichés
 
@@ -45,7 +45,7 @@ The three circular elements (top cap, left ring, right ring, base dot) create a 
 ## 3. Typography
 
 ### Primary Typeface — Poppins
-Poppins (Google Fonts, open licence) is the Trippin' brand typeface. Its geometric structure, friendly rounded forms, and excellent weight range make it ideal for both UI and brand applications.
+Poppins (Google Fonts, open licence) is the Trippin'' brand typeface. Its geometric structure, friendly rounded forms, and excellent weight range make it ideal for both UI and brand applications.
 
 | Usage | Weight | Size guidance |
 |---|---|---|
@@ -61,7 +61,7 @@ font-family: 'Poppins', 'Inter', 'Manrope', system-ui, -apple-system, sans-serif
 ```
 
 ### Typographic rules
-- **Wordmark** uses sentence case: "Trippin'" — the apostrophe is part of the brand name, never omit it.
+- **Wordmark** uses sentence case: "Trippin''" — the apostrophe is part of the brand name, never omit it.
 - Letter-spacing on the wordmark: `0` (no tracking — Poppins Bold already has balanced spacing).
 - Minimum wordmark size: 120 px wide (digital), 25 mm (print).
 
@@ -91,7 +91,7 @@ For the full horizontal logo, minimum clear space is **half the icon height** on
           ┌─────────────────────────────────┐
           │  ←───  clear space  ───→        │
           │    ┌───────────────────────┐    │
-  clear   │    │   [icon] Trippin'     │    │  clear
+  clear   │    │   [icon] Trippin''     │    │  clear
   space   │    └───────────────────────┘    │  space
           │                                 │
           └─────────────────────────────────┘
@@ -103,7 +103,7 @@ Never place the logo closer than the clear space boundary to other elements, edg
 
 ## 6. Dark Mode Recommendations
 
-Trippin' is designed dark-mode-first.
+Trippin'' is designed dark-mode-first.
 
 | Context | Icon bg | Icon mark | Wordmark | Tagline |
 |---|---|---|---|---|
@@ -122,7 +122,7 @@ The icon's Sky Blue background works on both light and dark surfaces — it is a
 ❌ **Do not** recolour the icon fill with gradients  
 ❌ **Do not** stretch or distort the mark  
 ❌ **Do not** place the icon on a busy photographic background without a colour-block backing  
-❌ **Do not** remove the apostrophe from "Trippin'"  
+❌ **Do not** remove the apostrophe from "Trippin''"  
 ❌ **Do not** use the wordmark without the icon in primary brand positions  
 ❌ **Do not** use the light icon variant on light backgrounds (insufficient contrast)  
 ❌ **Do not** resize the icon below 24 × 24 px on screen  
@@ -159,4 +159,4 @@ The two waypoint rings (○) on the crossbar and the destination dot (●) at th
 
 ---
 
-*Trippin' Brand Guidelines v1.0 — maintained by the Trippin' Design team.*
+*Trippin'' Brand Guidelines v1.0 — maintained by the Trippin'' Design team.*

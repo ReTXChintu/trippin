@@ -163,7 +163,7 @@ export function InvitePage() {
                   to={user ? "/dashboard" : "/"}
                   variant="outline"
                 >
-                  {user ? "Go to dashboard" : "Go to Trippin"}
+                  {user ? "Go to dashboard" : "Go to Trippin'"}
                 </Button>
               }
             />

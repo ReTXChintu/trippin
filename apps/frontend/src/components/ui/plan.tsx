@@ -1,5 +1,5 @@
 /**
- * Trippin plan primitives — shared by the trip workspace (header, stage bar, plan timeline, map
+ * Trippin' plan primitives — shared by the trip workspace (header, stage bar, plan timeline, map
  * overlays). Tokens only, so every piece is correct in light and dark.
  */
 import { Box, type BoxProps, Flex, type FlexProps, Icon, IconButton, Text } from "@chakra-ui/react";

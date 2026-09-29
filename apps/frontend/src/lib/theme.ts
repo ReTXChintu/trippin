@@ -1,7 +1,7 @@
 import { extendTheme, type StyleFunctionProps, type ThemeConfig } from "@chakra-ui/react";
 
 /**
- * Trippin design system — warm paper neutrals, a deep teal accent, Fraunces for display and
+ * Trippin' design system — warm paper neutrals, a deep teal accent, Fraunces for display and
  * DM Sans for UI. Every semantic token has a light and a dark value (see `semanticTokens`);
  * components use those, so a page never needs its own `useColorModeValue` for colour.
  */

@@ -1,4 +1,4 @@
-/** Trippin plan helpers — formatting and icon choice shared by the trip workspace. */
+/** Trippin' plan helpers — formatting and icon choice shared by the trip workspace. */
 import type { IconType } from "react-icons";
 import {
   LuBedDouble,

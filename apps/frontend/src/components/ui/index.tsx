@@ -1,5 +1,5 @@
 /**
- * Trippin UI primitives — the small pieces every screen of the redesign is built from. They only
+ * Trippin' UI primitives — the small pieces every screen of the redesign is built from. They only
  * use semantic tokens (bg.surface, border.line, accent.soft…), so they're correct in both modes.
  */
 import {

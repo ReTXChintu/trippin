@@ -42,7 +42,7 @@ export function formatItineraryAsIcs(trip: Trip, itinerary: Itinerary): string {
   const lines = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
-    "PRODID:-//Trippin//Itinerary//EN",
+    "PRODID:-//Trippin'//Itinerary//EN",
     "CALSCALE:GREGORIAN",
     `X-WR-CALNAME:${icsEscape(trip.title)}`,
   ];
