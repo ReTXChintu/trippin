@@ -25,4 +25,11 @@ export interface InvitePreview {
   role: "editor" | "viewer";
   alreadyMember: boolean;
   dates: string;
+  startDate?: string;
+  endDate?: string;
+  /** Base cities in visiting order. */
+  route?: string[];
+  /** Owner plus members. */
+  travellers?: number;
+  expiresAt?: string;
 }

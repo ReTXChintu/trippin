@@ -18,6 +18,7 @@ import {
   removeLegFromTrip,
 } from "@/modules/trips/services/trip.service";
 import { serverApiKeys } from "@/lib/services/trip-api-keys.service";
+import { withListExtras } from "@/modules/trips/services/trip-summary.service";
 
 async function enrichTripWithOwnerKeys(trip: Trip) {
   const owner = await UserRepository.findById(trip.userId);
@@ -34,7 +35,7 @@ async function enrichTripWithOwnerKeys(trip: Trip) {
 
 export async function list(req: Request, res: Response) {
   const status = (req.query.status as TripStatus | undefined) ?? undefined;
-  const trips = await getTrips(req.user!.sub, status);
+  const trips = await withListExtras(await getTrips(req.user!.sub, status));
   return sendOk(res, { trips });
 }
 

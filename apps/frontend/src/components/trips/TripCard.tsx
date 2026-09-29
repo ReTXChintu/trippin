@@ -30,7 +30,7 @@ function tripProgress(trip: Trip) {
   let next: string | null = null;
   if (!finished) {
     try {
-      const summary = getTripStages(trip);
+      const summary = getTripStages(trip, trip.planInfo);
       pct = (summary.doneCount / summary.stages.length) * 100;
       next = summary.next ? summary.next.text : null;
     } catch {

@@ -74,6 +74,8 @@ export interface TripDraft {
 export interface TripStats {
   totalTrips: number;
   upcomingTrips: number;
+  /** Trips marked active. */
+  activeTrips: number;
   completedTrips: number;
   archivedTrips: number;
 }

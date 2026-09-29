@@ -1,11 +1,11 @@
 import { Router } from "express";
-import { authMiddleware } from "@/middleware/auth.middleware";
+import { authMiddleware, optionalAuthMiddleware } from "@/middleware/auth.middleware";
 import { inviteAccept, invitePreview } from "@/modules/trips/controllers/trip-collab.controller";
 
 const router = Router();
 
-router.use(authMiddleware);
-router.get("/:token", invitePreview);
-router.post("/:token/accept", inviteAccept);
+// Anyone with the link can see what they're invited to; joining requires an account.
+router.get("/:token", optionalAuthMiddleware, invitePreview);
+router.post("/:token/accept", authMiddleware, inviteAccept);
 
 export default router;

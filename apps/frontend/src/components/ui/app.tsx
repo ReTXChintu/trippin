@@ -19,7 +19,7 @@ import { forwardRef, type ReactNode } from "react";
 import type { IconType } from "react-icons";
 import { FiUsers } from "react-icons/fi";
 import { PhotoFallback, Pill } from "@/components/ui";
-import { tripStatusInfo } from "./app-format";
+import { initials, tripStatusInfo } from "./app-format";
 import type { Trip } from "@/modules/trips/types/trip.types";
 
 // ---------------------------------------------------------------------------------------------
@@ -74,14 +74,51 @@ export function TripStatusPill({ trip, ...rest }: { trip: Trip } & Omit<BoxProps
   );
 }
 
-/** People on a trip (owner + members). Names aren't in the trip list, so it's a count. */
-export function MemberCount({ trip }: { trip: Trip }) {
+const AVATAR_COLORS = ["day.1", "day.2", "day.3", "day.4", "day.5", "day.6"];
+
+/** People on a trip as overlapping initials avatars (owner first). Hidden for solo trips. */
+export function MemberCount({ trip, max = 3 }: { trip: Trip; max?: number }) {
   const n = (trip.memberIds?.length ?? 0) + 1;
   if (n < 2) return null;
+  const people = trip.people ?? [];
+  if (people.length === 0) {
+    return (
+      <HStack spacing={1} color="fg.muted" fontSize="12px" fontWeight={600} title={`${n} people on this trip`} aria-label={`${n} people on this trip`}>
+        <Icon as={FiUsers} boxSize="14px" />
+        <span>{n}</span>
+      </HStack>
+    );
+  }
+  const shown = people.slice(0, max);
+  const extra = n - shown.length;
   return (
-    <HStack spacing={1} color="fg.muted" fontSize="12px" fontWeight={600} title={`${n} people on this trip`} aria-label={`${n} people on this trip`}>
-      <Icon as={FiUsers} boxSize="14px" />
-      <span>{n}</span>
+    <HStack spacing={0} aria-label={`On this trip: ${people.map((p) => p.name).join(", ")}`} title={people.map((p) => p.name).join(", ")}>
+      {shown.map((p, i) => (
+        <Flex
+          key={p.id}
+          w="30px"
+          h="30px"
+          ml={i === 0 ? 0 : "-8px"}
+          borderRadius="full"
+          borderWidth="2px"
+          borderColor="bg.surface"
+          bg={AVATAR_COLORS[i % AVATAR_COLORS.length]}
+          color="pin.fg"
+          fontSize="12px"
+          fontWeight={700}
+          align="center"
+          justify="center"
+          overflow="hidden"
+          aria-hidden
+        >
+          {p.avatar ? <img src={p.avatar} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : initials(p.name)}
+        </Flex>
+      ))}
+      {extra > 0 && (
+        <Flex w="30px" h="30px" ml="-8px" borderRadius="full" borderWidth="2px" borderColor="bg.surface" bg="bg.subtle" color="fg.muted" fontSize="12px" fontWeight={700} align="center" justify="center" aria-hidden>
+          +{extra}
+        </Flex>
+      )}
     </HStack>
   );
 }

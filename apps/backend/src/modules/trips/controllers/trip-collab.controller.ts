@@ -22,5 +22,5 @@ export const comment = async (req: Request, res: Response) => sendResult(res, aw
 export const removeComment = async (req: Request, res: Response) =>
   sendResult(res, await deleteComment(uid(req), req.params.id, req.params.commentId));
 
-export const invitePreview = async (req: Request, res: Response) => sendResult(res, await previewInvite(uid(req), req.params.token));
+export const invitePreview = async (req: Request, res: Response) => sendResult(res, await previewInvite(req.user?.sub ?? null, req.params.token));
 export const inviteAccept = async (req: Request, res: Response) => sendResult(res, await acceptInvite(uid(req), req.params.token));

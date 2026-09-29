@@ -45,12 +45,12 @@ function App() {
               <Route path="/trips/:id" element={<TripDetailPage />} />
               <Route path="/trips/:id/itinerary" element={<ItineraryPage />} />
               <Route path="/trips/:id/today" element={<TodayPage />} />
-              <Route path="/invite/:token" element={<InvitePage />} />
               <Route path="/trips/:id/itinerary/compare" element={<ItineraryComparePage />} />
             </Route>
           </Route>
 
           <Route path="/share/:slug" element={<SharePage />} />
+          <Route path="/invite/:token" element={<InvitePage />} />
         </Routes>
       </BrowserRouter>
     </AppProviders>

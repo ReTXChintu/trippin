@@ -57,7 +57,7 @@ export function DashboardContent() {
   const isOwner = (userId: string) => userId === user?.id;
 
   const stats = data?.stats;
-  const activeCount = trips?.filter((t) => t.status === "active").length;
+  const activeCount = stats?.activeTrips ?? trips?.filter((t) => t.status === "active").length;
   const upcoming = data?.upcomingTrips ?? [];
   const recent = data?.recentTrips ?? [];
 
@@ -80,7 +80,7 @@ export function DashboardContent() {
       <SimpleGrid columns={{ base: 2, md: 4 }} spacing={{ base: "10px", md: "16px" }} aria-label="Trip counts">
         <Stat icon={FiBriefcase} label="Total trips" value={stats?.totalTrips} />
         <Stat icon={FiCalendar} label="Upcoming" value={stats?.upcomingTrips} />
-        <Stat icon={FiCompass} label="Active" value={trips ? activeCount : undefined} />
+        <Stat icon={FiCompass} label="Active" value={activeCount} />
         <Stat icon={FiCheck} label="Completed" value={stats?.completedTrips} />
       </SimpleGrid>
 

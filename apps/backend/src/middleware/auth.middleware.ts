@@ -21,6 +21,19 @@ function extractToken(req: Request): string | null {
   return typeof cookieToken === "string" && cookieToken ? cookieToken : null;
 }
 
+/** Sets req.user when a valid token is present; lets anonymous requests through. */
+export async function optionalAuthMiddleware(req: Request, _res: Response, next: NextFunction) {
+  const token = extractToken(req);
+  if (token) {
+    try {
+      req.user = await verifyAccessToken(token);
+    } catch {
+      req.user = undefined;
+    }
+  }
+  next();
+}
+
 export async function authMiddleware(req: Request, res: Response, next: NextFunction) {
   const token = extractToken(req);
   if (!token) {

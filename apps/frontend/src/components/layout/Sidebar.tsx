@@ -19,7 +19,7 @@ function NextTripCard() {
   const trip = data?.upcomingTrips?.[0];
   if (!trip) return null;
   const days = differenceInCalendarDays(parseISO(trip.startDate.slice(0, 10)), new Date());
-  const { doneCount, stages } = getTripStages(trip);
+  const { doneCount, stages } = getTripStages(trip, trip.planInfo);
   return (
     <Box
       as={Link}

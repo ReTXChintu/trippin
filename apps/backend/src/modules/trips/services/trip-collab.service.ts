@@ -69,16 +69,36 @@ async function liveInvite(token: string) {
   return TripInvite.findOne({ token, revoked: false, expiresAt: { $gt: new Date() } });
 }
 
-export async function previewInvite(
-  userId: string,
-  token: string,
-): Promise<Result<{ tripId: string; tripTitle: string; invitedBy: string; role: "editor" | "viewer"; alreadyMember: boolean; dates: string }>> {
+export interface InvitePreview {
+  tripId: string;
+  tripTitle: string;
+  invitedBy: string;
+  role: "editor" | "viewer";
+  /** False for anonymous viewers — they log in first. */
+  alreadyMember: boolean;
+  dates: string;
+  startDate: string;
+  endDate: string;
+  /** Base cities in visiting order. */
+  route: string[];
+  /** Owner plus members. */
+  travellers: number;
+  expiresAt: string;
+}
+
+/** What an invite link leads to. Public: the unguessable token is the permission to see this much. */
+export async function previewInvite(userId: string | null, token: string): Promise<Result<InvitePreview>> {
   const invite = await liveInvite(token);
   if (!invite) return { success: false, error: "This invite link has expired or was reset. Ask for a new one." };
-  const trip = await TripModel.findById(invite.tripId).select({ title: 1, userId: 1, memberIds: 1, startDate: 1, endDate: 1 }).lean();
+  const trip = await TripModel.findById(invite.tripId)
+    .select({ title: 1, userId: 1, memberIds: 1, startDate: 1, endDate: 1, legs: 1, destinationCity: 1 })
+    .lean();
   if (!trip) return { success: false, error: "This trip no longer exists" };
   const inviter = await UserRepository.findById(String(invite.createdBy));
-  const alreadyMember = String(trip.userId) === userId || (trip.memberIds ?? []).some((id) => String(id) === userId);
+  const alreadyMember = userId !== null && (String(trip.userId) === userId || (trip.memberIds ?? []).some((id) => String(id) === userId));
+  const legs = [...(trip.legs ?? [])].sort((a, b) => a.order - b.order);
+  const start = new Date(trip.startDate).toISOString().slice(0, 10);
+  const end = new Date(trip.endDate).toISOString().slice(0, 10);
   return {
     success: true,
     data: {
@@ -87,7 +107,12 @@ export async function previewInvite(
       invitedBy: inviter?.name ?? "Someone",
       role: invite.role,
       alreadyMember,
-      dates: `${new Date(trip.startDate).toISOString().slice(0, 10)} → ${new Date(trip.endDate).toISOString().slice(0, 10)}`,
+      dates: `${start} → ${end}`,
+      startDate: start,
+      endDate: end,
+      route: legs.length > 0 ? legs.map((l) => l.baseCity).filter(Boolean) : [trip.destinationCity].filter(Boolean),
+      travellers: 1 + (trip.memberIds ?? []).length,
+      expiresAt: invite.expiresAt.toISOString(),
     },
   };
 }

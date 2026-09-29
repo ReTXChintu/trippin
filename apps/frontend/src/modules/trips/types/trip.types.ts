@@ -5,7 +5,18 @@ import type {
   LegDestinationBrief,
   VehicleRentalSuggestion,
 } from "@/modules/trips/types/trip-enrichment.types";
+/** Someone on a trip — sent with trip lists (owner first). */
+export interface TripPerson {
+  id: string;
+  name: string;
+  avatar?: string;
+}
+
 export interface Trip {
+  /** Only in lists (dashboard, My trips): the people on the trip, owner first. */
+  people?: TripPerson[];
+  /** Only in lists: whether a day-by-day plan exists and how many edits since. */
+  planInfo?: { hasPlan: boolean; edits: number };
   id: string;
   userId: string;
   memberIds: string[];
@@ -72,6 +83,7 @@ export interface TripDraft {
 export interface TripStats {
   totalTrips: number;
   upcomingTrips: number;
+  activeTrips?: number;
   completedTrips: number;
   archivedTrips: number;
 }

@@ -151,7 +151,7 @@ export class TripRepository {
     const access = userAccessFilter(userId);
     const now = new Date();
 
-    const [totalTrips, upcomingTrips, completedTrips, archivedTrips] =
+    const [totalTrips, upcomingTrips, completedTrips, archivedTrips, activeTrips] =
       await Promise.all([
         TripModel.countDocuments(access),
         TripModel.countDocuments({
@@ -161,9 +161,10 @@ export class TripRepository {
         }),
         TripModel.countDocuments({ ...access, status: "completed" }),
         TripModel.countDocuments({ ...access, status: "archived" }),
+        TripModel.countDocuments({ ...access, status: "active" }),
       ]);
 
-    return { totalTrips, upcomingTrips, completedTrips, archivedTrips };
+    return { totalTrips, upcomingTrips, activeTrips, completedTrips, archivedTrips };
   }
 
   /** Owner or member can update trip details. */
