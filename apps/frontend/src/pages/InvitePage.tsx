@@ -1,4 +1,4 @@
-import { Alert, AlertIcon, Box, Button, Heading, Stack, Text, useColorModeValue, useToast } from "@chakra-ui/react";
+import { Alert, AlertIcon, Box, Button, Heading, Stack, Text, useToast } from "@chakra-ui/react";
 import { useNavigate, useParams } from "react-router-dom";
 import { getApiErrorMessage } from "@/lib/api";
 import { LoadingState } from "@/components/ui/LoadingState";
@@ -10,8 +10,8 @@ export function InvitePage() {
   const toast = useToast();
   const { data, isLoading, error } = useInvitePreviewQuery(token);
   const accept = useAcceptInvite();
-  const bg = useColorModeValue("white", "gray.800");
-  const border = useColorModeValue("gray.200", "gray.700");
+  const bg = "bg.surface";
+  const border = "border.line";
 
   if (isLoading) return <LoadingState />;
 
@@ -34,11 +34,11 @@ export function InvitePage() {
         </Alert>
       ) : (
         <Stack spacing={4}>
-          <Text fontSize="sm" color="gray.500">
+          <Text fontSize="sm" color="fg.muted">
             {data.invitedBy} invited you to
           </Text>
           <Heading size="lg">{data.tripTitle}</Heading>
-          <Text fontSize="sm" color="gray.500">
+          <Text fontSize="sm" color="fg.muted">
             {data.dates} · {data.role === "viewer" ? "you'll be able to view, vote and comment" : "you'll be able to plan together"}
           </Text>
           {data.alreadyMember ? (

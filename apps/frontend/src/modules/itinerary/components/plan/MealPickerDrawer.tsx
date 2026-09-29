@@ -18,7 +18,6 @@ import {
   Skeleton,
   Stack,
   Text,
-  useColorModeValue,
   useToast,
 } from "@chakra-ui/react";
 import { useState } from "react";
@@ -55,9 +54,9 @@ function SuggestionCard({
   onChoose: () => void;
   isBusy: boolean;
 }) {
-  const border = useColorModeValue("gray.200", "gray.700");
-  const muted = useColorModeValue("gray.500", "gray.400");
-  const placeholderBg = useColorModeValue("orange.50", "whiteAlpha.100");
+  const border = "border.line";
+  const muted = "fg.muted";
+  const placeholderBg = "warn.soft";
 
   return (
     <Flex gap={3} p={3} borderWidth="1px" borderColor={border} borderRadius="lg" align="center">
@@ -131,7 +130,7 @@ export function MealPickerDrawer({ tripId, target, city, country, onClose }: Mea
   const toast = useToast();
   const updateMealSlot = useUpdateMealSlot(tripId);
   const [choosingId, setChoosingId] = useState<string | null>(null);
-  const muted = useColorModeValue("gray.500", "gray.400");
+  const muted = "fg.muted";
 
   const stop = target?.stop;
   const day = target?.day;

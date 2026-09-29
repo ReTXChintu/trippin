@@ -13,7 +13,6 @@ import {
   Stack,
   Text,
   Tooltip,
-  useColorModeValue,
   useToast,
 } from "@chakra-ui/react";
 import { useState } from "react";
@@ -40,9 +39,9 @@ function Section({ trip, section, suggestions }: { trip: Trip; section: (typeof 
   const update = useUpdateChecklistItem(trip.id);
   const remove = useRemoveChecklistItem(trip.id);
   const [text, setText] = useState("");
-  const bg = useColorModeValue("white", "gray.800");
-  const border = useColorModeValue("gray.200", "gray.700");
-  const muted = useColorModeValue("gray.500", "gray.400");
+  const bg = "bg.surface";
+  const border = "border.line";
+  const muted = "fg.muted";
 
   const items = trip.checklist.filter((c) => c.category === section.key);
   const done = items.filter((c) => c.done).length;
@@ -143,7 +142,7 @@ export function ChecklistView({ trip }: { trip: Trip }) {
   const { data } = useChecklistSuggestionsQuery(trip.id);
   const add = useAddChecklistItems(trip.id);
   const toast = useToast();
-  const muted = useColorModeValue("gray.500", "gray.400");
+  const muted = "fg.muted";
   const suggestions = data?.suggestions ?? [];
   const total = trip.checklist.length;
   const done = trip.checklist.filter((c) => c.done).length;

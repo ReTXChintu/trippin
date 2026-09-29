@@ -19,7 +19,6 @@ import {
   Stack,
   Text,
   Tooltip,
-  useColorModeValue,
   useToast,
   Wrap,
   WrapItem,
@@ -82,9 +81,9 @@ function NightsStrip({ leg }: { leg: TripLeg }) {
 }
 
 function StayCard({ stay, onEdit, onRemove }: { stay: TripStay; onEdit: () => void; onRemove: () => void }) {
-  const border = useColorModeValue("gray.200", "gray.700");
-  const bg = useColorModeValue("white", "gray.800");
-  const muted = useColorModeValue("gray.500", "gray.400");
+  const border = "border.line";
+  const bg = "bg.surface";
+  const muted = "fg.muted";
   const nights = nightCount(stay);
   const total = stay.pricePerNight !== undefined ? stay.pricePerNight * nights : undefined;
   const mapsUrl = stay.googlePlaceId
@@ -155,10 +154,10 @@ function StayCard({ stay, onEdit, onRemove }: { stay: TripStay; onEdit: () => vo
 }
 
 function HotelCard({ hotel, onAdd }: { hotel: HotelOption; onAdd: () => void }) {
-  const border = useColorModeValue("gray.200", "gray.700");
-  const bg = useColorModeValue("white", "gray.800");
-  const muted = useColorModeValue("gray.500", "gray.400");
-  const placeholder = useColorModeValue("gray.100", "whiteAlpha.100");
+  const border = "border.line";
+  const bg = "bg.surface";
+  const muted = "fg.muted";
+  const placeholder = "bg.subtle";
   const score = hotel.locationScore;
   const scoreLabel =
     score === undefined ? undefined : score >= 8 ? "Great location" : score >= 6 ? "Good location" : score >= 4 ? "Okay location" : "Far from your places";
@@ -229,9 +228,9 @@ export function StaysView({ trip, cityId, onCityChange }: StaysViewProps) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<HotelSearchResponse | null>(null);
 
-  const muted = useColorModeValue("gray.500", "gray.400");
-  const cardBg = useColorModeValue("white", "gray.800");
-  const border = useColorModeValue("gray.200", "gray.700");
+  const muted = "fg.muted";
+  const cardBg = "bg.surface";
+  const border = "border.line";
 
   useEffect(() => {
     setResults(null);

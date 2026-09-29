@@ -11,7 +11,6 @@ import {
   Link,
   Stack,
   Text,
-  useColorModeValue,
   VStack,
 } from "@chakra-ui/react";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -30,8 +29,8 @@ export function RegisterForm() {
   const [error, setError] = useState<string | null>(null);
   const register_ = useRegister();
 
-  const bg = useColorModeValue("white", "gray.800");
-  const borderColor = useColorModeValue("gray.200", "gray.700");
+  const bg = "bg.surface";
+  const borderColor = "border.line";
 
   const {
     register,
@@ -58,7 +57,7 @@ export function RegisterForm() {
           <Heading size="lg" mb={2}>
             Create account
           </Heading>
-          <Text color="gray.500">Start planning smarter trips today</Text>
+          <Text color="fg.muted">Start planning smarter trips today</Text>
         </Box>
 
         {error && (
@@ -100,7 +99,7 @@ export function RegisterForm() {
           </Stack>
         </form>
 
-        <Text textAlign="center" fontSize="sm" color="gray.500">
+        <Text textAlign="center" fontSize="sm" color="fg.muted">
           Already have an account?{" "}
           <Link as={RouterLink} to={`/login${callbackQuery ? `?${callbackQuery.slice(1)}` : ""}`} color="brand.500" fontWeight="medium">
             Sign in

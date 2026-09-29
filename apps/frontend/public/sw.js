@@ -1,4 +1,4 @@
-/* TripPlanner service worker — keeps the app usable offline on the road.
+/* Trippin service worker — keeps the app usable offline on the road.
  *
  * - App shell (navigations): network first, fall back to the cached index.html.
  * - Built assets (/assets/*, icons): cache first — filenames are content-hashed.

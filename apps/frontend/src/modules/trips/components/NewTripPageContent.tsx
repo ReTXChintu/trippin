@@ -9,7 +9,6 @@ import {
   Icon,
   Stack,
   Text,
-  useColorModeValue,
 } from "@chakra-ui/react";
 import { FiCalendar, FiEdit3, FiMap, FiSliders, FiZap } from "react-icons/fi";
 import { useSearchParams } from "react-router-dom";
@@ -27,10 +26,10 @@ const AI_GETS = [
 export function NewTripPageContent() {
   const [params, setParams] = useSearchParams();
   const mode: Mode = params.get("mode") === "describe" ? "describe" : "setup";
-  const cardBg = useColorModeValue("white", "gray.800");
-  const border = useColorModeValue("gray.200", "gray.700");
-  const muted = useColorModeValue("gray.500", "gray.400");
-  const accentBg = useColorModeValue("brand.50", "whiteAlpha.100");
+  const cardBg = "bg.surface";
+  const border = "border.line";
+  const muted = "fg.muted";
+  const accentBg = "accent.soft";
 
   return (
     <Box>

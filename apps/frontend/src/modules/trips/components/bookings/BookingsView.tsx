@@ -12,7 +12,6 @@ import {
   Link,
   Stack,
   Text,
-  useColorModeValue,
   useToast,
 } from "@chakra-ui/react";
 import { useState } from "react";
@@ -28,9 +27,9 @@ import { BOOKING_META } from "./bookingMeta";
 import { BookingFormModal } from "./BookingFormModal";
 
 function BookingCard({ booking, trip, onEdit, onRemove }: { booking: TripBooking; trip: Trip; onEdit: () => void; onRemove: () => void }) {
-  const bg = useColorModeValue("white", "gray.800");
-  const border = useColorModeValue("gray.200", "gray.700");
-  const muted = useColorModeValue("gray.500", "gray.400");
+  const bg = "bg.surface";
+  const border = "border.line";
+  const muted = "fg.muted";
   const meta = BOOKING_META[booking.type];
   const transfer = booking.transferId ? trip.transfers.find((t) => t.id === booking.transferId) : undefined;
 
@@ -50,7 +49,7 @@ function BookingCard({ booking, trip, onEdit, onRemove }: { booking: TripBooking
         <HStack spacing={2} flexWrap="wrap">
           <Text fontWeight="semibold">{booking.title}</Text>
           {transfer && (
-            <Badge colorScheme="purple" variant="subtle" fontSize="2xs">
+            <Badge colorScheme="brand" variant="subtle" fontSize="2xs">
               Sets the travel day
             </Badge>
           )}
@@ -89,7 +88,7 @@ export function BookingsView({ trip }: { trip: Trip }) {
   const toast = useToast();
   const remove = useRemoveBooking(trip.id);
   const [editing, setEditing] = useState<Partial<TripBooking> | null>(null);
-  const muted = useColorModeValue("gray.500", "gray.400");
+  const muted = "fg.muted";
   const legs = getEffectiveLegs(trip);
 
   const sorted = [...trip.bookings].sort((a, b) =>

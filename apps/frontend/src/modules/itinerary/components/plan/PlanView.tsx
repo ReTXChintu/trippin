@@ -20,7 +20,6 @@ import {
   Stack,
   Text,
   Tooltip,
-  useColorModeValue,
   useDisclosure,
   useToast,
 } from "@chakra-ui/react";
@@ -100,7 +99,7 @@ function SetupStep({
   description: string;
   action?: React.ReactNode;
 }) {
-  const muted = useColorModeValue("gray.500", "gray.400");
+  const muted = "fg.muted";
   return (
     <Flex gap={4} align="center">
       <Circle size="32px" bg={done ? "brand.500" : "gray.200"} color={done ? "white" : "gray.600"} fontWeight="bold" fontSize="sm" flexShrink={0}>
@@ -120,7 +119,7 @@ function SetupStep({
 }
 
 function CityHeader({ leg, onGoTo }: { leg: TripLeg; onGoTo: PlanViewProps["onGoTo"] }) {
-  const muted = useColorModeValue("gray.500", "gray.400");
+  const muted = "fg.muted";
   const stays = getEffectiveStays(leg);
   const uncovered = getUncoveredNights(leg);
 
@@ -309,10 +308,10 @@ export function PlanView({ trip, canEdit, hasMapsKey, hasAiKey, cityId, onCityCh
         })),
   };
 
-  const muted = useColorModeValue("gray.500", "gray.400");
-  const cardBg = useColorModeValue("white", "gray.800");
-  const border = useColorModeValue("gray.200", "gray.700");
-  const stripBg = useColorModeValue("gray.50", "gray.900");
+  const muted = "fg.muted";
+  const cardBg = "bg.surface";
+  const border = "border.line";
+  const stripBg = "bg.canvas";
 
   if (isLoading) return <LoadingState />;
 

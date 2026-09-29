@@ -11,7 +11,6 @@ import {
   Link,
   Stack,
   Text,
-  useColorModeValue,
   VStack,
 } from "@chakra-ui/react";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -29,8 +28,8 @@ export function ResetPasswordForm() {
   const [error, setError] = useState<string | null>(null);
   const resetPassword = useResetPassword();
 
-  const bg = useColorModeValue("white", "gray.800");
-  const borderColor = useColorModeValue("gray.200", "gray.700");
+  const bg = "bg.surface";
+  const borderColor = "border.line";
 
   const {
     register,
@@ -58,7 +57,7 @@ export function ResetPasswordForm() {
           <Heading size="lg" mb={2}>
             Reset password
           </Heading>
-          <Text color="gray.500">Enter your new password below</Text>
+          <Text color="fg.muted">Enter your new password below</Text>
         </Box>
 
         {error && (
@@ -90,7 +89,7 @@ export function ResetPasswordForm() {
           </Stack>
         </form>
 
-        <Text textAlign="center" fontSize="sm" color="gray.500">
+        <Text textAlign="center" fontSize="sm" color="fg.muted">
           <Link as={RouterLink} to="/login" color="brand.500" fontWeight="medium">
             Back to sign in
           </Link>

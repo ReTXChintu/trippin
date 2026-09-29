@@ -1,52 +1,66 @@
-import {
-  Box,
-  Drawer,
-  DrawerContent,
-  DrawerOverlay,
-  Flex,
-  useDisclosure,
-} from "@chakra-ui/react";
+import { Box, Drawer, DrawerContent, DrawerOverlay, Flex, useDisclosure } from "@chakra-ui/react";
+import { useLocation } from "react-router-dom";
 import { Navbar } from "./Navbar";
-import { Sidebar } from "./Sidebar";
+import { Rail, Sidebar } from "./Sidebar";
+import { BottomNav } from "./BottomNav";
 import { OfflineBanner } from "./OfflineBanner";
 
 interface AppLayoutProps {
   children: React.ReactNode;
 }
 
+const TRIP_WORKSPACE = /^\/trips\/(?!new(?:\/|$))[^/]+/;
+
+function pageTitle(pathname: string): string {
+  if (pathname.startsWith("/dashboard")) return "Dashboard";
+  if (pathname === "/trips") return "My trips";
+  if (pathname.startsWith("/trips/new")) return "New trip";
+  if (pathname.startsWith("/profile")) return "Profile";
+  if (pathname.startsWith("/invite")) return "Join a trip";
+  if (/\/today$/.test(pathname)) return "Today";
+  if (/\/itinerary\/compare/.test(pathname)) return "Compare with AI plan";
+  if (TRIP_WORKSPACE.test(pathname)) return "Trip workspace";
+  return "Trippin";
+}
+
 export function AppLayout({ children }: AppLayoutProps) {
   const { isOpen, onOpen, onClose } = useDisclosure();
+  const { pathname } = useLocation();
+  const inTrip = TRIP_WORKSPACE.test(pathname);
 
   return (
-    <Flex direction="column" minH="100vh">
-      <OfflineBanner />
-      <Navbar onToggleSidebar={onOpen} />
+    <Flex minH="100vh" bg="bg.canvas">
+      {/* Desktop navigation: full sidebar on app pages, slim rail inside a trip. */}
+      <Box flexShrink={0} display={{ base: "none", lg: "block" }} position="sticky" top={0} h="100vh">
+        {inTrip ? <Rail /> : <Sidebar />}
+      </Box>
 
-      <Flex flex={1}>
-        <Box
-          w="260px"
-          flexShrink={0}
-          display={{ base: "none", lg: "block" }}
-          position="sticky"
-          top="16"
-          h="calc(100vh - 4rem)"
-        >
-          <Sidebar />
-        </Box>
+      <Drawer isOpen={isOpen} placement="left" onClose={onClose}>
+        <DrawerOverlay />
+        <DrawerContent maxW="236px">
+          <Sidebar onNavigate={onClose} />
+        </DrawerContent>
+      </Drawer>
 
-        <Drawer isOpen={isOpen} placement="left" onClose={onClose} size="xs">
-          <DrawerOverlay />
-          <DrawerContent>
-            <Sidebar onNavigate={onClose} />
-          </DrawerContent>
-        </Drawer>
-
+      <Flex direction="column" flex={1} minW={0}>
+        <OfflineBanner />
+        <Navbar title={pageTitle(pathname)} onToggleSidebar={onOpen} />
         {/* overflow-x "clip" (not "auto") so the content box isn't a scroll container — that would
             silently break position: sticky for anything inside pages. */}
-        <Box flex={1} minW={0} p={{ base: 4, md: 6, lg: 8 }} overflowX="clip">
+        <Box
+          as="main"
+          flex={1}
+          minW={0}
+          px={inTrip ? { base: 4, md: 7 } : { base: 4, md: 8, xl: 10 }}
+          pt={inTrip ? { base: 4, md: 5 } : { base: 5, md: 8 }}
+          pb={{ base: "88px", lg: 10 }}
+          overflowX="clip"
+        >
           {children}
         </Box>
       </Flex>
+
+      {!inTrip && <BottomNav />}
     </Flex>
   );
 }

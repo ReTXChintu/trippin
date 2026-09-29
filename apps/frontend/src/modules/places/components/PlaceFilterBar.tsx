@@ -8,7 +8,6 @@ import {
   Select,
   Stack,
   Text,
-  useColorModeValue,
   Wrap,
   WrapItem,
 } from "@chakra-ui/react";
@@ -34,7 +33,7 @@ export function PlaceFilterBar({
   resultCount,
   totalCount,
 }: PlaceFilterBarProps) {
-  const borderColor = useColorModeValue("gray.200", "gray.700");
+  const borderColor = "border.line";
 
   return (
     <Box p={3} borderWidth="1px" borderColor={borderColor} borderRadius="lg">
@@ -42,7 +41,7 @@ export function PlaceFilterBar({
         <Text fontSize="sm" fontWeight="medium">
           Filters
         </Text>
-        <Text fontSize="xs" color="gray.500">
+        <Text fontSize="xs" color="fg.muted">
           Showing {resultCount} of {totalCount}
         </Text>
       </Flex>
@@ -50,7 +49,7 @@ export function PlaceFilterBar({
       <Stack spacing={3}>
         <HStack spacing={3} flexWrap="wrap">
           <Box minW="140px">
-            <Text fontSize="xs" color="gray.500" mb={1}>
+            <Text fontSize="xs" color="fg.muted" mb={1}>
               Min rating
             </Text>
             <Select
@@ -71,7 +70,7 @@ export function PlaceFilterBar({
           </Box>
 
           <Box minW="140px">
-            <Text fontSize="xs" color="gray.500" mb={1}>
+            <Text fontSize="xs" color="fg.muted" mb={1}>
               Sort by
             </Text>
             <Select
@@ -88,7 +87,7 @@ export function PlaceFilterBar({
           </Box>
 
           <Box flex={1} minW="180px">
-            <Text fontSize="xs" color="gray.500" mb={1}>
+            <Text fontSize="xs" color="fg.muted" mb={1}>
               Search by name
             </Text>
             <Input
@@ -102,7 +101,7 @@ export function PlaceFilterBar({
 
         {categories.length > 0 && (
           <Box>
-            <Text fontSize="xs" color="gray.500" mb={1}>
+            <Text fontSize="xs" color="fg.muted" mb={1}>
               Category
             </Text>
             <CheckboxGroup

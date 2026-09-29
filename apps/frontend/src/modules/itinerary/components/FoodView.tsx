@@ -14,7 +14,6 @@ import {
   Stack,
   Tag,
   Text,
-  useColorModeValue,
   useToast,
   Wrap,
   WrapItem,
@@ -61,9 +60,9 @@ function RestaurantCard({
   onAssign: (slot: MealSlot) => void;
   isBusy: boolean;
 }) {
-  const border = useColorModeValue("gray.200", "gray.700");
-  const bg = useColorModeValue("white", "gray.800");
-  const muted = useColorModeValue("gray.500", "gray.400");
+  const border = "border.line";
+  const bg = "bg.surface";
+  const muted = "fg.muted";
 
   const byDay = new Map<number, MealSlot[]>();
   for (const slot of slots) byDay.set(slot.day.dayNumber, [...(byDay.get(slot.day.dayNumber) ?? []), slot]);
@@ -132,10 +131,10 @@ export function FoodView({ trip, cityId, onCityChange, onGoToGuide }: FoodViewPr
   const [busyPlaceId, setBusyPlaceId] = useState<string | null>(null);
   const [pickerTarget, setPickerTarget] = useState<MealSlot | null>(null);
 
-  const muted = useColorModeValue("gray.500", "gray.400");
-  const cardBg = useColorModeValue("white", "gray.800");
-  const border = useColorModeValue("gray.200", "gray.700");
-  const calloutBg = useColorModeValue("orange.50", "whiteAlpha.100");
+  const muted = "fg.muted";
+  const cardBg = "bg.surface";
+  const border = "border.line";
+  const calloutBg = "warn.soft";
 
   const mealSlots = useMemo<MealSlot[]>(() => {
     if (!leg || !itineraryData?.itinerary) return [];

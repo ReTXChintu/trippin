@@ -1,12 +1,12 @@
 {
-  "name": "TripPlanner",
-  "short_name": "TripPlanner",
+  "name": "Trippin",
+  "short_name": "Trippin",
   "description": "Plan every day of your trip — places, stays, food, bookings and budget in one place.",
   "start_url": "/dashboard",
   "scope": "/",
   "display": "standalone",
-  "background_color": "#f7fafc",
-  "theme_color": "#0d9488",
+  "background_color": "#F5F3EE",
+  "theme_color": "#0F766E",
   "icons": [
     { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
     { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }

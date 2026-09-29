@@ -187,7 +187,7 @@ export function AddLegModal({
                 />
               )}
               {draft.country && (
-                <Text fontSize="xs" color="gray.500" mt={1}>
+                <Text fontSize="xs" color="fg.muted" mt={1}>
                   {[draft.state, draft.country].filter(Boolean).join(", ")}
                 </Text>
               )}

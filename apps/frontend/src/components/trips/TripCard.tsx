@@ -30,8 +30,8 @@ export function TripCard({
   endDate,
   status,
 }: TripCardProps) {
-  const bg = useColorModeValue("white", "gray.800");
-  const borderColor = useColorModeValue("gray.200", "gray.700");
+  const bg = "bg.surface";
+  const borderColor = "border.line";
   const hoverBorder = useColorModeValue("brand.300", "brand.600");
 
   const formatDate = (date: string) => {
@@ -68,14 +68,14 @@ export function TripCard({
         </Badge>
       </Flex>
 
-      <HStack spacing={2} color="gray.500" fontSize="sm" mb={2}>
+      <HStack spacing={2} color="fg.muted" fontSize="sm" mb={2}>
         <Icon as={FiMapPin} />
         <Text>
           {destinationCity}, {destinationCountry}
         </Text>
       </HStack>
 
-      <HStack spacing={2} color="gray.500" fontSize="sm">
+      <HStack spacing={2} color="fg.muted" fontSize="sm">
         <Icon as={FiCalendar} />
         <Text>
           {formatDate(startDate)} – {formatDate(endDate)}

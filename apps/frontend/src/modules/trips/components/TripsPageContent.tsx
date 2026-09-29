@@ -35,7 +35,7 @@ export function TripsPageContent() {
           <Heading size="lg" mb={1}>
             My Trips
           </Heading>
-          <Text color="gray.500">
+          <Text color="fg.muted">
             {trips.length} trip{trips.length !== 1 ? "s" : ""} total
           </Text>
         </Box>

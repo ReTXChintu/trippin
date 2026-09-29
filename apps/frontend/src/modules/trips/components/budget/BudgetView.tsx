@@ -14,7 +14,6 @@ import {
   StatLabel,
   StatNumber,
   Text,
-  useColorModeValue,
   useToast,
 } from "@chakra-ui/react";
 import { useState } from "react";
@@ -41,9 +40,9 @@ export function BudgetView({ trip, currentUserId, onOpenSettings }: BudgetViewPr
   const remove = useRemoveExpense(trip.id);
   const [editing, setEditing] = useState<Partial<Expense> | null>(null);
 
-  const cardBg = useColorModeValue("white", "gray.800");
-  const border = useColorModeValue("gray.200", "gray.700");
-  const muted = useColorModeValue("gray.500", "gray.400");
+  const cardBg = "bg.surface";
+  const border = "border.line";
+  const muted = "fg.muted";
 
   if (isLoading || !data) return <LoadingState />;
 

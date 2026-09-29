@@ -10,7 +10,6 @@ import {
   Tag,
   Text,
   Tooltip,
-  useColorModeValue,
   useToast,
 } from "@chakra-ui/react";
 import { useState } from "react";
@@ -26,9 +25,9 @@ export function AskAiBar({ tripId, hasAiKey }: { tripId: string; hasAiKey: boole
   const toast = useToast();
   const edit = useAiEditPlan(tripId);
   const [text, setText] = useState("");
-  const bg = useColorModeValue("purple.50", "whiteAlpha.50");
-  const border = useColorModeValue("purple.100", "whiteAlpha.200");
-  const muted = useColorModeValue("gray.500", "gray.400");
+  const bg = "accent.soft";
+  const border = "accent.soft";
+  const muted = "fg.muted";
 
   const submit = async (instruction = text) => {
     if (!instruction.trim() || edit.isPending) return;
@@ -64,14 +63,14 @@ export function AskAiBar({ tripId, hasAiKey }: { tripId: string; hasAiKey: boole
               value={text}
               onChange={(e) => setText(e.target.value)}
               placeholder="Ask AI to change the plan — e.g. “move the fort to day 3 and make day 2 lighter”"
-              bg={useColorModeValue("white", "gray.800")}
+              bg={"bg.surface"}
               borderRadius="lg"
               pr="6.5rem"
               isDisabled={!hasAiKey || edit.isPending}
               aria-label="Ask AI to change the plan"
             />
             <InputRightElement width="6rem" pr={1}>
-              <Button type="submit" size="sm" colorScheme="purple" isLoading={edit.isPending} loadingText="Thinking" isDisabled={!hasAiKey || !text.trim()}>
+              <Button type="submit" size="sm" colorScheme="brand" isLoading={edit.isPending} loadingText="Thinking" isDisabled={!hasAiKey || !text.trim()}>
                 Change
               </Button>
             </InputRightElement>
@@ -84,7 +83,7 @@ export function AskAiBar({ tripId, hasAiKey }: { tripId: string; hasAiKey: boole
             Try:
           </Text>
           {EXAMPLES.map((ex) => (
-            <Tag key={ex} size="sm" variant="subtle" colorScheme="purple" cursor="pointer" onClick={() => void submit(ex)} opacity={edit.isPending ? 0.5 : 1}>
+            <Tag key={ex} size="sm" variant="subtle" colorScheme="brand" cursor="pointer" onClick={() => void submit(ex)} opacity={edit.isPending ? 0.5 : 1}>
               {ex}
             </Tag>
           ))}

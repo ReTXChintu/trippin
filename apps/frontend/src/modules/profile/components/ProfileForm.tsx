@@ -12,7 +12,6 @@ import {
   Link,
   Stack,
   Text,
-  useColorModeValue,
   useToast,
   VStack,
 } from "@chakra-ui/react";
@@ -44,8 +43,8 @@ export function ProfileForm() {
   const updateProfile = useUpdateProfile();
   const updateApiKeys = useUpdateApiKeys();
 
-  const bg = useColorModeValue("white", "gray.800");
-  const borderColor = useColorModeValue("gray.200", "gray.700");
+  const bg = "bg.surface";
+  const borderColor = "border.line";
 
   const {
     register,
@@ -147,7 +146,7 @@ export function ProfileForm() {
             <Heading size="md" mb={1}>
               Profile Settings
             </Heading>
-            <Text color="gray.500" fontSize="sm">
+            <Text color="fg.muted" fontSize="sm">
               {profile.email}
             </Text>
           </Box>
@@ -192,7 +191,7 @@ export function ProfileForm() {
             <Heading size="md" mb={1}>
               API Keys
             </Heading>
-            <Text color="gray.500" fontSize="sm">
+            <Text color="fg.muted" fontSize="sm">
               Your keys are encrypted and used for trips you own. Trip members use the owner&apos;s keys for
               discovery and AI features.
             </Text>

@@ -19,7 +19,7 @@ export function OfflineBanner() {
 
   if (online) return null;
   return (
-    <Box bg="gray.800" color="white" px={4} py={1.5} position="sticky" top={0} zIndex={1500}>
+    <Box bg="fg.default" color="bg.canvas" px={4} py={1.5} position="sticky" top={0} zIndex={1500}>
       <HStack justify="center" spacing={2} fontSize="sm">
         <Icon as={FiWifiOff} />
         <Text>You're offline — showing the last saved copy of your trips. Changes need a connection.</Text>

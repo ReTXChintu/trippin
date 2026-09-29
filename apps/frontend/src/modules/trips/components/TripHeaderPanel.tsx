@@ -16,7 +16,6 @@ import {
   Textarea,
   Wrap,
   WrapItem,
-  useColorModeValue,
   useToast,
 } from "@chakra-ui/react";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -50,8 +49,8 @@ const statusColors: Record<Trip["status"], string> = {
 
 export function TripHeaderPanel({ trip, currentUserId, isOwner, embedded = false, onSaved }: TripHeaderPanelProps) {
   const toast = useToast();
-  const bg = useColorModeValue("white", "gray.800");
-  const borderColor = useColorModeValue("gray.200", "gray.700");
+  const bg = "bg.surface";
+  const borderColor = "border.line";
   const updateTrip = useUpdateTrip(trip.id);
 
   const {
@@ -204,7 +203,7 @@ export function TripHeaderPanel({ trip, currentUserId, isOwner, embedded = false
                 </WrapItem>
               ))}
               {(watch("mustVisitPlaces") ?? []).length === 0 && (
-                <Tag size="sm" variant="outline" color="gray.500">
+                <Tag size="sm" variant="outline" color="fg.muted">
                   None yet — add from a leg's Places tab
                 </Tag>
               )}

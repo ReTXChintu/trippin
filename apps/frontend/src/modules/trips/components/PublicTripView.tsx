@@ -11,7 +11,6 @@ import {
   Tabs,
   Tag,
   Text,
-  useColorModeValue,
   Wrap,
   WrapItem,
 } from "@chakra-ui/react";
@@ -37,9 +36,9 @@ function formatDate(date: string) {
 
 export function PublicTripView({ trip, itinerary = null }: PublicTripViewProps) {
   const [activeTab, setActiveTab] = useState(0);
-  const bg = useColorModeValue("white", "gray.800");
-  const borderColor = useColorModeValue("gray.200", "gray.700");
-  const summaryBg = useColorModeValue("brand.50", "gray.700");
+  const bg = "bg.surface";
+  const borderColor = "border.line";
+  const summaryBg = "accent.soft";
 
   const hasItinerary = Boolean(itinerary?.days.some((d) => d.stops.length > 0));
   const activeDay = itinerary?.days[activeTab] ?? null;
@@ -53,11 +52,11 @@ export function PublicTripView({ trip, itinerary = null }: PublicTripViewProps) 
         <Heading size="xl" mb={2}>
           {trip.title}
         </Heading>
-        <Text color="gray.500" fontSize="lg">
+        <Text color="fg.muted" fontSize="lg">
           {trip.destinationCity}
           {trip.destinationState ? `, ${trip.destinationState}` : ""}, {trip.destinationCountry}
         </Text>
-        <Text color="gray.500" mt={1}>
+        <Text color="fg.muted" mt={1}>
           {formatDate(trip.startDate)} – {formatDate(trip.endDate)}
         </Text>
       </Box>
@@ -112,7 +111,7 @@ export function PublicTripView({ trip, itinerary = null }: PublicTripViewProps) 
           borderStyle="dashed"
           textAlign="center"
         >
-          <Text color="gray.500" fontSize="sm">
+          <Text color="fg.muted" fontSize="sm">
             The itinerary has not been shared yet.
           </Text>
         </Box>

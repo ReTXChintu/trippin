@@ -8,7 +8,6 @@ import {
   TabPanels,
   Tabs,
   Text,
-  useColorModeValue,
   useToast,
 } from "@chakra-ui/react";
 import { useEffect, useMemo, useState } from "react";
@@ -37,8 +36,8 @@ interface TripPlacesPanelProps {
 
 export function TripPlacesPanel({ trip, leg, onPlanDays }: TripPlacesPanelProps) {
   const toast = useToast();
-  const bg = useColorModeValue("white", "gray.800");
-  const borderColor = useColorModeValue("gray.200", "gray.700");
+  const bg = "bg.surface";
+  const borderColor = "border.line";
 
   const poolQuery = useTripPlacesQuery(trip.id, "pool");
   const selectedQuery = useTripPlacesQuery(trip.id, "selected", leg.id);
@@ -82,7 +81,7 @@ export function TripPlacesPanel({ trip, leg, onPlanDays }: TripPlacesPanelProps)
   return (
     <Box>
       <HStack justify="space-between" align="center" mb={4} flexWrap="wrap" gap={3}>
-        <Text fontSize="sm" color="gray.500">
+        <Text fontSize="sm" color="fg.muted">
           {hasDiscoveryPool
             ? `Pick what you'd like to see in ${leg.name || leg.baseCity} — ${selectedPlaces.length} picked so far.`
             : `Start by finding the best places in ${leg.name || leg.baseCity}.`}

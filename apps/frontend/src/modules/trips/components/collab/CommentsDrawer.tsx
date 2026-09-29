@@ -15,7 +15,6 @@ import {
   Stack,
   Text,
   Textarea,
-  useColorModeValue,
   useToast,
 } from "@chakra-ui/react";
 import { formatDistanceToNow, parseISO } from "date-fns";
@@ -42,7 +41,7 @@ function ago(iso: string): string {
 }
 
 function CommentItem({ comment, canDelete, onDelete }: { comment: TripComment; canDelete: boolean; onDelete: () => void }) {
-  const muted = useColorModeValue("gray.500", "gray.400");
+  const muted = "fg.muted";
   return (
     <Flex gap={3} role="group">
       <Avatar size="xs" name={comment.userName} mt={1} />
@@ -76,8 +75,8 @@ export function CommentsDrawer({ trip, target, onClose }: { trip: Trip; target: 
   const remove = useDeleteComment(trip.id);
   const [text, setText] = useState("");
   const endRef = useRef<HTMLDivElement>(null);
-  const muted = useColorModeValue("gray.500", "gray.400");
-  const border = useColorModeValue("gray.200", "gray.700");
+  const muted = "fg.muted";
+  const border = "border.line";
 
   const all = data?.comments ?? [];
   const thread = target ? all.filter((c) => c.targetType === target.type && c.targetId === target.id) : [];

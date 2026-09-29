@@ -20,7 +20,6 @@ import {
   ModalOverlay,
   Text,
   Tooltip,
-  useColorModeValue,
   useDisclosure,
   Wrap,
   WrapItem,
@@ -62,7 +61,7 @@ export function TripHeader({ trip, currentUserId, isOwner, onCityAdded, settings
   const [discussionOpen, setDiscussionOpen] = useState(false);
   const { data: commentsData } = useCommentsQuery(trip.id);
   const tripComments = (commentsData?.comments ?? []).filter((c) => c.targetType === "trip").length;
-  const muted = useColorModeValue("gray.500", "gray.400");
+  const muted = "fg.muted";
 
   const legs = getEffectiveLegs(trip);
   const transfers = getEffectiveTransfers(trip);

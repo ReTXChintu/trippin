@@ -33,15 +33,15 @@ export function EmptyState({
       borderWidth="1px"
       borderRadius="xl"
       borderStyle="dashed"
-      borderColor="gray.200"
+      borderColor="border.line"
       _dark={{ borderColor: "gray.600", bg: "gray.800" }}
-      bg="white"
+      bg="bg.surface"
     >
       <VStack spacing={4}>
         <Icon as={icon} boxSize={10} color="brand.500" />
         <Heading size="md">{title}</Heading>
         {description && (
-          <Text color="gray.500" maxW="md">
+          <Text color="fg.muted" maxW="md">
             {description}
           </Text>
         )}

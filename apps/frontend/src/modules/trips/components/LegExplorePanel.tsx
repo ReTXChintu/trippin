@@ -1,4 +1,4 @@
-import { Box, Button, Heading, HStack, Stack, Text, Tooltip, useColorModeValue, useToast } from "@chakra-ui/react";
+import { Box, Button, Heading, HStack, Stack, Text, Tooltip, useToast } from "@chakra-ui/react";
 import { FiRefreshCw, FiSearch } from "react-icons/fi";
 import { getApiErrorMessage } from "@/lib/api";
 import { useGenerateLegGuide } from "@/modules/itinerary/hooks/useItinerary";
@@ -15,8 +15,8 @@ interface LegExplorePanelProps {
 
 export function LegExplorePanel({ trip, leg }: LegExplorePanelProps) {
   const toast = useToast();
-  const borderColor = useColorModeValue("gray.200", "gray.700");
-  const bg = useColorModeValue("white", "gray.800");
+  const borderColor = "border.line";
+  const bg = "bg.surface";
 
   const discoverRentals = useDiscoverVehicleRentals(trip.id);
   const generateGuide = useGenerateLegGuide(trip.id);
@@ -82,7 +82,7 @@ export function LegExplorePanel({ trip, leg }: LegExplorePanelProps) {
         {hasRentals ? (
           <VehicleRentalPanel trip={trip} legId={leg.id} />
         ) : (
-          <Text fontSize="sm" color="gray.500">
+          <Text fontSize="sm" color="fg.muted">
             {hasHotel
               ? 'No rental suggestions yet — click "Search rentals".'
               : "Add a stay on the Stays tab to search rentals near it."}

@@ -170,7 +170,7 @@ export function LegOverviewPanel({ trip, leg }: LegOverviewPanelProps) {
           Remove this city from the trip
         </Button>
         {!canDelete && (
-          <Text fontSize="xs" color="gray.500" mt={1}>
+          <Text fontSize="xs" color="fg.muted" mt={1}>
             This is the only city. Add another one first, or delete the whole trip instead.
           </Text>
         )}

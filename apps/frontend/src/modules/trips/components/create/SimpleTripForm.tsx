@@ -22,7 +22,6 @@ import {
   Textarea,
   Wrap,
   WrapItem,
-  useColorModeValue,
   useDisclosure,
   useToast,
 } from "@chakra-ui/react";
@@ -199,7 +198,7 @@ function Section({
   hint?: string;
   children: React.ReactNode;
 }) {
-  const muted = useColorModeValue("gray.500", "gray.400");
+  const muted = "fg.muted";
   return (
     <Box>
       <HStack spacing={3} mb={hint ? 1 : 4} align="center">
@@ -285,8 +284,8 @@ function CityCard({
 }) {
   const more = useDisclosure();
   const [areaInput, setAreaInput] = useState("");
-  const border = useColorModeValue("gray.200", "gray.700");
-  const muted = useColorModeValue("gray.500", "gray.400");
+  const border = "border.line";
+  const muted = "fg.muted";
   const needsCountry = row.city.trim().length >= 2 && !row.country.trim();
 
   const addArea = () => {
@@ -511,10 +510,10 @@ function TripPreview({
   isSubmitting: boolean;
   onCancel: () => void;
 }) {
-  const cardBg = useColorModeValue("white", "gray.800");
-  const border = useColorModeValue("gray.200", "gray.700");
-  const muted = useColorModeValue("gray.500", "gray.400");
-  const line = useColorModeValue("gray.200", "gray.600");
+  const cardBg = "bg.surface";
+  const border = "border.line";
+  const muted = "fg.muted";
+  const line = "border.line";
   const points: RoutePoint[] = cities
     .filter((c) => c.lat !== undefined && c.lng !== undefined)
     .map((c) => ({ label: c.city, lat: c.lat!, lng: c.lng! }));
@@ -661,9 +660,9 @@ export function SimpleTripForm() {
   const navigate = useNavigate();
   const toast = useToast();
   const createTrip = useCreateTrip();
-  const cardBg = useColorModeValue("white", "gray.800");
-  const border = useColorModeValue("gray.200", "gray.700");
-  const muted = useColorModeValue("gray.500", "gray.400");
+  const cardBg = "bg.surface";
+  const border = "border.line";
+  const muted = "fg.muted";
   const more = useDisclosure();
 
   const [startDate, setStartDate] = useState(() =>

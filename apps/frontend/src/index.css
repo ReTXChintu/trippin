@@ -1,6 +1,6 @@
 :root {
-  --font-geist-sans: "Geist", system-ui, sans-serif;
-  --font-geist-mono: "Geist Mono", ui-monospace, monospace;
+  --font-sans: "DM Sans", system-ui, sans-serif;
+  --font-display: "Fraunces", Georgia, serif;
 }
 
 *,
@@ -18,7 +18,7 @@ body,
 }
 
 body {
-  font-family: var(--font-geist-sans);
+  font-family: var(--font-sans);
 }
 
 a {

@@ -75,7 +75,7 @@ export function formatItineraryAsMarkdown(trip: Trip, itinerary: Itinerary): str
   lines.push(
     "",
     "---",
-    `_Generated ${formatTripDate(itinerary.generatedAt)} · TripPlanner_`,
+    `_Generated ${formatTripDate(itinerary.generatedAt)} · Trippin_`,
   );
 
   return lines.join("\n");

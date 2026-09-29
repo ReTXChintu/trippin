@@ -9,7 +9,6 @@ import {
   StatLabel,
   StatNumber,
   Text,
-  useColorModeValue,
 } from "@chakra-ui/react";
 import { Link } from "react-router-dom";
 import { FiMap, FiPlus } from "react-icons/fi";
@@ -22,8 +21,8 @@ import { useDashboardQuery } from "@/modules/trips/hooks/useTrips";
 
 export function DashboardContent() {
   const user = useAuthStore((s) => s.user);
-  const statBg = useColorModeValue("white", "gray.800");
-  const borderColor = useColorModeValue("gray.200", "gray.700");
+  const statBg = "bg.surface";
+  const borderColor = "border.line";
   const { data, isLoading } = useDashboardQuery();
 
   const firstName = user?.name?.split(" ")[0] ?? "Traveler";
@@ -38,7 +37,7 @@ export function DashboardContent() {
         <Heading size="lg" mb={1}>
           Welcome back, {firstName}
         </Heading>
-        <Text color="gray.500">Plan smarter trips with AI-powered itineraries</Text>
+        <Text color="fg.muted">Plan smarter trips with AI-powered itineraries</Text>
       </Box>
 
       <SimpleGrid columns={{ base: 2, md: 4 }} spacing={4} mb={8}>
@@ -50,7 +49,7 @@ export function DashboardContent() {
         ].map((stat) => (
           <Box key={stat.label} p={4} bg={statBg} borderWidth="1px" borderColor={borderColor} borderRadius="xl">
             <Stat>
-              <StatLabel color="gray.500">{stat.label}</StatLabel>
+              <StatLabel color="fg.muted">{stat.label}</StatLabel>
               <StatNumber>{stat.value}</StatNumber>
               <StatHelpText mb={0}>{stat.help}</StatHelpText>
             </Stat>

@@ -9,7 +9,6 @@ import {
   ListItem,
   Spinner,
   Text,
-  useColorModeValue,
 } from "@chakra-ui/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { SEARCH_DEBOUNCE_MS, SEARCH_MIN_QUERY_LENGTH } from "@/constants/google-places";
@@ -57,9 +56,9 @@ export function PlaceSearchInput({
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const listBg = useColorModeValue("white", "gray.800");
-  const borderColor = useColorModeValue("gray.200", "gray.700");
-  const hoverBg = useColorModeValue("gray.50", "gray.700");
+  const listBg = "bg.surface";
+  const borderColor = "border.line";
+  const hoverBg = "bg.subtle";
 
   useEffect(() => {
     if (value !== undefined) setQuery(value);
@@ -201,7 +200,7 @@ export function PlaceSearchInput({
                     {r.name}
                   </Text>
                   {r.address && (
-                    <Text fontSize="xs" color="gray.500" noOfLines={1}>
+                    <Text fontSize="xs" color="fg.muted" noOfLines={1}>
                       {r.address}
                     </Text>
                   )}

@@ -13,7 +13,6 @@ import {
   TabPanels,
   Tabs,
   Text,
-  useColorModeValue,
   useDisclosure,
 } from "@chakra-ui/react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
@@ -54,7 +53,7 @@ export function TripDetailContent() {
   const currentUserId = useAuthStore((s) => s.user?.id ?? "");
   const [params, setParams] = useSearchParams();
   const { data: trip, isLoading } = useTripQuery(id);
-  const tabBorder = useColorModeValue("gray.200", "gray.700");
+  const tabBorder = "border.line";
   const settings = useDisclosure();
 
   if (isLoading) return <LoadingState />;
@@ -137,13 +136,13 @@ export function TripDetailContent() {
                 <Icon as={t.icon} />
                 <Text>{t.label}</Text>
                 {t.key === "places" && selectedCount > 0 && (
-                  <Text as="span" fontSize="xs" color="gray.500" fontWeight="normal">
+                  <Text as="span" fontSize="xs" color="fg.muted" fontWeight="normal">
                     {selectedCount}
                   </Text>
                 )}
                 {t.key === "stays" && missingNights > 0 && <Circle size="7px" bg="orange.400" />}
                 {t.key === "checklist" && trip.checklist.length > 0 && (
-                  <Text as="span" fontSize="xs" color="gray.500" fontWeight="normal">
+                  <Text as="span" fontSize="xs" color="fg.muted" fontWeight="normal">
                     {trip.checklist.filter((c) => c.done).length}/{trip.checklist.length}
                   </Text>
                 )}
@@ -199,7 +198,7 @@ export function TripDetailContent() {
                 <LegExplorePanel key={focusedLeg.id} trip={trip} leg={focusedLeg} />
               ) : (
                 <Box>
-                  <Text fontSize="sm" color="gray.500">
+                  <Text fontSize="sm" color="fg.muted">
                     Add a city to this trip to get a local guide.
                   </Text>
                 </Box>

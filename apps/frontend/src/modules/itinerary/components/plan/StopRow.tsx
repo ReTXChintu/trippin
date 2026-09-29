@@ -17,7 +17,6 @@ import {
   Stack,
   Text,
   Tooltip,
-  useColorModeValue,
 } from "@chakra-ui/react";
 import {
   FiAlertTriangle,
@@ -62,8 +61,8 @@ function stopAccent(stop: ItineraryStop): { color: string; icon?: typeof MdHotel
 /** Travel line between two timeline rows: "🚕 12 min · 4.7 km", plus any free time before the stop. */
 export function TravelConnector({ prev, stop }: { prev?: ItineraryStop; stop: ItineraryStop }) {
   const { trip } = usePlan();
-  const muted = useColorModeValue("gray.500", "gray.400");
-  const line = useColorModeValue("gray.300", "gray.600");
+  const muted = "fg.muted";
+  const line = "border.line";
   const gap = gapBefore(prev, stop);
 
   if (stop.stopType === "transfer" || (stop.travelDurationMinutes <= 0 && gap < 15)) {
@@ -120,12 +119,12 @@ export function StopRow({ stop, day, visitNumber, draggable }: StopRowProps) {
     disabled: !draggable,
   });
 
-  const cardBg = useColorModeValue("white", "gray.800");
-  const subtleBg = useColorModeValue("gray.50", "whiteAlpha.50");
-  const border = useColorModeValue("gray.200", "gray.700");
-  const highlightBorder = useColorModeValue("brand.400", "brand.300");
-  const muted = useColorModeValue("gray.500", "gray.400");
-  const warnColor = useColorModeValue("orange.600", "orange.300");
+  const cardBg = "bg.surface";
+  const subtleBg = "bg.subtle";
+  const border = "border.line";
+  const highlightBorder = "accent";
+  const muted = "fg.muted";
+  const warnColor = "warn";
 
   const accent = stopAccent(stop);
   const isMeal = stop.stopType === "meal";
@@ -226,7 +225,7 @@ export function StopRow({ stop, day, visitNumber, draggable }: StopRowProps) {
                 </Tooltip>
               )}
               {stop.fixedStartTime && (
-                <Badge colorScheme="purple" variant="subtle" fontSize="2xs">
+                <Badge colorScheme="brand" variant="subtle" fontSize="2xs">
                   Booked {stop.fixedStartTime}
                 </Badge>
               )}

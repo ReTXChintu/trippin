@@ -1,20 +1,13 @@
-import { Flex, Heading, useColorModeValue } from "@chakra-ui/react";
+import { Flex } from "@chakra-ui/react";
+import { Link } from "react-router-dom";
+import { BrandLogo } from "@/components/brand/BrandLogo";
 
 export function ShareHeader() {
-  const bg = useColorModeValue("white", "gray.800");
-  const borderColor = useColorModeValue("gray.200", "gray.700");
-
   return (
-    <Flex
-      as="header"
-      align="center"
-      justify="center"
-      h="16"
-      bg={bg}
-      borderBottomWidth="1px"
-      borderColor={borderColor}
-    >
-      <Heading size="md">TripPlanner</Heading>
+    <Flex as="header" align="center" justify="center" h="60px" bg="bg.surface" borderBottomWidth="1px" borderColor="border.line">
+      <Link to="/">
+        <BrandLogo size={30} />
+      </Link>
     </Flex>
   );
 }

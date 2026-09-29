@@ -11,7 +11,6 @@ import {
   Link,
   Stack,
   Text,
-  useColorModeValue,
   VStack,
 } from "@chakra-ui/react";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -29,8 +28,8 @@ export function LoginForm() {
   const [error, setError] = useState<string | null>(null);
   const login = useLogin();
 
-  const bg = useColorModeValue("white", "gray.800");
-  const borderColor = useColorModeValue("gray.200", "gray.700");
+  const bg = "bg.surface";
+  const borderColor = "border.line";
 
   const {
     register,
@@ -57,7 +56,7 @@ export function LoginForm() {
           <Heading size="lg" mb={2}>
             Welcome back
           </Heading>
-          <Text color="gray.500">Sign in to plan your next adventure</Text>
+          <Text color="fg.muted">Sign in to plan your next adventure</Text>
         </Box>
 
         {error && (
@@ -93,7 +92,7 @@ export function LoginForm() {
           </Stack>
         </form>
 
-        <Text textAlign="center" fontSize="sm" color="gray.500">
+        <Text textAlign="center" fontSize="sm" color="fg.muted">
           Don&apos;t have an account?{" "}
           <Link
             as={RouterLink}

@@ -12,7 +12,6 @@ import {
   MenuItem,
   MenuList,
   Text,
-  useColorModeValue,
 } from "@chakra-ui/react";
 import { FiCalendar, FiClock, FiMapPin, FiMove } from "react-icons/fi";
 import type { ItineraryStop, MealType } from "@/modules/itinerary/types";
@@ -30,10 +29,10 @@ export interface AvailableDay {
  * the itinerary engine enforces server-side.
  */
 export function PinnedTimelineStop({ stop, isLast = false }: { stop: ItineraryStop; isLast?: boolean }) {
-  const borderColor = useColorModeValue("gray.200", "gray.700");
-  const dotColor = useColorModeValue("purple.500", "purple.300");
-  const lineColor = useColorModeValue("gray.200", "gray.600");
-  const cardBg = useColorModeValue("gray.50", "gray.700");
+  const borderColor = "border.line";
+  const dotColor = "accent";
+  const lineColor = "border.line";
+  const cardBg = "bg.subtle";
 
   return (
     <Flex gap={3} position="relative" pb={isLast ? 0 : 4}>
@@ -43,7 +42,7 @@ export function PinnedTimelineStop({ stop, isLast = false }: { stop: ItinerarySt
       </Box>
       <Box flex={1} p={3} borderWidth="1px" borderColor={borderColor} borderRadius="lg" bg={cardBg}>
         <HStack spacing={2} mb={0.5} flexWrap="wrap">
-          <Badge colorScheme="purple" fontSize="2xs">
+          <Badge colorScheme="brand" fontSize="2xs">
             {stop.stopType === "transfer" ? "Transfer" : "Return to hotel"}
           </Badge>
           <Text fontWeight="semibold" fontSize="sm">
@@ -51,11 +50,11 @@ export function PinnedTimelineStop({ stop, isLast = false }: { stop: ItinerarySt
           </Text>
         </HStack>
         {stop.notes && (
-          <Text fontSize="xs" color="gray.500" mt={0.5}>
+          <Text fontSize="xs" color="fg.muted" mt={0.5}>
             {stop.notes}
           </Text>
         )}
-        <Flex mt={2} gap={4} flexWrap="wrap" fontSize="xs" color="gray.500">
+        <Flex mt={2} gap={4} flexWrap="wrap" fontSize="xs" color="fg.muted">
           <Flex align="center" gap={1}>
             <Icon as={FiClock} />
             <Text>
@@ -104,11 +103,11 @@ export function TimelineStop({
   destinationCity,
   destinationCountry,
 }: TimelineStopProps) {
-  const borderColor = useColorModeValue("gray.200", "gray.700");
-  const dotColor = useColorModeValue("brand.500", "brand.300");
-  const lineColor = useColorModeValue("gray.200", "gray.600");
-  const mealDotColor = useColorModeValue("orange.400", "orange.300");
-  const cardBg = useColorModeValue("white", "gray.800");
+  const borderColor = "border.line";
+  const dotColor = "accent";
+  const lineColor = "border.line";
+  const mealDotColor = "warn";
+  const cardBg = "bg.surface";
 
   const {
     attributes,
@@ -177,17 +176,17 @@ export function TimelineStop({
               <HypeBadge level={stop.visitIntel?.hypeLevel} />
             </HStack>
             {stop.category && (
-              <Text fontSize="xs" color="gray.500" mt={0.5}>
+              <Text fontSize="xs" color="fg.muted" mt={0.5}>
                 {stop.category}
               </Text>
             )}
             {stop.aiNotes && (
-              <Text fontSize="xs" color="gray.600" mt={1.5} fontStyle="italic">
+              <Text fontSize="xs" color="fg.muted" mt={1.5} fontStyle="italic">
                 {stop.aiNotes}
               </Text>
             )}
             {stop.visitIntel?.bestTime && !stop.aiNotes && (
-              <Text fontSize="xs" color="gray.500" mt={1}>
+              <Text fontSize="xs" color="fg.muted" mt={1}>
                 Best time: {stop.visitIntel.bestTime}
               </Text>
             )}
@@ -226,7 +225,7 @@ export function TimelineStop({
               {...attributes}
               {...listeners}
               cursor="grab"
-              color="gray.400"
+              color="fg.muted"
               _hover={{ color: "gray.600" }}
               p={1}
               aria-label="Drag to reorder"
@@ -236,7 +235,7 @@ export function TimelineStop({
           </HStack>
         </Flex>
 
-        <Flex mt={2} gap={4} flexWrap="wrap" fontSize="xs" color="gray.500">
+        <Flex mt={2} gap={4} flexWrap="wrap" fontSize="xs" color="fg.muted">
           <Flex align="center" gap={1}>
             <Icon as={FiClock} />
             <Text>

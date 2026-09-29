@@ -7,7 +7,6 @@ import {
   Stack,
   Tag,
   Text,
-  useColorModeValue,
   Wrap,
   WrapItem,
 } from "@chakra-ui/react";
@@ -20,8 +19,8 @@ interface DestinationGuidePanelProps {
 }
 
 function BriefSection({ title, brief }: { title: string; brief: LegDestinationBrief }) {
-  const borderColor = useColorModeValue("gray.200", "gray.700");
-  const bg = useColorModeValue("white", "gray.800");
+  const borderColor = "border.line";
+  const bg = "bg.surface";
 
   return (
     <Box p={4} borderWidth="1px" borderColor={borderColor} borderRadius="lg" bg={bg}>
@@ -31,13 +30,13 @@ function BriefSection({ title, brief }: { title: string; brief: LegDestinationBr
 
       {brief.specialties.length > 0 && (
         <Box mb={3}>
-          <Text fontSize="xs" fontWeight="semibold" color="gray.500" mb={1} textTransform="uppercase">
+          <Text fontSize="xs" fontWeight="semibold" color="fg.muted" mb={1} textTransform="uppercase">
             Specialties
           </Text>
           <Wrap spacing={2}>
             {brief.specialties.map((item) => (
               <WrapItem key={item}>
-                <Tag size="sm" colorScheme="purple">
+                <Tag size="sm" colorScheme="brand">
                   {item}
                 </Tag>
               </WrapItem>
@@ -48,7 +47,7 @@ function BriefSection({ title, brief }: { title: string; brief: LegDestinationBr
 
       {brief.localFood.length > 0 && (
         <Box mb={3}>
-          <Text fontSize="xs" fontWeight="semibold" color="gray.500" mb={1} textTransform="uppercase">
+          <Text fontSize="xs" fontWeight="semibold" color="fg.muted" mb={1} textTransform="uppercase">
             Food to try
           </Text>
           <Wrap spacing={2}>
@@ -65,7 +64,7 @@ function BriefSection({ title, brief }: { title: string; brief: LegDestinationBr
 
       {brief.markets.length > 0 && (
         <Box mb={3}>
-          <Text fontSize="xs" fontWeight="semibold" color="gray.500" mb={2} textTransform="uppercase">
+          <Text fontSize="xs" fontWeight="semibold" color="fg.muted" mb={2} textTransform="uppercase">
             Markets & shopping
           </Text>
           <Stack spacing={2}>
@@ -75,7 +74,7 @@ function BriefSection({ title, brief }: { title: string; brief: LegDestinationBr
                   {market.name}
                 </Text>
                 {market.whatToBuy.length > 0 && (
-                  <Text fontSize="xs" color="gray.500">
+                  <Text fontSize="xs" color="fg.muted">
                     Buy: {market.whatToBuy.join(", ")}
                   </Text>
                 )}
@@ -87,7 +86,7 @@ function BriefSection({ title, brief }: { title: string; brief: LegDestinationBr
 
       {brief.festivals.length > 0 && (
         <Box mb={3}>
-          <Text fontSize="xs" fontWeight="semibold" color="gray.500" mb={1} textTransform="uppercase">
+          <Text fontSize="xs" fontWeight="semibold" color="fg.muted" mb={1} textTransform="uppercase">
             Local festivals
           </Text>
           <Wrap spacing={2}>
@@ -104,7 +103,7 @@ function BriefSection({ title, brief }: { title: string; brief: LegDestinationBr
 
       {brief.generalTips.length > 0 && (
         <Box>
-          <Text fontSize="xs" fontWeight="semibold" color="gray.500" mb={1} textTransform="uppercase">
+          <Text fontSize="xs" fontWeight="semibold" color="fg.muted" mb={1} textTransform="uppercase">
             Tips
           </Text>
           <List spacing={1} fontSize="sm" styleType="disc" pl={4}>
@@ -122,7 +121,7 @@ export function DestinationGuidePanel({ legs, singleBrief }: DestinationGuidePan
   const hasLegBriefs = legs.some((l) => l.brief);
   if (!hasLegBriefs && !singleBrief) {
     return (
-      <Text fontSize="sm" color="gray.500">
+      <Text fontSize="sm" color="fg.muted">
         Click &quot;Generate local guide&quot; for local specialties, food picks, festivals, and tips.
       </Text>
     );

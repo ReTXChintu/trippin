@@ -1,4 +1,4 @@
-import { Box, Flex, useColorModeValue } from "@chakra-ui/react";
+import { Box, Flex } from "@chakra-ui/react";
 import { MobileAppDownloadButton } from "@/components/layout/MobileAppDownloadButton";
 
 interface AuthPageWrapperProps {
@@ -6,7 +6,7 @@ interface AuthPageWrapperProps {
 }
 
 export function AuthPageWrapper({ children }: AuthPageWrapperProps) {
-  const bg = useColorModeValue("gray.50", "gray.900");
+  const bg = "bg.canvas";
 
   return (
     <Flex minH="100vh" align="center" justify="center" bg={bg} p={4} position="relative">

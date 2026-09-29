@@ -7,7 +7,6 @@ import {
   ListItem,
   Spinner,
   Text,
-  useColorModeValue,
 } from "@chakra-ui/react";
 import { useEffect, useRef, useState } from "react";
 import { searchCities, type CityMatch } from "@/modules/places/api/places.api";
@@ -45,10 +44,10 @@ export function CityInput({
   const [active, setActive] = useState(0);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const box = useRef<HTMLDivElement>(null);
-  const listBg = useColorModeValue("white", "gray.800");
-  const border = useColorModeValue("gray.200", "gray.700");
-  const hover = useColorModeValue("gray.50", "gray.700");
-  const muted = useColorModeValue("gray.500", "gray.400");
+  const listBg = "bg.surface";
+  const border = "border.line";
+  const hover = "bg.subtle";
+  const muted = "fg.muted";
 
   useEffect(() => setQuery(value.city), [value.city]);
 

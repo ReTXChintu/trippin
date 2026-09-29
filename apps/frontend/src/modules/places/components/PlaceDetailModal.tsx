@@ -14,7 +14,6 @@ import {
   Stack,
   Tag,
   Text,
-  useColorModeValue,
   useToast,
 } from "@chakra-ui/react";
 import { useEffect, useMemo, useState } from "react";
@@ -73,9 +72,9 @@ export function PlaceDetailModal({
   const addPlace = useAddPlaceToTrip(tripId, legId);
   const removePlace = useRemovePlaceFromTrip(tripId, legId);
 
-  const borderColor = useColorModeValue("gray.200", "gray.700");
-  const muted = useColorModeValue("gray.500", "gray.400");
-  const emptyPhotoBg = useColorModeValue("gray.100", "gray.700");
+  const borderColor = "border.line";
+  const muted = "fg.muted";
+  const emptyPhotoBg = "bg.subtle";
 
   useEffect(() => {
     if (!isOpen || !placeId) {

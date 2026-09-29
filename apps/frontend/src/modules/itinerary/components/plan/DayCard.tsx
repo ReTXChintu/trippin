@@ -19,7 +19,6 @@ import {
   Stack,
   Text,
   Tooltip,
-  useColorModeValue,
 } from "@chakra-ui/react";
 import { forwardRef } from "react";
 import { FiAlertTriangle, FiExternalLink, FiMap, FiPlus, FiSmartphone } from "react-icons/fi";
@@ -53,11 +52,11 @@ export const DayCard = forwardRef<HTMLDivElement, DayCardProps>(function DayCard
   ref,
 ) {
   const plan = usePlan();
-  const bg = useColorModeValue("white", "gray.800");
-  const border = useColorModeValue("gray.200", "gray.700");
-  const selectedBorder = useColorModeValue("brand.400", "brand.300");
-  const muted = useColorModeValue("gray.500", "gray.400");
-  const headerBg = useColorModeValue("gray.50", "whiteAlpha.50");
+  const bg = "bg.surface";
+  const border = "border.line";
+  const selectedBorder = "accent";
+  const muted = "fg.muted";
+  const headerBg = "bg.subtle";
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
@@ -126,7 +125,7 @@ export const DayCard = forwardRef<HTMLDivElement, DayCardProps>(function DayCard
                 {day.legName}
               </Badge>
             )}
-            {isTravelDay && <Badge colorScheme="purple">Travel day</Badge>}
+            {isTravelDay && <Badge colorScheme="brand">Travel day</Badge>}
             {weather && (
               <Tooltip
                 label={`${weather.summary}${weather.rainChance !== undefined ? ` · ${weather.rainChance}% chance of rain` : ""}${weather.kind === "typical" ? " · typical weather for these dates (forecast appears ~2 weeks before)" : ""}`}

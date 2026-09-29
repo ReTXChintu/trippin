@@ -1,4 +1,4 @@
-import { Box, HStack, Text, useColorModeValue, Wrap, WrapItem } from "@chakra-ui/react";
+import { Box, HStack, Text, Wrap, WrapItem } from "@chakra-ui/react";
 import { useEffect, useMemo } from "react";
 import L from "leaflet";
 import { MapContainer, Marker, Polyline, TileLayer, Tooltip, useMap } from "react-leaflet";
@@ -51,7 +51,7 @@ interface TripMapViewProps {
 
 /** Every day at once, one colour per day — to see how the trip is spread out. */
 export function TripMapView({ days, stays, onSelectDay, height = "100%" }: TripMapViewProps) {
-  const legendBg = useColorModeValue("white", "gray.800");
+  const legendBg = "bg.surface";
   const plotted = useMemo(
     () =>
       days

@@ -1,4 +1,4 @@
-import { Button, HStack, Stack, Tag, Text, Textarea, useColorModeValue, useToast } from "@chakra-ui/react";
+import { Button, HStack, Stack, Tag, Text, Textarea, useToast } from "@chakra-ui/react";
 import { useState } from "react";
 import { FiZap } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
@@ -18,7 +18,7 @@ export function DescribeTripPanel({ rows = 4 }: { rows?: number }) {
   const navigate = useNavigate();
   const generate = useGenerateTripFromPrompt();
   const [prompt, setPrompt] = useState("");
-  const muted = useColorModeValue("gray.500", "gray.400");
+  const muted = "fg.muted";
 
   const submit = async () => {
     if (prompt.trim().length < 10) {

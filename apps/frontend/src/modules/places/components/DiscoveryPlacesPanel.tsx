@@ -9,7 +9,6 @@ import {
   Stack,
   Tag,
   Text,
-  useColorModeValue,
   useToast,
 } from "@chakra-ui/react";
 import { useMemo, useState } from "react";
@@ -61,10 +60,10 @@ export function DiscoveryPlacesPanel({
   const addFromSearch = useAddPlaceFromSearch(trip.id, leg.id);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
-  const borderColor = useColorModeValue("gray.200", "gray.700");
-  const selectedBg = useColorModeValue("brand.50", "gray.700");
-  const hoverBg = useColorModeValue("gray.50", "gray.700");
-  const aiSectionBg = useColorModeValue("purple.50", "purple.900");
+  const borderColor = "border.line";
+  const selectedBg = "accent.soft";
+  const hoverBg = "bg.subtle";
+  const aiSectionBg = "accent.soft";
 
   const legPoolIds = useMemo(() => new Set(leg.discoveryPoolIds), [leg.discoveryPoolIds]);
   const aiMatchedIds = useMemo(() => new Set(leg.aiMatchedPlaceIds ?? []), [leg.aiMatchedPlaceIds]);
@@ -177,7 +176,7 @@ export function DiscoveryPlacesPanel({
   return (
     <Box>
       <Flex justify="space-between" align="center" mb={4} flexWrap="wrap" gap={2}>
-        <Text fontSize="xs" color="gray.500">
+        <Text fontSize="xs" color="fg.muted">
           {leg.dayTripAreas.length
             ? `Covers ${leg.baseCity} + ${leg.dayTripAreas.join(", ")}`
             : "Click a place for photos, hours, and Google Maps reviews"}
@@ -230,7 +229,7 @@ export function DiscoveryPlacesPanel({
                 key={name}
                 size="sm"
                 cursor="pointer"
-                colorScheme="purple"
+                colorScheme="brand"
                 onClick={() => setSearchPrefill(name)}
               >
                 {name}
@@ -255,7 +254,7 @@ export function DiscoveryPlacesPanel({
       )}
 
       {scopedPoolPlaces.length === 0 ? (
-        <Text color="gray.500" fontSize="sm">
+        <Text color="fg.muted" fontSize="sm">
           {`Click "Discover places" to search ${leg.baseCity}${leg.dayTripAreas.length ? `, ${leg.dayTripAreas.join(", ")}` : ""}.`}
         </Text>
       ) : (
@@ -269,7 +268,7 @@ export function DiscoveryPlacesPanel({
           />
 
           {filteredPlaces.length === 0 ? (
-            <Text color="gray.500" fontSize="sm">
+            <Text color="fg.muted" fontSize="sm">
               No places match your filters.
             </Text>
           ) : (
@@ -315,7 +314,7 @@ export function DiscoveryPlacesPanel({
                             </Text>
                             <HStack spacing={1} flexShrink={0}>
                               {aiMatchedIds.has(id) && (
-                                <Badge colorScheme="purple" fontSize="2xs">
+                                <Badge colorScheme="brand" fontSize="2xs">
                                   Suggested by AI
                                 </Badge>
                               )}
@@ -330,13 +329,13 @@ export function DiscoveryPlacesPanel({
                             <Tag size="sm">{place.category}</Tag>
                             <VoteButton trip={trip} placeId={id} />
                             {place.rating !== undefined && (
-                              <Text fontSize="xs" color="gray.500">
+                              <Text fontSize="xs" color="fg.muted">
                                 {place.rating.toFixed(1)} ★
                               </Text>
                             )}
                           </HStack>
                           {place.formattedAddress && (
-                            <Text fontSize="xs" color="gray.500" mt={1} noOfLines={1}>
+                            <Text fontSize="xs" color="fg.muted" mt={1} noOfLines={1}>
                               {place.formattedAddress}
                             </Text>
                           )}

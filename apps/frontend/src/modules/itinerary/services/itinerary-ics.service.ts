@@ -42,7 +42,7 @@ export function formatItineraryAsIcs(trip: Trip, itinerary: Itinerary): string {
   const lines = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
-    "PRODID:-//TripPlanner//Itinerary//EN",
+    "PRODID:-//Trippin//Itinerary//EN",
     "CALSCALE:GREGORIAN",
     `X-WR-CALNAME:${icsEscape(trip.title)}`,
   ];
@@ -50,7 +50,7 @@ export function formatItineraryAsIcs(trip: Trip, itinerary: Itinerary): string {
   const event = (uid: string, title: string, date: string, start: string, end: { date: string; time: string }, extra: string[] = []) => {
     lines.push(
       "BEGIN:VEVENT",
-      `UID:${uid}@tripplanner`,
+      `UID:${uid}@trippin`,
       `DTSTAMP:${stamp}`,
       `DTSTART:${icsDateTime(date, start)}`,
       `DTEND:${icsDateTime(end.date, end.time)}`,

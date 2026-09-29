@@ -17,7 +17,6 @@ import {
   Select,
   Stack,
   Text,
-  useColorModeValue,
   useToast,
 } from "@chakra-ui/react";
 import { useEffect, useMemo, useState } from "react";
@@ -75,10 +74,10 @@ export function TodayView() {
   const replan = useReplanFromNow(id);
   const [clock, setClock] = useState(nowHHMM);
 
-  const cardBg = useColorModeValue("white", "gray.800");
-  const border = useColorModeValue("gray.200", "gray.700");
-  const muted = useColorModeValue("gray.500", "gray.400");
-  const focusBg = useColorModeValue("brand.50", "whiteAlpha.100");
+  const cardBg = "bg.surface";
+  const border = "border.line";
+  const muted = "fg.muted";
+  const focusBg = "accent.soft";
 
   // Tick every 30s so "now / next" follows the clock. `?at=HH:mm` pins the time (handy for previewing).
   useEffect(() => {

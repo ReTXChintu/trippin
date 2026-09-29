@@ -14,7 +14,6 @@ import {
   SimpleGrid,
   Spinner,
   Text,
-  useColorModeValue,
   useToast,
   VStack,
 } from "@chakra-ui/react";
@@ -45,9 +44,9 @@ function ProviderCard({
   isActive: boolean;
   onSelect: () => void;
 }) {
-  const border = useColorModeValue("gray.200", "gray.600");
-  const selectedBg = useColorModeValue("brand.50", "whiteAlpha.100");
-  const muted = useColorModeValue("gray.500", "gray.400");
+  const border = "border.line";
+  const selectedBg = "accent.soft";
+  const muted = "fg.muted";
 
   return (
     <Box
@@ -90,9 +89,9 @@ function ProviderCard({
 export function AiSettingsCard({ profile }: { profile: ProfileDTO }) {
   const toast = useToast();
   const updateAiSettings = useUpdateAiSettings();
-  const bg = useColorModeValue("white", "gray.800");
-  const borderColor = useColorModeValue("gray.200", "gray.700");
-  const muted = useColorModeValue("gray.500", "gray.400");
+  const bg = "bg.surface";
+  const borderColor = "border.line";
+  const muted = "fg.muted";
 
   const hasKey: Record<AiProviderName, boolean> = {
     openai: profile.hasOpenaiKey || !!profile.serverKeys?.openai,

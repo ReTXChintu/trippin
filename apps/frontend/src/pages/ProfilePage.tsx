@@ -7,7 +7,7 @@ export function ProfilePage() {
       <Heading size="lg" mb={1}>
         Profile
       </Heading>
-      <Text color="gray.500" mb={6}>
+      <Text color="fg.muted" mb={6}>
         Manage your account settings and preferences
       </Text>
 

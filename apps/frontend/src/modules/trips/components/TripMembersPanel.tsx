@@ -16,7 +16,6 @@ import {
   Tag,
   Text,
   useClipboard,
-  useColorModeValue,
   useToast,
 } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
@@ -91,7 +90,7 @@ function InviteLinkBox({ trip }: { trip: Trip }) {
             </InputRightElement>
           </InputGroup>
           <HStack justify="space-between" mt={1}>
-            <Text fontSize="xs" color="gray.500">
+            <Text fontSize="xs" color="fg.muted">
               Anyone with this link can join after signing in · expires {new Date(link.expiresAt).toLocaleDateString()} · used {link.uses}×
             </Text>
             <Button size="xs" variant="link" leftIcon={<FiRefreshCw />} onClick={() => void load(true)}>
@@ -116,8 +115,8 @@ export function TripMembersPanel({ trip, currentUserId }: TripMembersPanelProps)
   const myRole = getTripRole(trip, currentUserId);
   const isOwner = myRole === "owner";
 
-  const bg = useColorModeValue("white", "gray.800");
-  const borderColor = useColorModeValue("gray.200", "gray.700");
+  const bg = "bg.surface";
+  const borderColor = "border.line";
 
   const run = async (id: string, fn: () => Promise<unknown>, success: string) => {
     setBusyId(id);
@@ -142,7 +141,7 @@ export function TripMembersPanel({ trip, currentUserId }: TripMembersPanelProps)
       <Text fontWeight="semibold" fontSize="sm" mb={1}>
         Who's going
       </Text>
-      <Text fontSize="xs" color="gray.500" mb={4}>
+      <Text fontSize="xs" color="fg.muted" mb={4}>
         Editors can change the plan. View-only members can see everything, vote on places and comment.
       </Text>
 
@@ -156,7 +155,7 @@ export function TripMembersPanel({ trip, currentUserId }: TripMembersPanelProps)
                   {member.name}
                   {member.id === currentUserId ? " (you)" : ""}
                 </Text>
-                <Text fontSize="xs" color="gray.500" noOfLines={1}>
+                <Text fontSize="xs" color="fg.muted" noOfLines={1}>
                   {member.email}
                 </Text>
               </Box>

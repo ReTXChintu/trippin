@@ -79,14 +79,14 @@ function formatDayDate(date: string) {
 }
 
 function StopCard({ stop }: { stop: ItineraryStop }) {
-  const borderColor = useColorModeValue("gray.200", "gray.700");
+  const borderColor = "border.line";
 
   return (
-    <Box p={2.5} borderWidth="1px" borderColor={borderColor} borderRadius="md" bg={useColorModeValue("white", "gray.800")}>
+    <Box p={2.5} borderWidth="1px" borderColor={borderColor} borderRadius="md" bg={"bg.surface"}>
       <Text fontWeight="medium" fontSize="xs" noOfLines={2}>
         {stop.placeName}
       </Text>
-      <HStack spacing={2} mt={1} fontSize="2xs" color="gray.500" flexWrap="wrap">
+      <HStack spacing={2} mt={1} fontSize="2xs" color="fg.muted" flexWrap="wrap">
         <Text>
           {stop.arrivalTime}–{stop.departureTime}
         </Text>
@@ -94,7 +94,7 @@ function StopCard({ stop }: { stop: ItineraryStop }) {
         <HypeBadge level={stop.visitIntel?.hypeLevel} />
       </HStack>
       {stop.aiNotes && (
-        <Text fontSize="2xs" color="gray.500" mt={1} noOfLines={2}>
+        <Text fontSize="2xs" color="fg.muted" mt={1} noOfLines={2}>
           {stop.aiNotes}
         </Text>
       )}
@@ -124,7 +124,7 @@ function SourceStopCard({ id, stop }: { id: string; stop: ItineraryStop }) {
 function FinalStopCard({ id, stop, onRemove }: { id: string; stop: ItineraryStop; onRemove: () => void }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
   const borderColor = useColorModeValue("brand.200", "brand.600");
-  const bg = useColorModeValue("brand.50", "gray.700");
+  const bg = "accent.soft";
 
   return (
     <Box
@@ -145,7 +145,7 @@ function FinalStopCard({ id, stop, onRemove }: { id: string; stop: ItineraryStop
               {stop.placeName}
             </Text>
           </HStack>
-          <Text fontSize="2xs" color="gray.500" mt={0.5}>
+          <Text fontSize="2xs" color="fg.muted" mt={0.5}>
             {stop.arrivalTime}–{stop.departureTime}
           </Text>
         </Box>
@@ -156,8 +156,8 @@ function FinalStopCard({ id, stop, onRemove }: { id: string; stop: ItineraryStop
 }
 
 function PendingOptionalCard({ place, onRemove }: { place: PendingOptional; onRemove: () => void }) {
-  const borderColor = useColorModeValue("purple.200", "purple.600");
-  const bg = useColorModeValue("purple.50", "gray.700");
+  const borderColor = "border.line";
+  const bg = "accent.soft";
 
   return (
     <Box p={2.5} borderWidth="1px" borderStyle="dashed" borderColor={borderColor} borderRadius="md" bg={bg}>
@@ -166,7 +166,7 @@ function PendingOptionalCard({ place, onRemove }: { place: PendingOptional; onRe
           <Text fontWeight="medium" fontSize="xs" noOfLines={1}>
             {place.placeName}
           </Text>
-          <Text fontSize="2xs" color="gray.500" mt={0.5}>
+          <Text fontSize="2xs" color="fg.muted" mt={0.5}>
             Time TBD — computed on save
           </Text>
         </Box>
@@ -178,7 +178,7 @@ function PendingOptionalCard({ place, onRemove }: { place: PendingOptional; onRe
 
 function OptionalSourceCard({ id, place }: { id: string; place: OptionalItineraryPlace & { sources: string[] } }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id });
-  const borderColor = useColorModeValue("gray.200", "gray.700");
+  const borderColor = "border.line";
 
   return (
     <Box
@@ -195,7 +195,7 @@ function OptionalSourceCard({ id, place }: { id: string; place: OptionalItinerar
       borderWidth="1px"
       borderColor={borderColor}
       borderRadius="md"
-      bg={useColorModeValue("white", "gray.800")}
+      bg={"bg.surface"}
     >
       <Text fontWeight="medium" fontSize="xs" noOfLines={1}>
         {place.placeName}
@@ -207,7 +207,7 @@ function OptionalSourceCard({ id, place }: { id: string; place: OptionalItinerar
           </Badge>
         ))}
       </HStack>
-      <Text fontSize="2xs" color="gray.500" mt={1} noOfLines={2}>
+      <Text fontSize="2xs" color="fg.muted" mt={1} noOfLines={2}>
         {place.reason}
       </Text>
     </Box>
@@ -216,8 +216,8 @@ function OptionalSourceCard({ id, place }: { id: string; place: OptionalItinerar
 
 function FinalDropZone({ date, children }: { date: string; children: ReactNode }) {
   const { setNodeRef, isOver } = useDroppable({ id: `final:${date}` });
-  const borderColor = useColorModeValue("gray.300", "gray.600");
-  const overBg = useColorModeValue("brand.50", "gray.700");
+  const borderColor = "border.line";
+  const overBg = "accent.soft";
 
   return (
     <Stack
@@ -255,7 +255,7 @@ function DayCompareRow({
   onRemoveStop,
   onRemovePendingOptional,
 }: DayCompareRowProps) {
-  const borderColor = useColorModeValue("gray.200", "gray.700");
+  const borderColor = "border.line";
   const date = systemDay?.date ?? aiDay?.date ?? "";
   const dayNumber = systemDay?.dayNumber ?? aiDay?.dayNumber;
   const finalStops = final?.stops ?? [];
@@ -278,7 +278,7 @@ function DayCompareRow({
           <Button size="xs" variant="outline" onClick={onUseSystem}>
             Use System day
           </Button>
-          <Button size="xs" variant="outline" colorScheme="purple" onClick={onUseAi}>
+          <Button size="xs" variant="outline" colorScheme="brand" onClick={onUseAi}>
             Use AI day
           </Button>
         </HStack>
@@ -286,7 +286,7 @@ function DayCompareRow({
 
       <SimpleGrid columns={{ base: 1, md: 3 }} spacing={3}>
         <Box>
-          <Text fontSize="2xs" fontWeight="bold" color="gray.500" mb={2} textTransform="uppercase">
+          <Text fontSize="2xs" fontWeight="bold" color="fg.muted" mb={2} textTransform="uppercase">
             System ({systemDay?.distanceKm ?? 0} km)
           </Text>
           <Stack spacing={2}>
@@ -317,7 +317,7 @@ function DayCompareRow({
           >
             <FinalDropZone date={date}>
               {finalStops.length === 0 && finalPending.length === 0 ? (
-                <Text fontSize="2xs" color="gray.400" p={2}>
+                <Text fontSize="2xs" color="fg.muted" p={2}>
                   Drag stops from System, AI, another day's Final, or Optional Places here — or use a quick-copy
                   button above.
                 </Text>
@@ -363,7 +363,7 @@ export function ItineraryComparePageContent() {
   const applyMergedDays = useApplyMergedDays(tripId);
 
   const [finalByDate, setFinalByDate] = useState<Map<string, FinalDayState>>(new Map());
-  const panelBorderColor = useColorModeValue("gray.200", "gray.700");
+  const panelBorderColor = "border.line";
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
@@ -637,7 +637,7 @@ export function ItineraryComparePageContent() {
           <Heading size="lg" mb={1}>
             Compare with AI itinerary
           </Heading>
-          <Text color="gray.500" fontSize="sm">
+          <Text color="fg.muted" fontSize="sm">
             {trip?.title}
             {leg ? ` · ${leg.name || leg.baseCity}` : ""} — drag stops from System or AI into Final to build your
             merged day. Untouched days keep the current System itinerary.
@@ -660,7 +660,7 @@ export function ItineraryComparePageContent() {
               <Button
                 size="sm"
                 variant="outline"
-                colorScheme="purple"
+                colorScheme="brand"
                 onClick={handleKeepAi}
                 isLoading={keepAi.isPending}
               >
@@ -684,7 +684,7 @@ export function ItineraryComparePageContent() {
           <Text fontWeight="semibold" fontSize="lg" mb={2}>
             No AI itinerary yet
           </Text>
-          <Text color="gray.500" mb={4} fontSize="sm">
+          <Text color="fg.muted" mb={4} fontSize="sm">
             Generate an AI alternative to compare against your current itinerary.
           </Text>
         </Box>
@@ -695,7 +695,7 @@ export function ItineraryComparePageContent() {
               <Heading size="sm" mb={1}>
                 Optional Places
               </Heading>
-              <Text fontSize="xs" color="gray.500" mb={3}>
+              <Text fontSize="xs" color="fg.muted" mb={3}>
                 Didn't fit automatically. Drag one onto any day's Final column to schedule it.
               </Text>
               <Wrap spacing={3}>

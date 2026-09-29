@@ -102,7 +102,7 @@ function PlacePhotoCarouselInner({
     isFullscreen ? "blackAlpha.600" : "gray.100",
     isFullscreen ? "blackAlpha.700" : "gray.700",
   );
-  const muted = useColorModeValue("gray.500", "gray.400");
+  const muted = "fg.muted";
   const overlayBg = useColorModeValue("blackAlpha.500", "blackAlpha.600");
   const navBg = useColorModeValue("whiteAlpha.900", "blackAlpha.700");
 

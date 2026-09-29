@@ -1,4 +1,4 @@
-import { Badge, Box, HStack, Text, useColorModeValue } from "@chakra-ui/react";
+import { Badge, Box, HStack, Text } from "@chakra-ui/react";
 import type { ItineraryStop } from "@/modules/itinerary/types";
 
 interface PlaceCardProps {
@@ -7,8 +7,8 @@ interface PlaceCardProps {
 }
 
 export function PlaceCard({ stop, compact = false }: PlaceCardProps) {
-  const borderColor = useColorModeValue("gray.200", "gray.600");
-  const bg = useColorModeValue("gray.50", "gray.700");
+  const borderColor = "border.line";
+  const bg = "bg.subtle";
 
   return (
     <Box
@@ -27,10 +27,10 @@ export function PlaceCard({ stop, compact = false }: PlaceCardProps) {
             {stop.category}
           </Badge>
         )}
-        <Text fontSize="xs" color="gray.500">
+        <Text fontSize="xs" color="fg.muted">
           {stop.arrivalTime} – {stop.departureTime}
         </Text>
-        <Text fontSize="xs" color="gray.500">
+        <Text fontSize="xs" color="fg.muted">
           {stop.visitDurationMinutes} min visit
         </Text>
       </HStack>

@@ -7,7 +7,6 @@ import {
   SimpleGrid,
   Stack,
   Text,
-  useColorModeValue,
 } from "@chakra-ui/react";
 import { FiExternalLink, FiMapPin, FiStar } from "react-icons/fi";
 import type { Trip } from "@/modules/trips/types/trip.types";
@@ -21,8 +20,8 @@ interface VehicleRentalPanelProps {
 }
 
 function RentalCard({ rental }: { rental: VehicleRentalSuggestion }) {
-  const borderColor = useColorModeValue("gray.200", "gray.700");
-  const bg = useColorModeValue("white", "gray.800");
+  const borderColor = "border.line";
+  const bg = "bg.surface";
 
   return (
     <Box p={4} borderWidth="1px" borderColor={borderColor} borderRadius="lg" bg={bg}>
@@ -37,12 +36,12 @@ function RentalCard({ rental }: { rental: VehicleRentalSuggestion }) {
       </HStack>
 
       {rental.address && (
-        <Text fontSize="xs" color="gray.500" mb={2}>
+        <Text fontSize="xs" color="fg.muted" mb={2}>
           {rental.address}
         </Text>
       )}
 
-      <HStack spacing={3} fontSize="xs" color="gray.500" mb={2} flexWrap="wrap">
+      <HStack spacing={3} fontSize="xs" color="fg.muted" mb={2} flexWrap="wrap">
         {rental.distanceKm != null && (
           <HStack spacing={1}>
             <FiMapPin />

@@ -18,7 +18,6 @@ import {
   Heading,
   Icon,
   Text,
-  useColorModeValue,
 } from "@chakra-ui/react";
 import { FiClock, FiMapPin } from "react-icons/fi";
 import { format, parseISO } from "date-fns";
@@ -58,8 +57,8 @@ export function DayTimeline({
   destinationCity,
   destinationCountry,
 }: DayTimelineProps) {
-  const borderColor = useColorModeValue("gray.200", "gray.700");
-  const bg = useColorModeValue("white", "gray.800");
+  const borderColor = "border.line";
+  const bg = "bg.surface";
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -104,7 +103,7 @@ export function DayTimeline({
         {day.legName ? ` · ${day.legName}` : ""}
         {day.dayType === "transfer" ? " (Travel)" : ""}
       </Heading>
-      <Text fontSize="sm" color="gray.500" mb={4}>
+      <Text fontSize="sm" color="fg.muted" mb={4}>
         {formatDayDate(day.date)}
         {day.transferLabel ? ` · ${day.transferLabel}` : ""}
         {" · "}
@@ -112,7 +111,7 @@ export function DayTimeline({
       </Text>
 
       {day.stops.length === 0 ? (
-        <Text fontSize="sm" color="gray.500">
+        <Text fontSize="sm" color="fg.muted">
           No stops scheduled for this day.
         </Text>
       ) : readOnly ? (
@@ -158,10 +157,10 @@ function ReadOnlyStop({
   stop: ItineraryDay["stops"][number];
   isLast: boolean;
 }) {
-  const borderColor = useColorModeValue("gray.200", "gray.700");
-  const dotColor = useColorModeValue("brand.500", "brand.300");
-  const lineColor = useColorModeValue("gray.200", "gray.600");
-  const cardBg = useColorModeValue("white", "gray.800");
+  const borderColor = "border.line";
+  const dotColor = "accent";
+  const lineColor = "border.line";
+  const cardBg = "bg.surface";
 
   return (
     <Flex gap={3} position="relative" pb={isLast ? 0 : 4}>
@@ -184,11 +183,11 @@ function ReadOnlyStop({
           {stop.placeName}
         </Text>
         {stop.category && (
-          <Text fontSize="xs" color="gray.500" mt={0.5}>
+          <Text fontSize="xs" color="fg.muted" mt={0.5}>
             {stop.category}
           </Text>
         )}
-        <Flex mt={2} gap={4} flexWrap="wrap" fontSize="xs" color="gray.500">
+        <Flex mt={2} gap={4} flexWrap="wrap" fontSize="xs" color="fg.muted">
           <Flex align="center" gap={1}>
             <Icon as={FiClock} />
             <Text>

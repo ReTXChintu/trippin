@@ -1,4 +1,4 @@
-import { Box, Button, HStack, Select, Text, useColorModeValue, useToast } from "@chakra-ui/react";
+import { Box, Button, HStack, Select, Text, useToast } from "@chakra-ui/react";
 import { useEffect, useMemo, useState } from "react";
 import L from "leaflet";
 import { MapContainer, Marker, Popup, TileLayer, useMap, useMapEvents } from "react-leaflet";
@@ -74,7 +74,7 @@ export function PlacesMapView({ tripId, leg, places, selectedIds, onToggle, onOp
   const [viewport, setViewport] = useState<{ lat: number; lng: number; radiusMeters: number } | null>(null);
   const [category, setCategory] = useState<AreaSearchCategory>("sights");
   const [showOnlyPicked, setShowOnlyPicked] = useState(false);
-  const panelBg = useColorModeValue("white", "gray.800");
+  const panelBg = "bg.surface";
 
   const located = places.filter((p) => p.coordinates && p.googlePlaceId);
   const visible = showOnlyPicked ? located.filter((p) => selectedIds.has(p.googlePlaceId!)) : located;
@@ -128,7 +128,7 @@ export function PlacesMapView({ tripId, leg, places, selectedIds, onToggle, onOp
                   <Text fontWeight="semibold" fontSize="sm">
                     {place.name}
                   </Text>
-                  <Text fontSize="xs" color="gray.500" mb={2}>
+                  <Text fontSize="xs" color="fg.muted" mb={2}>
                     {place.category}
                     {place.rating !== undefined ? ` · ★ ${place.rating.toFixed(1)}` : ""}
                     {place.userRatingCount ? ` (${place.userRatingCount.toLocaleString()})` : ""}

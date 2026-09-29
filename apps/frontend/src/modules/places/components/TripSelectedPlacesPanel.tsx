@@ -9,7 +9,6 @@ import {
   Stack,
   Tag,
   Text,
-  useColorModeValue,
   useToast,
 } from "@chakra-ui/react";
 import { useMemo, useState } from "react";
@@ -40,7 +39,7 @@ export function TripSelectedPlacesPanel({ trip, leg, selectedPlaces, onSelectedC
   const bulkRemove = useBulkRemovePlacesFromTrip(trip.id, leg.id);
   const [removingId, setRemovingId] = useState<string | null>(null);
 
-  const borderColor = useColorModeValue("gray.200", "gray.700");
+  const borderColor = "border.line";
 
   const placeIds = useMemo(
     () => selectedPlaces.map((p) => p.googlePlaceId).filter((id): id is string => Boolean(id)),
@@ -108,7 +107,7 @@ export function TripSelectedPlacesPanel({ trip, leg, selectedPlaces, onSelectedC
   return (
     <Box>
       <Flex justify="space-between" align="center" mb={4} flexWrap="wrap" gap={2}>
-        <Text fontSize="xs" color="gray.500">
+        <Text fontSize="xs" color="fg.muted">
           Set preferred arrival & departure times per place. Enable &quot;Plan by place best times&quot; in trip
           settings to ignore fixed daily start.
         </Text>
@@ -138,7 +137,7 @@ export function TripSelectedPlacesPanel({ trip, leg, selectedPlaces, onSelectedC
       </Box>
 
       {selectedPlaces.length === 0 ? (
-        <Text color="gray.500" fontSize="sm">
+        <Text color="fg.muted" fontSize="sm">
           No places selected yet. Discover places above or search to add attractions manually.
         </Text>
       ) : (
@@ -175,7 +174,7 @@ export function TripSelectedPlacesPanel({ trip, leg, selectedPlaces, onSelectedC
                     <HStack spacing={2} mt={1}>
                       <Tag size="sm">{place.category}</Tag>
                       {place.rating !== undefined && (
-                        <Text fontSize="xs" color="gray.500">
+                        <Text fontSize="xs" color="fg.muted">
                           {place.rating.toFixed(1)} ★
                         </Text>
                       )}

@@ -1,5 +1,4 @@
 import {
-  Badge,
   Box,
   IconButton,
   Menu,
@@ -8,7 +7,6 @@ import {
   MenuItem,
   MenuList,
   Text,
-  useColorModeValue,
 } from "@chakra-ui/react";
 import { useNavigate } from "react-router-dom";
 import { useCallback, useEffect, useState } from "react";
@@ -24,7 +22,6 @@ export function NotificationBell() {
   const navigate = useNavigate();
   const [notifications, setNotifications] = useState<NotificationDTO[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
-  const menuBg = useColorModeValue("white", "gray.800");
 
   const load = useCallback(async () => {
     try {
@@ -63,27 +60,33 @@ export function NotificationBell() {
     <Menu onOpen={() => void load()}>
       <MenuButton
         as={IconButton}
-        aria-label="Notifications"
-        icon={<FiBell />}
+        aria-label={unreadCount > 0 ? `Notifications, ${unreadCount} unread` : "Notifications"}
+        icon={<FiBell size={18} />}
         variant="ghost"
         position="relative"
       >
         {unreadCount > 0 && (
-          <Badge
-            colorScheme="red"
-            borderRadius="full"
+          <Box
+            as="span"
             position="absolute"
-            top={1}
-            right={1}
-            fontSize="0.6rem"
-            minW={4}
+            top="5px"
+            right="5px"
+            minW="16px"
+            h="16px"
+            px="3px"
+            borderRadius="8px"
+            bg="danger"
+            color="bg.surface"
+            fontSize="11px"
+            lineHeight="16px"
+            fontWeight={700}
             textAlign="center"
           >
             {unreadCount > 9 ? "9+" : unreadCount}
-          </Badge>
+          </Box>
         )}
       </MenuButton>
-      <MenuList bg={menuBg} maxW="sm" w="320px">
+      <MenuList maxW="sm" w="340px">
         <Box px={3} py={2}>
           <Text fontWeight="semibold" fontSize="sm">
             Notifications
@@ -92,7 +95,7 @@ export function NotificationBell() {
         <MenuDivider />
         {notifications.length === 0 ? (
           <Box px={3} py={4}>
-            <Text fontSize="sm" color="gray.500">
+            <Text fontSize="sm" color="fg.muted">
               No notifications yet.
             </Text>
           </Box>
@@ -104,13 +107,12 @@ export function NotificationBell() {
               flexDirection="column"
               alignItems="flex-start"
               whiteSpace="normal"
-              bg={notification.read ? undefined : "brand.50"}
-              _dark={{ bg: notification.read ? undefined : "gray.700" }}
+              bg={notification.read ? undefined : "accent.soft"}
             >
               <Text fontSize="sm" fontWeight={notification.read ? "normal" : "semibold"}>
                 {notification.title}
               </Text>
-              <Text fontSize="xs" color="gray.500" mt={1}>
+              <Text fontSize="xs" color="fg.muted" mt={1}>
                 {notification.message}
               </Text>
             </MenuItem>
