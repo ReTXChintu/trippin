@@ -1,28 +1,22 @@
-import { Box, Flex, HStack, Text } from "@chakra-ui/react";
+import { Box, HStack, Image, Text } from "@chakra-ui/react";
 
-/** The one place the Trippin logo is defined — swap `BrandMark`'s contents when the final logo
- * arrives and every screen (sidebar, rail, auth, landing, share page) picks it up. */
+/** The one place the Trippin logo is used — every screen (sidebar, rail, auth, landing, share page)
+ * renders `BrandMark` / `BrandLogo`. Source artwork: `logo.png` at the repo root; the web copies in
+ * `public/brand/` (and the favicon / PWA icons) are generated from it with transparent corners. */
 
 export const BRAND_NAME = "Trippin";
 
 export function BrandMark({ size = 34 }: { size?: number }) {
   return (
-    <Flex
+    <Image
+      src={size > 48 ? "/brand/logo-256.png" : "/brand/logo-64.png"}
+      srcSet={size > 48 ? undefined : "/brand/logo-64.png 1x, /brand/logo-256.png 3x"}
+      alt=""
       w={`${size}px`}
       h={`${size}px`}
-      borderRadius={`${Math.round(size * 0.27)}px`}
-      bg="accent"
-      color="accent.fg"
-      align="center"
-      justify="center"
       flexShrink={0}
-      aria-hidden
-    >
-      <svg width={size * 0.53} height={size * 0.53} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="12" cy="12" r="9" />
-        <path d="M15.5 8.5l-2 5-5 2 2-5z" />
-      </svg>
-    </Flex>
+      draggable={false}
+    />
   );
 }
 
