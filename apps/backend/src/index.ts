@@ -12,7 +12,10 @@ import dashboardRoutes from "@/modules/dashboard/routes/dashboard.routes";
 import invitesRoutes from "@/modules/trips/routes/invites.routes";
 
 const app = express();
-const PORT = Number(process.env.PORT ?? 4000);
+const PORT = Number(process.env.PORT);
+if (!Number.isInteger(PORT) || PORT <= 0) {
+  throw new Error("PORT is not set — add it to the .env file at the repo root.");
+}
 
 app.use(
   cors({

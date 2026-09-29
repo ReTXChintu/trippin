@@ -1,0 +1,66 @@
+name: Deploy to VPS
+
+# Deploys when a version tag is pushed (e.g. `git push origin v1.2.3`, as release-it creates) or a
+# GitHub release is published. Both can fire for the same tag; the concurrency group runs them one
+# at a time and deploying the same tag twice is harmless.
+on:
+  push:
+    tags: ["v*"]
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Tag or commit to deploy
+        required: true
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.ref || github.event.release.tag_name || github.ref }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci --no-audit --no-fund
+      # Catches type and bundling errors before anything touches the server.
+      - run: npm run build
+
+  deploy:
+    name: Deploy
+    needs: build
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1.2.0
+        env:
+          DEPLOY_REF: ${{ github.event.inputs.ref || github.event.release.tag_name || github.ref_name }}
+          APP_DIR: ${{ secrets.VPS_APP_DIR }}
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          port: ${{ secrets.VPS_PORT || 22 }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          passphrase: ${{ secrets.VPS_SSH_PASSPHRASE }}
+          envs: DEPLOY_REF,APP_DIR
+          command_timeout: 20m
+          script: |
+            set -e
+            # Load nvm/profile so node, npm and pm2 are on PATH in a non-interactive shell.
+            [ -s "$HOME/.nvm/nvm.sh" ] && . "$HOME/.nvm/nvm.sh"
+            [ -f "$HOME/.profile" ] && . "$HOME/.profile" || true
+            cd "$APP_DIR"
+            git fetch --tags --force origin
+            git checkout --force --detach "$DEPLOY_REF"
+            bash scripts/deploy.sh "$DEPLOY_REF"
