@@ -225,7 +225,8 @@ export class LlmAIProvider implements AIProvider {
         temperature: 0.5,
         system:
           'Design an alternative day-by-day sightseeing plan. Return JSON: { "days": [{ "date": "YYYY-MM-DD", "placeIds": ["id1","id2"], "dressCode": string }], "stopNotes": [{ "placeId": "id1", "bestTime": string?, "avoidTime": string?, "hypeLevel": "overhyped"|"worth-it"|"hidden-gem"?, "why": string?, "tips": string[]? }] }. ' +
-          "Only use placeIds from the input list — never invent places. Assign each place to exactly one date; it's fine to leave out places that don't fit well. Group nearby places on the same date and order placeIds within a day in a sensible visiting sequence starting near the stay, minimizing backtracking. Each date has limited daily hours (given) — favor fewer well-paced stops over overpacking a day. dressCode is a 1-2 sentence practical outfit suggestion for that day's activities/season/destination, geared toward good photos. stopNotes give practical best-time-to-visit, crowd-avoidance, and hype-level guidance per place.",
+          "Only use placeIds from the input list — never invent places. Assign each place to exactly one date; it's fine to leave out places that don't fit well. Group nearby places on the same date and order placeIds within a day in a sensible visiting sequence starting near the stay, minimizing backtracking. Each date has limited daily hours (given) — favor fewer well-paced stops over overpacking a day. dressCode is a 1-2 sentence practical outfit suggestion for that day's activities/season/destination, geared toward good photos. stopNotes give practical best-time-to-visit, crowd-avoidance, and hype-level guidance per place. " +
+          "If the input has \"instructions\" (the traveller's own words), follow them first — they override every guideline above except: only given placeIds, only given dates. \"Day 1\" means the first date in the list, and so on; match place names loosely. Also return \"pinnedPlaceIds\": the placeIds the instructions explicitly tie to a particular date (empty if none), and \"instructionNote\": one or two plain sentences telling the traveller how you applied the instructions, mentioning anything you couldn't do and why (e.g. a place that isn't in their list). Without instructions return pinnedPlaceIds: [] and instructionNote: null.",
         user: JSON.stringify({
           destination: params.leg?.baseCity ?? params.trip.destinationCity,
           country: params.leg?.country ?? params.trip.destinationCountry,
@@ -233,7 +234,8 @@ export class LlmAIProvider implements AIProvider {
           travelStyle: params.trip.travelStyle,
           mustVisitPlaces: params.trip.mustVisitPlaces,
           excludedPlaces: params.trip.excludedPlaces,
-          dates: params.eligibleDates,
+          dates: params.eligibleDates.map((d, i) => ({ ...d, dayNumber: i + 1 })),
+          instructions: params.instructions || undefined,
           places: params.places
             .filter((p) => p.googlePlaceId)
             .map((p) => ({
@@ -247,6 +249,12 @@ export class LlmAIProvider implements AIProvider {
         }),
       }),
     );
-    return { days: parsed?.days ?? [], stopNotes: parsed?.stopNotes ?? [] };
+    const known = new Set(params.places.map((p) => p.googlePlaceId).filter(Boolean));
+    return {
+      days: parsed?.days ?? [],
+      stopNotes: parsed?.stopNotes ?? [],
+      pinnedPlaceIds: (parsed?.pinnedPlaceIds ?? []).filter((id): id is string => typeof id === "string" && known.has(id)),
+      instructionNote: typeof parsed?.instructionNote === "string" && parsed.instructionNote.trim() ? parsed.instructionNote.trim() : undefined,
+    };
   }
 }

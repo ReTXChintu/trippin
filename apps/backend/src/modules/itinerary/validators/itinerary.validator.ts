@@ -5,6 +5,13 @@ export const tripIdSchema = z.object({
   legId: z.string().optional(),
 });
 
+export const aiCandidateSchema = z.object({
+  tripId: z.string().min(1, "Trip ID is required"),
+  legId: z.string().optional(),
+  /** Free-text wishes for the AI ("keep Amber Fort and Hawa Mahal on day 1"). */
+  instructions: z.string().trim().max(1000, "Keep instructions under 1000 characters").optional(),
+});
+
 export const generateLegGuideSchema = z.object({
   tripId: z.string().min(1, "Trip ID is required"),
   legId: z.string().min(1, "Leg is required"),

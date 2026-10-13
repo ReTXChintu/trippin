@@ -91,6 +91,8 @@ export interface GenerateAiItineraryParams {
   leg?: TripLeg;
   places: Place[];
   eligibleDates: AiItineraryEligibleDate[];
+  /** The traveller's own wishes for this plan; they take priority. */
+  instructions?: string;
 }
 
 export interface AiItineraryDayAssignment {
@@ -106,6 +108,10 @@ export interface AiItineraryStopNote extends VisitIntel {
 export interface AiItineraryCandidateResult {
   days: AiItineraryDayAssignment[];
   stopNotes: AiItineraryStopNote[];
+  /** Places the instructions tie to a specific date — kept there when the plan is timed. */
+  pinnedPlaceIds?: string[];
+  /** One or two sentences on how the instructions were applied (or why one couldn't be). */
+  instructionNote?: string;
 }
 
 export interface AIProvider {

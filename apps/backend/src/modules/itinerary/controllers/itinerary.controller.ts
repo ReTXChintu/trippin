@@ -61,7 +61,7 @@ export async function act(req: Request, res: Response) {
     case "summarize":
       return sendResult(res, await generateItinerarySummary(userId, { tripId }));
     case "generateAiCandidate":
-      return sendResult(res, await generateAiCandidate(userId, { tripId, legId: body.legId }));
+      return sendResult(res, await generateAiCandidate(userId, { tripId, legId: body.legId, instructions: body.instructions }));
     case "getComparison":
       return sendResult(res, await getItineraryComparison(userId, { tripId, legId: body.legId }));
     case "keepSystem":

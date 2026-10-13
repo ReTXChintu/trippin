@@ -51,8 +51,12 @@ export async function summarizeItinerary(tripId: string): Promise<{ itinerary: I
   return res.data.data;
 }
 
-export async function generateAiCandidate(tripId: string, legId?: string): Promise<ComparisonResponse> {
-  const res = await api.post(`/trips/${tripId}/itinerary`, { action: "generateAiCandidate", legId });
+export async function generateAiCandidate(
+  tripId: string,
+  legId?: string,
+  instructions?: string,
+): Promise<ComparisonResponse & { instructionNote?: string }> {
+  const res = await api.post(`/trips/${tripId}/itinerary`, { action: "generateAiCandidate", legId, instructions: instructions?.trim() || undefined });
   return res.data.data;
 }
 

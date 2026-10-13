@@ -35,6 +35,7 @@ import type { Trip } from "@/modules/trips/types/trip.types";
 import type { TripLeg } from "@/modules/trips/types/trip-leg.types";
 import {
   addStopSchema,
+  aiCandidateSchema,
   aiEditPlanSchema,
   applyMergedDaysSchema,
   generateLegGuideSchema,
@@ -903,7 +904,8 @@ async function buildAiCandidateForScope(
   leg: TripLeg | undefined,
   legId: string | undefined,
   aiConfig: AiConfig,
-): Promise<{ days: ItineraryDay[]; optionalPlaces: OptionalItineraryPlace[] }> {
+  instructions?: string,
+): Promise<{ days: ItineraryDay[]; optionalPlaces: OptionalItineraryPlace[]; instructionNote?: string }> {
   const dayPlans = legId ? buildTripDayPlans(trip) : null;
   const placeIds = leg ? leg.selectedPlaceIds : getAggregatedSelectedPlaceIds(trip);
   const env = await buildEnv(trip, placeIds);
@@ -916,7 +918,9 @@ async function buildAiCandidateForScope(
   }));
 
   const ai = getAIProvider(aiConfig);
-  const candidate = await ai.generateAiItineraryCandidate({ trip, leg, places, eligibleDates: eligibleDatesForAi });
+  const candidate = await ai.generateAiItineraryCandidate({ trip, leg, places, eligibleDates: eligibleDatesForAi, instructions });
+  // Places the traveller pinned to a day are locked, so timing never drops or moves them.
+  const pinned = new Set(candidate.pinnedPlaceIds ?? []);
 
   const assignment: AiPlaceAssignment = {
     byDate: new Map(candidate.days.map((d) => [d.date, d.placeIds])),
@@ -929,6 +933,7 @@ async function buildAiCandidateForScope(
   const notedDays = aiDays.map((day) => ({
     ...day,
     stops: day.stops.map((stop) => {
+      if (pinned.has(stop.placeId)) stop = { ...stop, locked: true };
       const note = notesByPlaceId.get(stop.placeId);
       if (!note) return stop;
       const visitIntel = {
@@ -949,7 +954,7 @@ async function buildAiCandidateForScope(
   const scopedDays =
     legId && dayPlans ? finalDays.filter((d) => isDayOwnedByLeg(d.date, dayPlans, legId)) : finalDays;
 
-  return { days: scopedDays, optionalPlaces: filled.optionalPlaces };
+  return { days: scopedDays, optionalPlaces: filled.optionalPlaces, instructionNote: candidate.instructionNote };
 }
 
 export async function generateAiCandidate(
@@ -960,12 +965,13 @@ export async function generateAiCandidate(
     currentDays: ItineraryDayWithDistance[];
     currentOptionalPlaces: OptionalItineraryPlace[];
     aiCandidate: { days: ItineraryDayWithDistance[]; optionalPlaces: OptionalItineraryPlace[]; generatedAt: string };
+    instructionNote?: string;
   }>
 > {
-  const parsed = tripIdSchema.safeParse(input);
+  const parsed = aiCandidateSchema.safeParse(input);
   if (!parsed.success) return invalid(parsed.error.issues);
 
-  const { tripId, legId } = parsed.data;
+  const { tripId, legId, instructions } = parsed.data;
   const trip = await TripRepository.findByIdForUser(tripId, userId);
   if (!trip) return { success: false, error: "Trip not found" };
 
@@ -992,11 +998,12 @@ export async function generateAiCandidate(
       return { success: false, error: "No days found for this leg to compare." };
     }
 
-    const { days: aiDays, optionalPlaces: aiOptionalPlaces } = await buildAiCandidateForScope(
+    const { days: aiDays, optionalPlaces: aiOptionalPlaces, instructionNote } = await buildAiCandidateForScope(
       trip,
       leg,
       legId,
       aiConfig,
+      instructions,
     );
 
     const generatedAt = new Date().toISOString();
@@ -1013,8 +1020,9 @@ export async function generateAiCandidate(
         currentDays: withDistance(currentDays),
         currentOptionalPlaces,
         aiCandidate: { days: withDistance(aiDays), optionalPlaces: aiOptionalPlaces, generatedAt },
+        instructionNote,
       },
-      message: "AI itinerary generated.",
+      message: instructionNote ?? "AI itinerary generated.",
     };
   } catch (err) {
     return actionError(err, "Failed to generate AI itinerary");

@@ -67,7 +67,8 @@ export function useItineraryComparisonQuery(tripId: string, legId?: string) {
 export function useGenerateAiCandidate(tripId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (legId?: string) => itineraryApi.generateAiCandidate(tripId, legId),
+    mutationFn: ({ legId, instructions }: { legId?: string; instructions?: string } = {}) =>
+      itineraryApi.generateAiCandidate(tripId, legId, instructions),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["itinerary-comparison", tripId] }),
   });
 }

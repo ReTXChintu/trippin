@@ -34,7 +34,8 @@ import type { ItineraryDay, ItineraryDayWithDistance, OptionalItineraryPlace } f
 import { CompareDayCard, PlanChooser } from "./compare/CompareDayCard";
 import type { FinalDayState } from "./compare/compare.types";
 import { CompareBoard } from "./compare/CompareBoard";
-import { differenceLabels, roundKm } from "./compare/compare.utils";
+import { AiInstructions } from "./compare/AiInstructions";
+import { differenceLabels, instructionExamples, roundKm } from "./compare/compare.utils";
 
 const EMPTY_DAYS: ItineraryDayWithDistance[] = [];
 const EMPTY_OPTIONAL: OptionalItineraryPlace[] = [];
@@ -73,6 +74,24 @@ export function ItineraryComparePageContent() {
   const applyMergedDays = useApplyMergedDays(tripId);
 
   const [finalByDate, setFinalByDate] = useState<Map<string, FinalDayState>>(new Map());
+  // Special instructions for the AI plan, kept per trip + city for this browser session.
+  const instructionsKey = `trippin.aiInstructions.${tripId}.${legId ?? "all"}`;
+  const [instructions, setInstructionsState] = useState(() => {
+    try {
+      return sessionStorage.getItem(instructionsKey) ?? "";
+    } catch {
+      return "";
+    }
+  });
+  const setInstructions = (v: string) => {
+    setInstructionsState(v);
+    try {
+      sessionStorage.setItem(instructionsKey, v);
+    } catch {
+      // storage unavailable — the text just isn't kept across reloads
+    }
+  };
+  const [instructionNote, setInstructionNote] = useState<string | null>(null);
 
   const currentDays = comparison?.currentDays ?? EMPTY_DAYS;
   const currentOptionalPlaces = comparison?.currentOptionalPlaces ?? EMPTY_OPTIONAL;
@@ -116,8 +135,9 @@ export function ItineraryComparePageContent() {
 
   const handleRegenerate = async () => {
     try {
-      await generateAiCandidate.mutateAsync(legId);
+      const result = await generateAiCandidate.mutateAsync({ legId, instructions });
       setFinalByDate(new Map());
+      setInstructionNote(result.instructionNote ?? null);
       toast({ title: aiCandidate ? "AI plan regenerated" : "AI plan ready — pick a side for each day", status: "success" });
     } catch (err) {
       toast({ title: getApiErrorMessage(err), status: "error", duration: 5000 });
@@ -243,6 +263,9 @@ export function ItineraryComparePageContent() {
           .join(" · ");
 
   const showCity = !legId && legs.length > 1;
+  const examples = instructionExamples(
+    currentDays.flatMap((d) => d.stops).filter((st) => st.placeId && st.stopType !== "meal" && st.stopType !== "transfer" && st.stopType !== "return").map((st) => st.placeName),
+  );
 
   // The right-hand column when there's no AI plan to compare yet.
   const aiPlaceholder = generating ? (
@@ -264,9 +287,18 @@ export function ItineraryComparePageContent() {
         text={`Ask AI for an alternative plan for ${cityName}, then keep yours, take AI's, or mix day by day.`}
         action={
           canEdit ? (
-            <Button variant="ai" leftIcon={<LuSparkles />} onClick={handleRegenerate}>
-              Make an AI plan
-            </Button>
+            <Box w="full" maxW="520px" mt={2}>
+              <AiInstructions
+                value={instructions}
+                onChange={setInstructions}
+                examples={examples}
+                action={
+                  <Button variant="ai" leftIcon={<LuSparkles />} onClick={handleRegenerate} ml="auto">
+                    Make an AI plan
+                  </Button>
+                }
+              />
+            </Box>
           ) : undefined
         }
       />
@@ -309,6 +341,30 @@ export function ItineraryComparePageContent() {
             )}
           </Flex>
         </Flex>
+
+        {aiCandidate && canEdit && hasAiKey && !generating && (
+          <Box bg="bg.surface" borderWidth="1px" borderColor="border.line" borderRadius="xl" px={4} py={3}>
+            <AiInstructions
+              value={instructions}
+              onChange={setInstructions}
+              examples={examples}
+              disabled={busy}
+              action={
+                <Button variant="ai" size="sm" leftIcon={<FiRefreshCw />} onClick={handleRegenerate} isDisabled={busy} ml="auto">
+                  Regenerate with these
+                </Button>
+              }
+            />
+          </Box>
+        )}
+        {instructionNote && aiCandidate && !generating && (
+          <Flex gap={2} align="flex-start" bg="accent.soft" color="accent.text" borderRadius="lg" px={4} py={3} fontSize="13px">
+            <Icon as={LuSparkles} boxSize="16px" mt="1px" flexShrink={0} />
+            <Text>
+              <b>How AI used your instructions:</b> {instructionNote}
+            </Text>
+          </Flex>
+        )}
 
         {!canEdit && trip && <ViewOnlyBanner>You can view this comparison. Only editors can keep or merge a plan.</ViewOnlyBanner>}
 

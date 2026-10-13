@@ -44,3 +44,14 @@ export function differenceLabels(system: ItineraryDayWithDistance | undefined, a
   }
   return labels;
 }
+
+/** Ready-made wishes, using real place names from the plan when there are some. */
+export function instructionExamples(placeNames: string[]): string[] {
+  const [a, b, c] = placeNames;
+  const out: string[] = [];
+  if (a && b) out.push(`Keep ${a} and ${b} on day 1`);
+  if (c) out.push(`Put ${c} on the last day`);
+  out.push("Keep the last day light — we fly out in the evening");
+  out.push("Museums in the mornings, markets in the evenings");
+  return out.slice(0, 4);
+}
