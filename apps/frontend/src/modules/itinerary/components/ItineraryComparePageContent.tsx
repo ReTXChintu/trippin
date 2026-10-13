@@ -1,14 +1,4 @@
 import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  type DragEndEvent,
-} from "@dnd-kit/core";
-import { sortableKeyboardCoordinates, arrayMove } from "@dnd-kit/sortable";
-import {
   Box,
   Button,
   Collapse,
@@ -19,8 +9,6 @@ import {
   Stack,
   Text,
   Tooltip,
-  Wrap,
-  WrapItem,
   useBreakpointValue,
   useDisclosure,
   useToast,
@@ -42,9 +30,10 @@ import {
   useKeepAiItinerary,
   useKeepSystemItinerary,
 } from "@/modules/itinerary/hooks/useItinerary";
-import type { ItineraryDay, ItineraryDayWithDistance, ItineraryStop, OptionalItineraryPlace } from "@/modules/itinerary/types";
+import type { ItineraryDay, ItineraryDayWithDistance, OptionalItineraryPlace } from "@/modules/itinerary/types";
 import { CompareDayCard, PlanChooser } from "./compare/CompareDayCard";
-import { FineTuneDayRow, OptionalSourceCard, type FinalDayState } from "./compare/FineTune";
+import type { FinalDayState } from "./compare/compare.types";
+import { CompareBoard } from "./compare/CompareBoard";
 import { differenceLabels, roundKm } from "./compare/compare.utils";
 
 const EMPTY_DAYS: ItineraryDayWithDistance[] = [];
@@ -73,7 +62,7 @@ export function ItineraryComparePageContent() {
   const toast = useToast();
   const currentUserId = useAuthStore((s) => s.user?.id ?? "");
   const isDesktop = useBreakpointValue({ base: false, md: true }, { ssr: false }) ?? true;
-  const fineTune = useDisclosure();
+  const arrange = useDisclosure({ defaultIsOpen: true });
 
   const { data: trip } = useTripQuery(tripId);
   const comparisonQuery = useItineraryComparisonQuery(tripId, legId);
@@ -84,11 +73,6 @@ export function ItineraryComparePageContent() {
   const applyMergedDays = useApplyMergedDays(tripId);
 
   const [finalByDate, setFinalByDate] = useState<Map<string, FinalDayState>>(new Map());
-
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
-  );
 
   const currentDays = comparison?.currentDays ?? EMPTY_DAYS;
   const currentOptionalPlaces = comparison?.currentOptionalPlaces ?? EMPTY_OPTIONAL;
@@ -107,16 +91,6 @@ export function ItineraryComparePageContent() {
     }
     return Array.from(map.values());
   }, [currentOptionalPlaces, aiCandidate]);
-
-  const usedOptionalIds = useMemo(() => {
-    const ids = new Set<string>();
-    for (const state of finalByDate.values()) {
-      for (const p of state.pendingOptional) ids.add(p.placeId);
-    }
-    return ids;
-  }, [finalByDate]);
-
-  const visibleOptionalPlaces = allOptionalPlaces.filter((p) => !usedOptionalIds.has(p.placeId));
 
   /** A day's merged state; an untouched day starts as your plan (what "System" means in the chooser). */
   const stateFor = (map: Map<string, FinalDayState>, date: string): FinalDayState | undefined => {
@@ -138,143 +112,6 @@ export function ItineraryComparePageContent() {
         source: side,
       });
     });
-  };
-
-  const handleRemoveStop = (date: string, stopId: string) => {
-    setFinalByDate((prev) => {
-      const current = stateFor(prev, date);
-      if (!current) return prev;
-      const next = new Map(prev);
-      next.set(date, { ...current, stops: current.stops.filter((s) => s.id !== stopId), source: "custom" });
-      return next;
-    });
-  };
-
-  const handleRemovePendingOptional = (date: string, placeId: string) => {
-    setFinalByDate((prev) => {
-      const current = stateFor(prev, date);
-      if (!current) return prev;
-      const next = new Map(prev);
-      next.set(date, { ...current, pendingOptional: current.pendingOptional.filter((p) => p.placeId !== placeId) });
-      return next;
-    });
-  };
-
-  const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
-    if (!over) return;
-
-    const activeId = String(active.id);
-    const overId = String(over.id);
-    if (!overId.startsWith("final:")) return;
-
-    const targetDate = overId.slice("final:".length).split(":")[0];
-    const targetStopPrefix = `final:${targetDate}:stop:`;
-
-    const insertIndexFor = (stops: ItineraryStop[]) => {
-      if (!overId.startsWith(targetStopPrefix)) return stops.length;
-      const overStopId = overId.slice(targetStopPrefix.length);
-      const idx = stops.findIndex((s) => s.id === overStopId);
-      return idx === -1 ? stops.length : idx;
-    };
-
-    // A stop already sitting in some day's merged column — either reordering within the same day,
-    // or moving it to a different day entirely (e.g. day 2 -> day 5).
-    if (activeId.startsWith("final:")) {
-      const afterFinal = activeId.slice("final:".length); // "{sourceDate}:stop:{stopId}"
-      const separatorIdx = afterFinal.indexOf(":stop:");
-      if (separatorIdx === -1) return;
-      const sourceDate = afterFinal.slice(0, separatorIdx);
-      const stopId = afterFinal.slice(separatorIdx + ":stop:".length);
-
-      if (sourceDate === targetDate) {
-        setFinalByDate((prev) => {
-          const current = stateFor(prev, targetDate);
-          if (!current) return prev;
-          const oldIndex = current.stops.findIndex((s) => s.id === stopId);
-          if (oldIndex === -1) return prev;
-          const newIndex = insertIndexFor(current.stops);
-          if (oldIndex === newIndex) return prev;
-          const next = new Map(prev);
-          next.set(targetDate, { ...current, stops: arrayMove(current.stops, oldIndex, newIndex), source: "custom" });
-          return next;
-        });
-      } else {
-        setFinalByDate((prev) => {
-          const sourceState = stateFor(prev, sourceDate);
-          if (!sourceState) return prev;
-          const stopIdx = sourceState.stops.findIndex((s) => s.id === stopId);
-          if (stopIdx === -1) return prev;
-          const movedStop = sourceState.stops[stopIdx];
-
-          const next = new Map(prev);
-          next.set(sourceDate, { ...sourceState, stops: sourceState.stops.filter((s) => s.id !== stopId), source: "custom" });
-
-          const targetState = stateFor(next, targetDate);
-          if (!targetState) return prev;
-          if (targetState.stops.some((s) => s.placeId && s.placeId === movedStop.placeId)) return prev;
-          const insertAt = insertIndexFor(targetState.stops);
-          const nextStops = [...targetState.stops.slice(0, insertAt), movedStop, ...targetState.stops.slice(insertAt)];
-          next.set(targetDate, { ...targetState, stops: nextStops, source: "custom" });
-          return next;
-        });
-      }
-      return;
-    }
-
-    // Dragging a stop from Your plan / AI plan (from any date) into a day's merged column
-    if (activeId.startsWith("sys:") || activeId.startsWith("ai:")) {
-      const isSystem = activeId.startsWith("sys:");
-      const rest = activeId.slice(isSystem ? "sys:".length : "ai:".length); // "{sourceDate}:{stopId}"
-      const sepIdx = rest.indexOf(":");
-      if (sepIdx === -1) return;
-      const sourceDate = rest.slice(0, sepIdx);
-      const stopId = rest.slice(sepIdx + 1);
-
-      const sourceDay = isSystem ? currentDays.find((d) => d.date === sourceDate) : aiByDate.get(sourceDate);
-      const sourceStop = sourceDay?.stops.find((s) => s.id === stopId);
-      if (!sourceStop) return;
-
-      setFinalByDate((prev) => {
-        const current = stateFor(prev, targetDate);
-        if (!current) return prev;
-        if (sourceStop.placeId && current.stops.some((s) => s.placeId === sourceStop.placeId)) return prev;
-        const clone: ItineraryStop = {
-          ...sourceStop,
-          id: `${sourceStop.id}-${Math.random().toString(36).slice(2, 8)}`,
-        };
-        const insertAt = insertIndexFor(current.stops);
-        const nextStops = [...current.stops.slice(0, insertAt), clone, ...current.stops.slice(insertAt)];
-        const next = new Map(prev);
-        next.set(targetDate, { ...current, stops: nextStops, source: "custom" });
-        return next;
-      });
-      return;
-    }
-
-    // Dragging an optional-place card into a day's merged column
-    if (activeId.startsWith("optional:")) {
-      const placeId = activeId.slice("optional:".length);
-      const optionalPlace = allOptionalPlaces.find((p) => p.placeId === placeId);
-      if (!optionalPlace) return;
-
-      setFinalByDate((prev) => {
-        const current = stateFor(prev, targetDate);
-        if (!current) return prev;
-        if (current.pendingOptional.some((p) => p.placeId === placeId) || current.stops.some((s) => s.placeId === placeId)) {
-          return prev;
-        }
-        const next = new Map(prev);
-        next.set(targetDate, {
-          ...current,
-          pendingOptional: [
-            ...current.pendingOptional,
-            { placeId: optionalPlace.placeId, placeName: optionalPlace.placeName, category: optionalPlace.category },
-          ],
-        });
-        return next;
-      });
-    }
   };
 
   const handleRegenerate = async () => {
@@ -392,7 +229,9 @@ export function ItineraryComparePageContent() {
   const mergeParts = currentDays.map((d) => {
     const final = finalByDate.get(d.date);
     const src = final?.source ?? "system";
-    return { n: d.dayNumber, label: src === "ai" ? "AI" : src === "custom" ? "edited" : "yours" };
+    // A day with places dropped onto it from the board counts as edited too.
+    const edited = src === "custom" || (final?.pendingOptional.length ?? 0) > 0;
+    return { n: d.dayNumber, label: edited ? "edited" : src === "ai" ? "AI" : "yours" };
   });
   const mergeSummary =
     mergeParts.length <= 6
@@ -488,7 +327,7 @@ export function ItineraryComparePageContent() {
             </Stack>
           </Grid>
         ) : (
-          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <>
             {isDesktop ? (
               <Grid templateColumns="minmax(0,1fr) 110px minmax(0,1fr)" columnGap={4} rowGap={3} alignItems="stretch">
                 <GridItem>
@@ -557,49 +396,26 @@ export function ItineraryComparePageContent() {
               </Stack>
             )}
 
-            {canEdit && (
-              <Box mt={6}>
-                <Button variant="ghost" size="sm" onClick={fineTune.onToggle} aria-expanded={fineTune.isOpen} rightIcon={<Icon as={fineTune.isOpen ? FiChevronUp : FiChevronDown} />}>
-                  Fine-tune stop by stop
-                </Button>
-                <Collapse in={fineTune.isOpen} animateOpacity unmountOnExit>
-                  <Stack spacing={4} mt={3}>
-                    <Text fontSize="13px" color="fg.muted">
-                      Drag stops from either plan into a day's merged column, reorder them, or move them between days. Days you
-                      don't touch keep the side chosen above.
-                    </Text>
-                    {visibleOptionalPlaces.length > 0 && (
-                      <Box p={4} bg="bg.surface" borderWidth="1px" borderColor="border.line" borderRadius="xl">
-                        <Text fontWeight={600} mb={1}>
-                          Optional places
-                        </Text>
-                        <Text fontSize="12px" color="fg.muted" mb={3}>
-                          Didn't fit automatically. Drag one onto any day's merged column to schedule it.
-                        </Text>
-                        <Wrap spacing={3}>
-                          {visibleOptionalPlaces.map((place) => (
-                            <WrapItem key={place.placeId}>
-                              <OptionalSourceCard id={`optional:${place.placeId}`} place={place} />
-                            </WrapItem>
-                          ))}
-                        </Wrap>
-                      </Box>
-                    )}
-                    {currentDays.map((systemDay) => (
-                      <FineTuneDayRow
-                        key={systemDay.date}
-                        systemDay={systemDay}
-                        aiDay={aiByDate.get(systemDay.date)}
-                        final={stateFor(finalByDate, systemDay.date)}
-                        onRemoveStop={(stopId) => handleRemoveStop(systemDay.date, stopId)}
-                        onRemovePendingOptional={(placeId) => handleRemovePendingOptional(systemDay.date, placeId)}
-                      />
-                    ))}
-                  </Stack>
-                </Collapse>
-              </Box>
-            )}
-          </DndContext>
+            <Box mt={6}>
+              <Button variant="ghost" size="sm" onClick={arrange.onToggle} aria-expanded={arrange.isOpen} rightIcon={<Icon as={arrange.isOpen ? FiChevronUp : FiChevronDown} />}>
+                Arrange the merged plan by hand
+              </Button>
+              <Collapse in={arrange.isOpen} animateOpacity unmountOnExit>
+                <Box mt={3}>
+                  <CompareBoard
+                    currentDays={currentDays}
+                    aiByDate={aiByDate}
+                    optionalPlaces={allOptionalPlaces}
+                    stateFor={stateFor}
+                    finalByDate={finalByDate}
+                    setFinalByDate={setFinalByDate}
+                    showCity={showCity}
+                    readOnly={!canEdit}
+                  />
+                </Box>
+              </Collapse>
+            </Box>
+          </>
         )}
 
         {/* Merge bar */}

@@ -1080,10 +1080,15 @@ export function fillUnscheduledPlaces(
 
 /** Puts a place on a chosen day even if it overruns — the user asked for exactly this, so it's
  * kept and flagged rather than silently refused. */
-export function forceInsertPlaceIntoDay(day: ItineraryDay, place: Place, env: EngineEnv, opts: { userAdded?: boolean } = {}): ItineraryDay {
+export function forceInsertPlaceIntoDay(
+  day: ItineraryDay,
+  place: Place,
+  env: EngineEnv,
+  opts: { userAdded?: boolean; index?: number } = {},
+): ItineraryDay {
   const leg = legForDate(env.trip, day.date, day.legId);
   const stop = { ...placeToStop(place, env.trip, leg?.id), userAdded: opts.userAdded || undefined };
-  const { stops } = walkDay(insertIntoDay(day, stop, env), contextForDay(env, day), { strict: false, autoMeals: false });
+  const { stops } = walkDay(insertIntoDay(day, stop, env, opts.index), contextForDay(env, day), { strict: false, autoMeals: false });
   return { ...day, stops };
 }
 

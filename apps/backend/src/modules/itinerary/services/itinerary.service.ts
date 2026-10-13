@@ -617,23 +617,30 @@ export async function movePlaceFromOptional(
   const parsed = movePlaceToDaySchema.safeParse(input);
   if (!parsed.success) return invalid(parsed.error.issues);
 
-  const { tripId, placeId, toDayNumber } = parsed.data;
+  const { tripId, placeId, toDayNumber, targetIndex } = parsed.data;
   const loaded = await loadTripAndItinerary(userId, tripId);
   if ("error" in loaded) return { success: false, error: loaded.error };
   const { trip, itinerary: existing } = loaded;
   if (!existing) return { success: false, error: "Itinerary not found" };
 
-  const optionalPlace = existing.optionalPlaces.find((p) => p.placeId === placeId);
-  if (!optionalPlace) return { success: false, error: "Optional place not found" };
+  // Any place the traveller picked can go on a day — whether it "didn't fit" when the plan was made
+  // or was picked afterwards.
+  const isOptional = existing.optionalPlaces.some((p) => p.placeId === placeId);
+  if (!isOptional && !getAggregatedSelectedPlaceIds(trip).includes(placeId)) {
+    return { success: false, error: "Add this place to your trip first." };
+  }
+  const scheduledOn = existing.days.find((d) => d.stops.some((s) => s.placeId === placeId));
+  if (scheduledOn) return { success: false, error: `Already on ${dayLabel(scheduledOn)} — drag that stop instead.` };
 
   const day = existing.days.find((d) => d.dayNumber === toDayNumber);
   if (!day) return { success: false, error: "Day not found" };
+  if (!isSchedulable(day)) return { success: false, error: "That's a travel day — pick another day" };
 
   const env = await buildEnv(trip, [...placeIdsInDays([day]), placeId]);
   const place = env.placesById.get(placeId);
   if (!place) return { success: false, error: "Place not found — try discovering places again." };
 
-  const nextDay = forceInsertPlaceIntoDay(day, place, env, { userAdded: true });
+  const nextDay = forceInsertPlaceIntoDay(day, place, env, { userAdded: true, index: targetIndex });
   const itinerary = await applyDayEdit(trip, existing, [nextDay], `Add ${place.name} to ${dayLabel(day)}`, {
     optionalPlaces: existing.optionalPlaces.filter((p) => p.placeId !== placeId),
   });

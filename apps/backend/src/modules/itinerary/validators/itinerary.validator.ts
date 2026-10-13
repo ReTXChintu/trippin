@@ -115,6 +115,8 @@ export const movePlaceToDaySchema = z.object({
   placeId: z.string().min(1),
   toDayNumber: z.number().int().min(1),
   legId: z.string().optional(),
+  /** Position among the day's movable stops (everything except travel/return); omitted = best fit. */
+  targetIndex: z.number().int().min(0).optional(),
 });
 
 export const setStopLockSchema = z.object({

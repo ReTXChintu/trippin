@@ -87,7 +87,7 @@ export async function applyMergedDays(
 
 export async function movePlaceToDay(
   tripId: string,
-  params: { placeId: string; toDayNumber: number; legId?: string },
+  params: { placeId: string; toDayNumber: number; legId?: string; targetIndex?: number },
 ): Promise<{ itinerary: Itinerary }> {
   const res = await api.post(`/trips/${tripId}/itinerary`, { action: "movePlaceToDay", ...params });
   return res.data.data;
@@ -120,12 +120,14 @@ export async function moveItineraryStop(
   stopId: string,
   fromDayNumber: number,
   toDayNumber: number,
+  targetIndex?: number,
 ): Promise<{ itinerary: Itinerary }> {
   const res = await api.post(`/trips/${tripId}/itinerary`, {
     action: "moveStop",
     stopId,
     fromDayNumber,
     toDayNumber,
+    targetIndex,
   });
   return res.data.data;
 }

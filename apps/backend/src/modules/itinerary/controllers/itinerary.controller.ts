@@ -86,6 +86,7 @@ export async function act(req: Request, res: Response) {
           placeId: body.placeId,
           toDayNumber: body.toDayNumber,
           legId: body.legId,
+          targetIndex: body.targetIndex,
         }),
       );
     case "generateGuide":

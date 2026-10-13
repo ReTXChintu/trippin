@@ -26,6 +26,7 @@ import {
   LuCheck,
   LuChevronDown,
   LuColumns2,
+  LuKanban,
   LuEye,
   LuFileText,
   LuInfo,
@@ -63,6 +64,7 @@ import { CommentsDrawer, type CommentThreadTarget } from "@/modules/trips/compon
 import { ItineraryExportMenu } from "@/modules/itinerary/components/ItineraryExportMenu";
 import { MapView } from "@/modules/itinerary/components/MapView";
 import { mapChromeSx } from "@/modules/itinerary/components/map-pins";
+import { PlanTabBoard } from "@/modules/itinerary/components/board/PlanTabBoard";
 import { AskAiBar } from "@/modules/itinerary/components/plan/AskAiBar";
 import { TripMapView } from "@/modules/itinerary/components/TripMapView";
 import { PlaceDetailModal } from "@/modules/places/components/PlaceDetailModal";
@@ -159,7 +161,23 @@ export function PlanView({ trip, canEdit, hasMapsKey, hasAiKey, isOwner = true, 
   const [addDay, setAddDay] = useState<ItineraryDay | null>(null);
   const [busyStopId, setBusyStopId] = useState<string | null>(null);
   const [mapMode, setMapMode] = useState<"day" | "trip">("day");
-  const [mobileView, setMobileView] = useState<"list" | "map">("list");
+  const [mobileView, setMobileView] = useState<"list" | "map" | "board">("list");
+  // Desktop: the list + map workspace, or the drag board (days as columns). Remembered per browser.
+  const [desktopView, setDesktopViewState] = useState<"list" | "board">(() => {
+    try {
+      return localStorage.getItem("trippin.planView") === "board" ? "board" : "list";
+    } catch {
+      return "list";
+    }
+  });
+  const setDesktopView = (v: "list" | "board") => {
+    setDesktopViewState(v);
+    try {
+      localStorage.setItem("trippin.planView", v);
+    } catch {
+      // storage unavailable — the choice just isn't remembered
+    }
+  };
   const [commentTarget, setCommentTarget] = useState<CommentThreadTarget | null>(null);
   const { data: commentsData } = useCommentsQuery(trip.id);
   const commentCounts = new Map<string, number>();
@@ -732,6 +750,16 @@ export function PlanView({ trip, canEdit, hasMapsKey, hasAiKey, isOwner = true, 
         justify="space-between"
         gap={4}
       >
+        <Segmented
+          value={desktopView}
+          onChange={setDesktopView}
+          flexShrink={0}
+          aria-label="Plan view"
+          options={[
+            { value: "list", label: "List", icon: LuList },
+            { value: "board", label: "Board", icon: LuKanban },
+          ]}
+        />
         <Flex
           role="group"
           aria-label="Days"
@@ -740,6 +768,7 @@ export function PlanView({ trip, canEdit, hasMapsKey, hasAiKey, isOwner = true, 
           minW={0}
           overflowX="auto"
           py={1}
+          visibility={desktopView === "board" ? "hidden" : "visible"}
           sx={{ scrollbarWidth: "none", "&::-webkit-scrollbar": { display: "none" } }}
         >
           <ChoiceChip
@@ -807,6 +836,7 @@ export function PlanView({ trip, canEdit, hasMapsKey, hasAiKey, isOwner = true, 
             options={[
               { value: "list", label: "List", icon: LuList },
               { value: "map", label: "Map", icon: LuMap },
+              { value: "board", label: "Board", icon: LuKanban },
             ]}
           />
           <HStack spacing={2} minW={0}>
@@ -818,8 +848,15 @@ export function PlanView({ trip, canEdit, hasMapsKey, hasAiKey, isOwner = true, 
         </Flex>
       </Box>
 
+      {/* ---------------- Board (days as columns) ---------------- */}
+      {itinerary && (compact ? mobileView === "board" : desktopView === "board") && (
+        <Box px={{ base: 4, lg: 7 }} pt={{ base: 0, lg: 5 }} pb={{ base: "88px", lg: 6 }}>
+          <PlanTabBoard trip={trip} itinerary={itinerary} days={days} legs={legs} activeLeg={activeLeg} canEdit={canEdit} />
+        </Box>
+      )}
+
       {/* ---------------- Panes ---------------- */}
-      <Flex align="flex-start">
+      <Flex align="flex-start" display={itinerary && (compact ? mobileView === "board" : desktopView === "board") ? "none" : "flex"}>
         <Flex
           direction="column"
           gap="14px"

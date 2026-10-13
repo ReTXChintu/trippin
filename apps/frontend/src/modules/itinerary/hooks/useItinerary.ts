@@ -98,10 +98,15 @@ export function useApplyMergedDays(tripId: string) {
 
 export function useMovePlaceToDay(tripId: string) {
   const invalidate = useInvalidateItinerary(tripId);
+  const setItinerary = useSetItinerary(tripId);
   return useMutation({
-    mutationFn: (params: { placeId: string; toDayNumber: number; legId?: string }) =>
+    mutationFn: (params: { placeId: string; toDayNumber: number; legId?: string; targetIndex?: number }) =>
       itineraryApi.movePlaceToDay(tripId, params),
-    onSuccess: invalidate,
+    // Show the server's result straight away (no flash back while refetching), then refresh the rest.
+    onSuccess: (data) => {
+      setItinerary(data.itinerary);
+      invalidate();
+    },
   });
 }
 
@@ -194,17 +199,23 @@ export function useMealSuggestionsQuery(tripId: string, dayNumber: number, stopI
 
 export function useMoveItineraryStop(tripId: string) {
   const invalidate = useInvalidateItinerary(tripId);
+  const setItinerary = useSetItinerary(tripId);
   return useMutation({
     mutationFn: ({
       stopId,
       fromDayNumber,
       toDayNumber,
+      targetIndex,
     }: {
       stopId: string;
       fromDayNumber: number;
       toDayNumber: number;
-    }) => itineraryApi.moveItineraryStop(tripId, stopId, fromDayNumber, toDayNumber),
-    onSuccess: invalidate,
+      targetIndex?: number;
+    }) => itineraryApi.moveItineraryStop(tripId, stopId, fromDayNumber, toDayNumber, targetIndex),
+    onSuccess: (data) => {
+      setItinerary(data.itinerary);
+      invalidate();
+    },
   });
 }
 
