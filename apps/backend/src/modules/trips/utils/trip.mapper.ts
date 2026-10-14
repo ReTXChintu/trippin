@@ -66,6 +66,7 @@ function toTripLeg(leg: NonNullable<ITripDocument["legs"]>[number]): TripLeg {
     name: leg.name,
     baseCity: leg.baseCity,
     dayTripAreas: toStringArray(leg.dayTripAreas),
+    placeAreas: leg.placeAreas && typeof leg.placeAreas === "object" ? { ...(leg.placeAreas as Record<string, string>) } : {},
     // Trips saved before day trips had dates only have the names — list those.
     dayTrips: leg.dayTrips?.length
       ? leg.dayTrips.map((d) => ({

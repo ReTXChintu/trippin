@@ -13,6 +13,8 @@ export async function searchPlaces(params: {
   type?: "places" | "hotels";
   /** Day-trip towns to search as well ("Ujjain,Omkareshwar"). */
   areas?: string;
+  /** With lat/lng: only results within this many km. */
+  radiusKm?: number;
 }): Promise<{ results: PlaceSearchResult[] }> {
   const res = await api.get("/places/search", { params });
   return res.data.data;
@@ -72,8 +74,8 @@ export async function getTripEatShopPool(
   return res.data.data;
 }
 
-export async function addPlaceToTrip(tripId: string, legId: string, placeId: string): Promise<{ places: Place[] }> {
-  const res = await api.post(`/trips/${tripId}/places`, { legId, placeId });
+export async function addPlaceToTrip(tripId: string, legId: string, placeId: string, areaId?: string): Promise<{ places: Place[] }> {
+  const res = await api.post(`/trips/${tripId}/places`, { legId, placeId, areaId });
   return res.data.data;
 }
 
@@ -81,8 +83,15 @@ export async function bulkAddPlacesToTrip(
   tripId: string,
   legId: string,
   placeIds: string[],
+  areaId?: string,
 ): Promise<{ places: Place[] }> {
-  const res = await api.post(`/trips/${tripId}/places`, { action: "bulkAdd", legId, placeIds });
+  const res = await api.post(`/trips/${tripId}/places`, { action: "bulkAdd", legId, placeIds, areaId });
+  return res.data.data;
+}
+
+/** Moves picked places to another area of the city ("base" or a day trip id). */
+export async function setPlaceArea(tripId: string, legId: string, placeIds: string[], areaId: string): Promise<{ placeAreas: Record<string, string> }> {
+  const res = await api.post(`/trips/${tripId}/places`, { action: "setArea", legId, placeIds, areaId });
   return res.data.data;
 }
 
@@ -108,8 +117,9 @@ export async function addPlaceFromSearch(
   tripId: string,
   legId: string,
   placeId: string,
+  areaId?: string,
 ): Promise<{ places: Place[]; place: Place }> {
-  const res = await api.post(`/trips/${tripId}/places/from-search`, { legId, placeId });
+  const res = await api.post(`/trips/${tripId}/places/from-search`, { legId, placeId, areaId });
   return res.data.data;
 }
 

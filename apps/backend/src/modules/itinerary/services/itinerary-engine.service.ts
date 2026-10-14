@@ -166,8 +166,11 @@ export interface EngineEnv {
 // ---------------------------------------------------------------------------------------------
 
 export interface DayTripZone {
+  /** The day trip's id (matches the city's placeAreas values). */
+  id?: string;
   name: string;
-  center: Coordinates;
+  /** Unknown when the town couldn't be located — then only explicitly picked places join it. */
+  center?: Coordinates;
   /** Fixed day (YYYY-MM-DD); omitted = the planner picks one. */
   date?: string;
 }
@@ -176,15 +179,24 @@ export interface LegZones {
   /** Where the city's days start (the stay); places are compared against it. */
   base?: Coordinates;
   zones: DayTripZone[];
+  /** Places the traveller picked for a specific area: place id → zone index, or -1 for the city. */
+  explicit?: Map<string, number>;
 }
+
+type Zoneable = { googlePlaceId?: string; coordinates?: Coordinates };
 
 /** Which day trip a place belongs to (-1 = the base city): it must be closer to that town than to
  * the base, and within about 60% of the base→town distance of it (at least 25 km). */
-export function zoneIndexFor(place: { coordinates?: Coordinates }, lz: LegZones | undefined): number {
-  if (!place.coordinates || !lz || lz.zones.length === 0) return -1;
+export function zoneIndexFor(place: Zoneable, lz: LegZones | undefined): number {
+  if (!lz || lz.zones.length === 0) return -1;
+  // What the traveller chose wins over distance.
+  const chosen = place.googlePlaceId ? lz.explicit?.get(place.googlePlaceId) : undefined;
+  if (chosen !== undefined) return chosen;
+  if (!place.coordinates) return -1;
   let best = -1;
   let bestKm = Infinity;
   lz.zones.forEach((z, i) => {
+    if (!z.center) return;
     const km = haversineKm(place.coordinates!, z.center);
     if (km < bestKm) {
       bestKm = km;
@@ -193,12 +205,12 @@ export function zoneIndexFor(place: { coordinates?: Coordinates }, lz: LegZones 
   });
   if (best < 0) return -1;
   const toBase = lz.base ? haversineKm(place.coordinates, lz.base) : Infinity;
-  const span = lz.base ? haversineKm(lz.base, lz.zones[best].center) : 60;
+  const span = lz.base ? haversineKm(lz.base, lz.zones[best].center!) : 60;
   return bestKm < toBase && bestKm <= Math.max(25, span * 0.6) ? best : -1;
 }
 
 export interface LegZonePlan {
-  zoneOf: (place: { coordinates?: Coordinates }) => number;
+  zoneOf: (place: Zoneable) => number;
   /** zone index → the date it's on. */
   dateOfZone: Map<number, string>;
   /** Dates given to day trips (base-city places stay off them). */
@@ -207,8 +219,8 @@ export interface LegZonePlan {
 
 /** Gives every day trip that has places a date: its fixed one if it's in the city's dates, else the
  * free date nearest the middle of the stay (arrival and departure days are picked last). */
-export function planLegZones(lz: LegZones | undefined, dates: string[], legPlaces: { coordinates?: Coordinates }[]): LegZonePlan {
-  const zoneOf = (p: { coordinates?: Coordinates }) => zoneIndexFor(p, lz);
+export function planLegZones(lz: LegZones | undefined, dates: string[], legPlaces: Zoneable[]): LegZonePlan {
+  const zoneOf = (p: Zoneable) => zoneIndexFor(p, lz);
   const dateOfZone = new Map<number, string>();
   if (!lz || lz.zones.length === 0 || dates.length === 0) return { zoneOf, dateOfZone, reserved: new Set() };
 

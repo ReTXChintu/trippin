@@ -75,6 +75,23 @@ export class GooglePlacesProvider implements PlacesProvider {
     return response.json() as Promise<T>;
   }
 
+  /** A strict circle (autocomplete) — Google allows up to 50 km. */
+  private circle(location: Coordinates, km: number) {
+    return { circle: { center: { latitude: location.lat, longitude: location.lng }, radius: Math.min(km, 50) * 1000 } };
+  }
+
+  /** Text search only takes a rectangle for strict limits — the box around the circle. */
+  private rectangle(location: Coordinates, km: number) {
+    const dLat = km / 111;
+    const dLng = km / (111 * Math.max(Math.cos((location.lat * Math.PI) / 180), 0.1));
+    return {
+      rectangle: {
+        low: { latitude: location.lat - dLat, longitude: location.lng - dLng },
+        high: { latitude: location.lat + dLat, longitude: location.lng + dLng },
+      },
+    };
+  }
+
   private locationBias(location?: Coordinates) {
     if (!location) return undefined;
     return {
@@ -90,11 +107,14 @@ export class GooglePlacesProvider implements PlacesProvider {
       return { results: [] };
     }
 
-    const textQuery = buildTextQuery(options.query, options.city, options.country);
+    const strict = Boolean(options.restrictKm && options.location);
+    const textQuery = strict ? options.query.trim() : buildTextQuery(options.query, options.city, options.country);
     const body: Record<string, unknown> = {
       textQuery,
       maxResultCount: options.limit ?? MAX_SEARCH_RESULTS,
-      locationBias: this.locationBias(options.location),
+      ...(strict
+        ? { locationRestriction: this.rectangle(options.location!, options.restrictKm!) }
+        : { locationBias: this.locationBias(options.location) }),
     };
 
     if (options.pageToken) {
@@ -169,14 +189,18 @@ export class GooglePlacesProvider implements PlacesProvider {
   async autocomplete(options: SearchPlacesOptions): Promise<PlaceSearchResult[]> {
     if (options.query.trim().length < SEARCH_MIN_QUERY_LENGTH) return [];
 
+    const strict = Boolean(options.restrictKm && options.location);
     const body: Record<string, unknown> = {
-      input: buildTextQuery(options.query, options.city, options.country),
+      // Restricted to an area, the bare name works best ("in Indore" would pull in namesakes).
+      input: strict ? options.query.trim() : buildTextQuery(options.query, options.city, options.country),
     };
 
     if (options.sessionToken) {
       body.sessionToken = options.sessionToken;
     }
-    if (options.location) {
+    if (strict) {
+      body.locationRestriction = this.circle(options.location!, options.restrictKm!);
+    } else if (options.location) {
       body.locationBias = this.locationBias(options.location);
     }
 

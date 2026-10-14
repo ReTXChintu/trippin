@@ -95,6 +95,8 @@ export interface SearchPlacesOptions {
   limit?: number;
   sessionToken?: string;
   pageToken?: string;
+  /** Only return places within this many km of `location` (instead of just preferring them). */
+  restrictKm?: number;
   googleMapsApiKey: string;
 }
 

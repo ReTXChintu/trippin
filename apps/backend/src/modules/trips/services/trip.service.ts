@@ -107,6 +107,9 @@ export async function updateTripFromRaw(
   }
   // Day trips: keep dates/locations for clients that only send names, locate new ones.
   const storedLegs = new Map((existing?.legs ?? []).map((l) => [l.id, l]));
+  parsed.data.legs = parsed.data.legs.map((leg) =>
+    leg.placeAreas ? leg : { ...leg, placeAreas: storedLegs.get(leg.id)?.placeAreas ?? {} },
+  );
   parsed.data.legs = (await Promise.all(
     parsed.data.legs.map((leg) => locateDayTrips(normalizeDayTrips(leg as TripLeg, storedLegs.get(leg.id)))),
   )) as typeof parsed.data.legs;

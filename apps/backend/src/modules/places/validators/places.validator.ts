@@ -3,6 +3,8 @@ import { SEARCH_MIN_QUERY_LENGTH } from "@/constants/google-places";
 
 export const searchQuerySchema = z.object({
   query: z.string().min(SEARCH_MIN_QUERY_LENGTH, "Enter at least 3 characters"),
+  /** Only return places within this many km of lat/lng (max 50). */
+  radiusKm: z.coerce.number().min(1).max(50).optional(),
   city: z.string().optional(),
   country: z.string().optional(),
   sessionToken: z.string().optional(),
@@ -36,6 +38,8 @@ export const tripPlaceSchema = z.object({
   tripId: z.string().min(1),
   legId: z.string().min(1),
   placeId: z.string().min(1),
+  /** Day-trip id or "base" — which part of the city's stay the place is for. */
+  areaId: z.string().min(1).optional(),
 });
 
 export const placeDetailSchema = z.object({
@@ -47,6 +51,14 @@ export const bulkAddPlacesSchema = z.object({
   tripId: z.string().min(1),
   legId: z.string().min(1),
   placeIds: z.array(z.string().min(1)).min(1),
+  areaId: z.string().min(1).optional(),
+});
+
+export const setPlaceAreaSchema = z.object({
+  tripId: z.string().min(1),
+  legId: z.string().min(1),
+  placeIds: z.array(z.string().min(1)).min(1),
+  areaId: z.string().min(1),
 });
 
 export const bulkRemovePlacesSchema = z.object({

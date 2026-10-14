@@ -22,6 +22,7 @@ import {
 import type { TripLeg } from "@/modules/trips/types/trip-leg.types";
 import {
   bulkAddPlacesSchema,
+  setPlaceAreaSchema,
   bulkRemovePlacesSchema,
   discoverTripPlacesSchema,
   geocodeSchema,
@@ -81,13 +82,28 @@ function findLeg(trip: Trip, legId: string): TripLeg | undefined {
   return trip.legs.find((l) => l.id === legId);
 }
 
+/** placeAreas after picking `placeIds` for `areaId` (or dropping them when removed). */
+function areasWith(leg: TripLeg, placeIds: string[], areaId: string | null | undefined): Record<string, string> {
+  const next = { ...(leg.placeAreas ?? {}) };
+  for (const id of placeIds) {
+    if (areaId) next[id] = areaId;
+    else if (areaId === null) delete next[id];
+  }
+  return next;
+}
+
 async function persistLegSelectedPlaceIds(
   trip: Trip,
   userId: string,
   legId: string,
   selectedPlaceIds: string[],
+  area?: { placeIds: string[]; areaId: string | null | undefined },
 ): Promise<void> {
-  const updatedLegs = trip.legs.map((l) => (l.id === legId ? { ...l, selectedPlaceIds } : l));
+  const updatedLegs = trip.legs.map((l) =>
+    l.id === legId
+      ? { ...l, selectedPlaceIds, ...(area ? { placeAreas: areasWith(l, area.placeIds, area.areaId) } : {}) }
+      : l,
+  );
   await TripRepository.update(trip.id, userId, { legs: updatedLegs });
 }
 
@@ -99,12 +115,14 @@ async function persistLegSelectedAndPoolPlaceIds(
   legId: string,
   selectedPlaceIds: string[],
   placeId: string,
+  areaId?: string,
 ): Promise<void> {
   const updatedLegs = trip.legs.map((l) =>
     l.id === legId
       ? {
           ...l,
           selectedPlaceIds,
+          placeAreas: areasWith(l, [placeId], areaId),
           discoveryPoolIds: l.discoveryPoolIds.includes(placeId)
             ? l.discoveryPoolIds
             : [...l.discoveryPoolIds, placeId],
@@ -170,7 +188,21 @@ export async function searchPlaces(
     const keys = await getUserApiKeys(userId);
     assertGoogleMapsKey(keys, "profile");
 
-    const { query, city, country, sessionToken, lat, lng, areas } = parsed.data;
+    const { query, city, country, sessionToken, lat, lng, areas, radiusKm } = parsed.data;
+    // Searching one area of the trip: only places within the radius, nothing from other states.
+    if (radiusKm && lat !== undefined && lng !== undefined) {
+      const near = await PlacesService.autocomplete({
+        query,
+        country,
+        sessionToken,
+        location: { lat, lng },
+        restrictKm: radiusKm,
+        googleMapsApiKey: keys.googleMaps,
+      });
+      if (near.length > 0) return { success: true, data: { results: near } };
+      const text = await PlacesService.searchPlaces({ query, country, location: { lat, lng }, restrictKm: radiusKm, googleMapsApiKey: keys.googleMaps });
+      return { success: true, data: { results: text } };
+    }
     // Day-trip towns are searched too — "Mamleshwar" from an Indore trip should find the temple at
     // Omkareshwar, not a small namesake in Indore. Results from every place are merged in turn.
     if (areas.length > 0) {
@@ -537,7 +569,7 @@ export async function addPlaceToTrip(
     return { success: false, error: parsed.error.issues[0]?.message ?? "Invalid input" };
   }
 
-  const { tripId, legId, placeId } = parsed.data;
+  const { tripId, legId, placeId, areaId } = parsed.data;
   const trip = await TripRepository.findByIdForUser(tripId, userId);
   if (!trip) return { success: false, error: "Trip not found" };
 
@@ -545,6 +577,9 @@ export async function addPlaceToTrip(
   if (!leg) return { success: false, error: "Trip leg not found" };
 
   if (leg.selectedPlaceIds.includes(placeId)) {
+    if (areaId && leg.placeAreas?.[placeId] !== areaId) {
+      await persistLegSelectedPlaceIds(trip, userId, legId, leg.selectedPlaceIds, { placeIds: [placeId], areaId });
+    }
     const places = await PlacesService.getCachedPlaces(leg.selectedPlaceIds);
     return { success: true, data: { places }, message: "Place already in trip" };
   }
@@ -558,7 +593,7 @@ export async function addPlaceToTrip(
   }
 
   const updatedIds = [...leg.selectedPlaceIds, placeId];
-  await persistLegSelectedPlaceIds(trip, userId, legId, updatedIds);
+  await persistLegSelectedPlaceIds(trip, userId, legId, updatedIds, { placeIds: [placeId], areaId });
 
   const places = await PlacesService.getCachedPlaces(updatedIds);
   return { success: true, data: { places }, message: "Place added to trip" };
@@ -581,7 +616,7 @@ export async function removePlaceFromTrip(
   if (!leg) return { success: false, error: "Trip leg not found" };
 
   const updatedIds = leg.selectedPlaceIds.filter((id) => id !== placeId);
-  await persistLegSelectedPlaceIds(trip, userId, legId, updatedIds);
+  await persistLegSelectedPlaceIds(trip, userId, legId, updatedIds, { placeIds: [placeId], areaId: null });
 
   const places = await PlacesService.getCachedPlaces(updatedIds);
   return { success: true, data: { places }, message: "Place removed from trip" };
@@ -596,7 +631,7 @@ export async function bulkAddPlacesToTrip(
     return { success: false, error: parsed.error.issues[0]?.message ?? "Invalid input" };
   }
 
-  const { tripId, legId, placeIds } = parsed.data;
+  const { tripId, legId, placeIds, areaId } = parsed.data;
   const trip = await TripRepository.findByIdForUser(tripId, userId);
   if (!trip) return { success: false, error: "Trip not found" };
 
@@ -621,7 +656,7 @@ export async function bulkAddPlacesToTrip(
   }
 
   const updatedIds = Array.from(merged);
-  await persistLegSelectedPlaceIds(trip, userId, legId, updatedIds);
+  await persistLegSelectedPlaceIds(trip, userId, legId, updatedIds, { placeIds, areaId });
 
   const places = await PlacesService.getCachedPlaces(updatedIds);
   return { success: true, data: { places }, message: `Added ${placeIds.length} place(s) to trip` };
@@ -645,10 +680,23 @@ export async function bulkRemovePlacesFromTrip(
 
   const removeSet = new Set(placeIds);
   const updatedIds = leg.selectedPlaceIds.filter((id) => !removeSet.has(id));
-  await persistLegSelectedPlaceIds(trip, userId, legId, updatedIds);
+  await persistLegSelectedPlaceIds(trip, userId, legId, updatedIds, { placeIds, areaId: null });
 
   const places = await PlacesService.getCachedPlaces(updatedIds);
   return { success: true, data: { places }, message: `Removed ${placeIds.length} place(s) from trip` };
+}
+
+export async function setPlaceArea(userId: string, input: unknown): Promise<PlacesActionResult<{ placeAreas: Record<string, string> }>> {
+  const parsed = setPlaceAreaSchema.safeParse(input);
+  if (!parsed.success) return { success: false, error: parsed.error.issues[0]?.message ?? "Invalid input" };
+  const { tripId, legId, placeIds, areaId } = parsed.data;
+  const trip = await TripRepository.findByIdForUser(tripId, userId);
+  if (!trip) return { success: false, error: "Trip not found" };
+  const leg = findLeg(trip, legId);
+  if (!leg) return { success: false, error: "Trip leg not found" };
+  if (areaId !== "base" && !(leg.dayTrips ?? []).some((d) => d.id === areaId)) return { success: false, error: "Day trip not found" };
+  await persistLegSelectedPlaceIds(trip, userId, legId, leg.selectedPlaceIds, { placeIds, areaId });
+  return { success: true, data: { placeAreas: areasWith(leg, placeIds, areaId) }, message: "Moved" };
 }
 
 export async function addPlaceFromSearch(
@@ -660,7 +708,7 @@ export async function addPlaceFromSearch(
     return { success: false, error: parsed.error.issues[0]?.message ?? "Invalid input" };
   }
 
-  const { tripId, legId, placeId } = parsed.data;
+  const { tripId, legId, placeId, areaId } = parsed.data;
   const trip = await TripRepository.findByIdForUser(tripId, userId);
   if (!trip) return { success: false, error: "Trip not found" };
 
@@ -676,7 +724,7 @@ export async function addPlaceFromSearch(
     merged.add(placeId);
 
     const updatedIds = Array.from(merged);
-    await persistLegSelectedAndPoolPlaceIds(trip, userId, legId, updatedIds, placeId);
+    await persistLegSelectedAndPoolPlaceIds(trip, userId, legId, updatedIds, placeId, areaId);
 
     const places = await PlacesService.getCachedPlaces(updatedIds);
     return { success: true, data: { places, place }, message: "Place added to trip" };

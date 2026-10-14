@@ -1,12 +1,15 @@
-import { Box, Button, Flex, SimpleGrid, Stack, Text, useToast } from "@chakra-ui/react";
+import { Box, Button, Flex, Menu, MenuButton, MenuItem, MenuList, SimpleGrid, Stack, Text, useToast } from "@chakra-ui/react";
 import { useMemo, useState } from "react";
-import { FiCheckSquare, FiMapPin, FiTrash2, FiX } from "react-icons/fi";
+import { FiCheckSquare, FiChevronDown, FiMapPin, FiTrash2, FiX } from "react-icons/fi";
 import { EmptyState } from "@/components/ui";
 import {
   useAddPlaceFromSearch,
   useBulkRemovePlacesFromTrip,
   useRemovePlaceFromTrip,
+  useSetPlaceArea,
 } from "@/modules/places/hooks/usePlaces";
+import { usePlaceAreaFor } from "@/modules/places/hooks/useLegAreas";
+import type { LegArea } from "@/modules/trips/utils/place-areas";
 import { getApiErrorMessage } from "@/lib/api";
 import { PlaceSearchInput } from "@/modules/places/components/PlaceSearchInput";
 import type { Place } from "@/modules/places/types/place.types";
@@ -21,16 +24,33 @@ interface TripSelectedPlacesPanelProps {
   onSelectedChange: (places: Place[]) => void;
   /** Open the place detail modal (hours, photos, preferred times). */
   onOpenDetails?: (placeId: string) => void;
+  /** The city and its day trips — enables "Move to…" in select mode. */
+  areas?: LegArea[];
 }
 
 /** "My places" — what's picked for this city, with remove / bulk remove and search-to-add. */
-export function TripSelectedPlacesPanel({ trip, leg, selectedPlaces, onSelectedChange, onOpenDetails }: TripSelectedPlacesPanelProps) {
+export function TripSelectedPlacesPanel({ trip, leg, selectedPlaces, onSelectedChange, onOpenDetails, areas }: TripSelectedPlacesPanelProps) {
   const toast = useToast();
   const [selectMode, setSelectMode] = useState(false);
   const [checkedIds, setCheckedIds] = useState<Set<string>>(new Set());
   const addFromSearch = useAddPlaceFromSearch(trip.id, leg.id);
   const removePlace = useRemovePlaceFromTrip(trip.id, leg.id);
   const bulkRemove = useBulkRemovePlacesFromTrip(trip.id, leg.id);
+  const setArea = useSetPlaceArea(trip.id, leg.id);
+  const currentArea = usePlaceAreaFor(leg.id);
+
+  const handleMove = async (areaId: string, areaName: string) => {
+    const ids = [...checkedIds];
+    if (ids.length === 0) return;
+    try {
+      await setArea.mutateAsync({ placeIds: ids, areaId });
+      setCheckedIds(new Set());
+      setSelectMode(false);
+      toast({ title: `Moved ${ids.length} place${ids.length === 1 ? "" : "s"} to ${areaName}`, status: "success" });
+    } catch (err) {
+      toast({ title: getApiErrorMessage(err), status: "error" });
+    }
+  };
   const [removingId, setRemovingId] = useState<string | null>(null);
   const aiMatchedIds = useMemo(() => new Set(leg.aiMatchedPlaceIds ?? []), [leg.aiMatchedPlaceIds]);
 
@@ -119,6 +139,22 @@ export function TripSelectedPlacesPanel({ trip, leg, selectedPlaces, onSelectedC
                 <Button size="xs" variant="ghost" onClick={() => setCheckedIds(allChecked ? new Set() : new Set(placeIds))}>
                   {allChecked ? "Clear" : `Select all ${placeIds.length}`}
                 </Button>
+                {areas && areas.length > 1 && (
+                  <Menu placement="bottom-end">
+                    <MenuButton as={Button} size="xs" variant="outline" rightIcon={<FiChevronDown />} isDisabled={checkedIds.size === 0} isLoading={setArea.isPending}>
+                      Move to
+                    </MenuButton>
+                    <MenuList fontSize="13px" zIndex={1500}>
+                      {areas
+                        .filter((a) => a.id !== currentArea)
+                        .map((a) => (
+                          <MenuItem key={a.id} onClick={() => void handleMove(a.id, a.isBase ? a.name : `the ${a.name} day trip`)}>
+                            {a.isBase ? a.name : `${a.name} day trip`}
+                          </MenuItem>
+                        ))}
+                    </MenuList>
+                  </Menu>
+                )}
                 <Button size="xs" variant="danger" leftIcon={<FiTrash2 />} onClick={() => void handleBulkRemove()} isDisabled={checkedIds.size === 0} isLoading={bulkRemove.isPending}>
                   Remove selected ({checkedIds.size})
                 </Button>

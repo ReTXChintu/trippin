@@ -16,6 +16,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { FiSearch } from "react-icons/fi";
 import { SEARCH_DEBOUNCE_MS, SEARCH_MIN_QUERY_LENGTH } from "@/constants/google-places";
 import { searchPlaces, getPlaceDetails } from "@/modules/places/api/places.api";
+import { usePlaceAreaScope } from "@/modules/places/hooks/useLegAreas";
 import type { PlaceSearchResult } from "@/modules/places/types/place.types";
 
 export interface PlaceSelection {
@@ -60,6 +61,7 @@ export function PlaceSearchInput({
   autoFocus,
 }: PlaceSearchInputProps) {
   const [query, setQuery] = useState(value ?? "");
+  const scope = usePlaceAreaScope();
   const [results, setResults] = useState<PlaceSearchResult[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -100,7 +102,10 @@ export function PlaceSearchInput({
           country,
           sessionToken,
           type: mode === "hotel" ? "hotels" : "places",
-          areas: mode === "place" && areas?.length ? areas.join(",") : undefined,
+          // Picking for one area of the trip: only places around it.
+          ...(mode === "place" && scope?.center
+            ? { lat: scope.center.lat, lng: scope.center.lng, radiusKm: scope.radiusKm }
+            : { areas: mode === "place" && areas?.length ? areas.join(",") : undefined }),
         });
         setResults(data.results);
         setIsOpen(true);
@@ -110,7 +115,7 @@ export function PlaceSearchInput({
         setIsLoading(false);
       }
     },
-    [city, country, mode, sessionToken, areas],
+    [city, country, mode, sessionToken, areas, scope],
   );
 
   const handleChange = (text: string) => {

@@ -116,10 +116,15 @@ async function withDayTripZones(env: ScheduleEnv): Promise<ScheduleEnv> {
   const legZones = new Map<string, LegZones>();
   for (const leg of getEffectiveLegs(env.trip)) {
     const located = await locateDayTrips(normalizeDayTrips(leg));
-    const zones = (located.dayTrips ?? [])
-      .filter((d) => d.coordinates)
-      .map((d) => ({ name: d.name, center: d.coordinates!, date: d.date }));
-    if (zones.length > 0) legZones.set(leg.id, { base: await legBasePoint(leg), zones });
+    const zones = (located.dayTrips ?? []).map((d) => ({ id: d.id, name: d.name, center: d.coordinates, date: d.date }));
+    if (zones.length === 0) continue;
+    // Places picked for a specific area (Places tab) go there regardless of distance.
+    const explicit = new Map<string, number>();
+    for (const [placeId, areaId] of Object.entries(leg.placeAreas ?? {})) {
+      const idx = areaId === "base" ? -1 : zones.findIndex((z) => z.id === areaId);
+      if (areaId === "base" || idx >= 0) explicit.set(placeId, idx);
+    }
+    legZones.set(leg.id, { base: await legBasePoint(leg), zones, explicit });
   }
   return { ...env, legZones };
 }

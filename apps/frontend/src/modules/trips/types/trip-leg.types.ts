@@ -41,6 +41,8 @@ export interface TripLeg {
   dayTripAreas: string[];
   /** Day trips with optional fixed days (`dayTripAreas` mirrors the names). */
   dayTrips?: TripDayTrip[];
+  /** Which area each picked place is for: a day trip's id, or "base" for the city. */
+  placeAreas?: Record<string, string>;
   startDate: string;
   endDate: string;
   /** HH:mm — when you reach this leg (first sightseeing day only). */

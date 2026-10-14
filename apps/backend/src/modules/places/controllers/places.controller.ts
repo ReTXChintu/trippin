@@ -19,6 +19,7 @@ export async function search(req: Request, res: Response) {
     lat: req.query.lat ? Number(req.query.lat) : undefined,
     lng: req.query.lng ? Number(req.query.lng) : undefined,
     areas: (req.query.areas as string) ?? undefined,
+    radiusKm: req.query.radiusKm ? Number(req.query.radiusKm) : undefined,
   };
 
   const result = type === "hotels" ? await searchHotels(req.user!.sub, input) : await searchPlaces(req.user!.sub, input);

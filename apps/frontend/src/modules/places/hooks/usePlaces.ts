@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import * as placesApi from "@/modules/places/api/places.api";
+import { usePlaceAreaFor } from "@/modules/places/hooks/useLegAreas";
 
 export function useTripPlacesQuery(tripId: string, view: "selected" | "pool" = "selected", legId?: string) {
   return useQuery({
@@ -36,16 +37,18 @@ export function useDiscoverPlaces(tripId: string) {
 
 export function useAddPlaceToTrip(tripId: string, legId: string) {
   const invalidate = useInvalidateTripPlaces(tripId);
+  const areaId = usePlaceAreaFor(legId);
   return useMutation({
-    mutationFn: (placeId: string) => placesApi.addPlaceToTrip(tripId, legId, placeId),
+    mutationFn: (placeId: string) => placesApi.addPlaceToTrip(tripId, legId, placeId, areaId),
     onSuccess: invalidate,
   });
 }
 
 export function useBulkAddPlacesToTrip(tripId: string, legId: string) {
   const invalidate = useInvalidateTripPlaces(tripId);
+  const areaId = usePlaceAreaFor(legId);
   return useMutation({
-    mutationFn: (placeIds: string[]) => placesApi.bulkAddPlacesToTrip(tripId, legId, placeIds),
+    mutationFn: (placeIds: string[]) => placesApi.bulkAddPlacesToTrip(tripId, legId, placeIds, areaId),
     onSuccess: invalidate,
   });
 }
@@ -68,9 +71,18 @@ export function useBulkRemovePlacesFromTrip(tripId: string, legId: string) {
 
 export function useAddPlaceFromSearch(tripId: string, legId: string) {
   const invalidate = useInvalidateTripPlaces(tripId);
+  const areaId = usePlaceAreaFor(legId);
   return useMutation({
-    mutationFn: (placeId: string) => placesApi.addPlaceFromSearch(tripId, legId, placeId),
+    mutationFn: (placeId: string) => placesApi.addPlaceFromSearch(tripId, legId, placeId, areaId),
     onSuccess: invalidate,
+  });
+}
+
+export function useSetPlaceArea(tripId: string, legId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ placeIds, areaId }: { placeIds: string[]; areaId: string }) => placesApi.setPlaceArea(tripId, legId, placeIds, areaId),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["trips", tripId] }),
   });
 }
 

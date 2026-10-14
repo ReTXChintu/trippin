@@ -51,6 +51,7 @@ export const tripLegSchema = z.object({
   name: z.string().min(1, "Leg name is required"),
   baseCity: z.string().min(2, "Base city is required"),
   dayTripAreas: z.array(z.string()).default([]),
+  placeAreas: z.record(z.string(), z.string()).optional(),
   dayTrips: z
     .array(
       z.object({

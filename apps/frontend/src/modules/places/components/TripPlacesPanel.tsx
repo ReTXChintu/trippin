@@ -1,7 +1,9 @@
-import { Box, Button, Flex, Stack, Tooltip, useBreakpointValue, useToast } from "@chakra-ui/react";
+import { Box, Button, Flex, Stack, Text, Tooltip, useBreakpointValue, useToast } from "@chakra-ui/react";
 import { useEffect, useMemo, useState } from "react";
-import { FiArrowRight, FiCompass, FiRefreshCw } from "react-icons/fi";
-import { Segmented } from "@/components/ui";
+import { FiArrowRight, FiCompass, FiMapPin, FiNavigation, FiRefreshCw } from "react-icons/fi";
+import { ChoiceChip, Segmented } from "@/components/ui";
+import { AREA_SEARCH_RADIUS_KM, PlaceAreaContext, useLegAreas } from "@/modules/places/hooks/useLegAreas";
+import { BASE_AREA, areaOfPlace } from "@/modules/trips/utils/place-areas";
 import { CityChips, TabSplit } from "@/components/ui/tabs";
 import { getApiErrorMessage } from "@/lib/api";
 import { DiscoveryPlacesPanel } from "@/modules/places/components/DiscoveryPlacesPanel";
@@ -44,17 +46,28 @@ export function TripPlacesPanel({ trip, leg, onPlanDays, onCityChange }: TripPla
   const [detailsPlaceId, setDetailsPlaceId] = useState<string | null>(null);
 
   const [localSelected, setLocalSelected] = useState<Place[] | null>(null);
+  // Day trips: pick places for the city and for each day-trip town separately.
+  const areas = useLegAreas(leg);
+  const hasDayTrips = areas.length > 1;
+  const [areaId, setAreaId] = useState<string>(BASE_AREA);
+  const area = areas.find((a) => a.id === areaId) ?? areas[0];
+  const inArea = (p: Place) => !hasDayTrips || areaOfPlace(p, leg, areas) === area.id;
 
   useEffect(() => {
     setLocalSelected(null);
+    setAreaId(BASE_AREA);
   }, [leg.id]);
 
   useEffect(() => {
     if (isWide && mode === "map") setMode("discover");
   }, [isWide, mode]);
 
-  const poolPlaces = useMemo(() => poolQuery.data?.places ?? [], [poolQuery.data]);
-  const selectedPlaces = useMemo(() => localSelected ?? selectedQuery.data?.places ?? [], [localSelected, selectedQuery.data]);
+  const allPoolPlaces = useMemo(() => poolQuery.data?.places ?? [], [poolQuery.data]);
+  const allSelectedPlaces = useMemo(() => localSelected ?? selectedQuery.data?.places ?? [], [localSelected, selectedQuery.data]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const poolPlaces = useMemo(() => allPoolPlaces.filter(inArea), [allPoolPlaces, area.id, areas, leg.placeAreas]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const selectedPlaces = useMemo(() => allSelectedPlaces.filter(inArea), [allSelectedPlaces, area.id, areas, leg.placeAreas]);
   const selectedPlaceIds = useMemo(
     () => new Set(selectedPlaces.map((p) => p.googlePlaceId).filter((id): id is string => Boolean(id))),
     [selectedPlaces],
@@ -65,7 +78,7 @@ export function TripPlacesPanel({ trip, leg, onPlanDays, onCityChange }: TripPla
 
   const syncSelectedFromIds = (ids: string[]) => {
     const catalog = new Map<string, Place>();
-    for (const p of [...poolPlaces, ...selectedPlaces]) {
+    for (const p of [...allPoolPlaces, ...allSelectedPlaces]) {
       if (p.googlePlaceId) catalog.set(p.googlePlaceId, p);
     }
     setLocalSelected(ids.map((id) => catalog.get(id)).filter((p): p is Place => Boolean(p)));
@@ -150,6 +163,23 @@ export function TripPlacesPanel({ trip, leg, onPlanDays, onCityChange }: TripPla
         <CityChips cities={legs.map((l) => ({ id: l.id, name: l.name || l.baseCity }))} value={leg.id} onChange={onCityChange} />
       </Flex>
 
+      {hasDayTrips && (
+        <Flex align="center" gap={2} flexWrap="wrap">
+          <Text fontSize="12px" color="fg.muted" fontWeight={600} textTransform="uppercase" letterSpacing="0.06em" mr={1}>
+            Picking for
+          </Text>
+          {areas.map((a) => {
+            const count = allSelectedPlaces.filter((p) => areaOfPlace(p, leg, areas) === a.id).length;
+            return (
+              <ChoiceChip key={a.id} selected={a.id === area.id} onClick={() => setAreaId(a.id)} icon={a.isBase ? FiMapPin : FiNavigation}>
+                {a.isBase ? a.name : `${a.name} · day trip`}
+                {count > 0 ? ` · ${count}` : ""}
+              </ChoiceChip>
+            );
+          })}
+        </Flex>
+      )}
+
       {mode === "discover" && (
         <DiscoveryPlacesPanel
           trip={trip}
@@ -164,6 +194,7 @@ export function TripPlacesPanel({ trip, leg, onPlanDays, onCityChange }: TripPla
         <TripSelectedPlacesPanel
           trip={trip}
           leg={leg}
+          areas={hasDayTrips ? areas : undefined}
           selectedPlaces={selectedPlaces}
           onSelectedChange={setLocalSelected}
           onOpenDetails={setDetailsPlaceId}
@@ -174,6 +205,7 @@ export function TripPlacesPanel({ trip, leg, onPlanDays, onCityChange }: TripPla
   );
 
   return (
+    <PlaceAreaContext.Provider value={{ legId: leg.id, areaId: area.id, center: area.center, radiusKm: AREA_SEARCH_RADIUS_KM }}>
     <Box>
       <TabSplit main={main} aside={isWide ? map : undefined} />
       <PlaceDetailModal
@@ -186,5 +218,6 @@ export function TripPlacesPanel({ trip, leg, onPlanDays, onCityChange }: TripPla
         onSelectedChange={syncSelectedFromIds}
       />
     </Box>
+    </PlaceAreaContext.Provider>
   );
 }

@@ -12,6 +12,7 @@ import {
   discoverPlacesForTrip,
   discoverVehicleRentalsForLeg,
   searchAreaForLeg,
+  setPlaceArea,
 } from "@/modules/places/services/places-actions.service";
 
 export async function list(req: Request, res: Response) {
@@ -45,12 +46,17 @@ export async function add(req: Request, res: Response) {
       tripId,
       legId: body.legId,
       placeIds: body.placeIds,
+      areaId: body.areaId,
     });
     return sendResult(res, result);
   }
 
+  if (body.action === "setArea" && Array.isArray(body.placeIds)) {
+    return sendResult(res, await setPlaceArea(req.user!.sub, { tripId, legId: body.legId, placeIds: body.placeIds, areaId: body.areaId }));
+  }
+
   if (body.placeId) {
-    const result = await addPlaceToTrip(req.user!.sub, { tripId, legId: body.legId, placeId: body.placeId });
+    const result = await addPlaceToTrip(req.user!.sub, { tripId, legId: body.legId, placeId: body.placeId, areaId: body.areaId });
     return sendResult(res, result);
   }
 
@@ -87,7 +93,7 @@ export async function addFromSearch(req: Request, res: Response) {
   if (!legId) {
     return sendError(res, "legId is required", 400);
   }
-  const result = await addPlaceFromSearch(req.user!.sub, { tripId, legId, placeId: req.body?.placeId });
+  const result = await addPlaceFromSearch(req.user!.sub, { tripId, legId, placeId: req.body?.placeId, areaId: req.body?.areaId });
   return sendResult(res, result);
 }
 

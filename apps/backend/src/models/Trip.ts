@@ -75,6 +75,7 @@ export interface ITripLeg {
   baseCity: string;
   dayTripAreas: string[];
   dayTrips?: ITripDayTrip[];
+  placeAreas?: Record<string, string>;
   startDate: string;
   endDate: string;
   arrivalTime?: string;
@@ -237,6 +238,7 @@ const TripLegSchema = new Schema<ITripLeg>(
     baseCity: { type: String, required: true, trim: true },
     dayTripAreas: { type: [String], default: [] },
     dayTrips: { type: [TripDayTripSchema], default: [] },
+    placeAreas: { type: Schema.Types.Mixed, default: {} },
     startDate: { type: String, required: true },
     endDate: { type: String, required: true },
     arrivalTime: { type: String, trim: true },
