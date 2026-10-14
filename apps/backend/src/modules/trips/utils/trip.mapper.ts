@@ -156,8 +156,9 @@ export function toTripDTO(doc: TripDocLike): Trip {
     userId: doc.userId.toString(),
     memberIds: (doc.memberIds ?? []).map((id) => id.toString()),
     viewerIds: (doc.viewerIds ?? []).map((id) => id.toString()),
-    placeVotes: (doc.votes ?? []).reduce<Record<string, string[]>>((acc, v) => {
-      (acc[v.placeId] ??= []).push(v.userId);
+    // Tolerate a malformed field rather than failing every trip list it appears in.
+    placeVotes: (Array.isArray(doc.votes) ? doc.votes : []).reduce<Record<string, string[]>>((acc, v) => {
+      if (v?.placeId && v.userId) (acc[v.placeId] ??= []).push(String(v.userId));
       return acc;
     }, {}),
     title: doc.title,
