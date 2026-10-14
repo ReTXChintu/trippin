@@ -1,6 +1,6 @@
-import { Box, Button, Flex, Icon, Text } from "@chakra-ui/react";
+import { Box, Button, Collapse, Flex, Icon, Text, useDisclosure } from "@chakra-ui/react";
 import { Fragment } from "react";
-import { LuArrowRight, LuCheck, LuChevronRight, LuTriangleAlert } from "react-icons/lu";
+import { LuArrowRight, LuCheck, LuChevronDown, LuChevronRight, LuTriangleAlert } from "react-icons/lu";
 import type { NextStep, StageSummary, TripStage } from "@/modules/trips/utils/trip-stage";
 
 function StageIcon({ status }: { status: TripStage["status"] }) {
@@ -35,59 +35,79 @@ interface StageBarProps {
   onNext: (next: NextStep) => void;
 }
 
-/** The 7 trip stages as links, plus the one suggested next step. Desktop only (phones get the banner). */
+/** One quiet line: progress, the suggested next step and its button. The seven stages (each a link to
+ * its tab) open from "Steps". Desktop only (phones get the banner). */
 export function StageBar({ summary, onStage, onNext }: StageBarProps) {
-  const { stages, next } = summary;
+  const { stages, next, doneCount } = summary;
+  const steps = useDisclosure();
   return (
-    <Flex py="10px" borderTopWidth="1px" borderColor="border.line" align="center" justify="space-between" gap={3} flexWrap="wrap">
-      <Flex as="nav" aria-label="Trip progress" align="center" flexWrap="wrap" rowGap={1} minW={0}>
-        {stages.map((stage, i) => (
-          <Fragment key={stage.key}>
-            {i > 0 && <Box w="18px" h="2px" mx="2px" flexShrink={0} bg={stages[i - 1].status === "done" ? "accent" : "border.line"} />}
-            <Flex
-              as="button"
-              type="button"
-              onClick={() => onStage(stage)}
-              align="center"
-              gap={2}
-              px="6px"
-              py="4px"
-              borderRadius="md"
-              textAlign="left"
-              _hover={{ bg: "bg.subtle" }}
-              _focusVisible={{ outline: "2px solid", outlineColor: "accent" }}
-              aria-label={`${stage.label}: ${stage.detail}`}
-            >
-              <StageIcon status={stage.status} />
-              <Flex direction="column" lineHeight={1.3}>
-                <Text fontWeight={600} fontSize="13px" whiteSpace="nowrap">
-                  {stage.label}
-                </Text>
-                <Text fontSize="12px" whiteSpace="nowrap" color={stage.status === "warn" ? "warn" : "fg.muted"}>
-                  {stage.detail}
-                </Text>
-              </Flex>
-            </Flex>
-          </Fragment>
-        ))}
-      </Flex>
-
-      {next && (
-        <Flex align="center" gap="10px" bg="warn.soft" color="warn" borderRadius="lg" pl="14px" pr={2} py={2} flexShrink={0} ml="auto">
-          <Flex direction="column" minW={0}>
-            <Text fontSize="12px" fontWeight={600} textTransform="uppercase" letterSpacing="0.06em">
-              Suggested next
-            </Text>
-            <Text fontWeight={600} fontSize="13px" color="warn">
-              {next.text}
-            </Text>
-          </Flex>
-          <Button size="sm" rightIcon={<LuArrowRight />} onClick={() => onNext(next)}>
-            {next.actionLabel}
-          </Button>
+    <Box py="8px" borderTopWidth="1px" borderColor="border.line">
+      <Flex align="center" gap={3} flexWrap="wrap">
+        <Flex gap="3px" aria-hidden>
+          {stages.map((s) => (
+            <Box key={s.key} w="16px" h="5px" borderRadius="full" bg={s.status === "done" ? "accent" : s.status === "warn" ? "warn" : "border.line"} />
+          ))}
         </Flex>
-      )}
-    </Flex>
+        <Text fontSize="13px" color="fg.muted" whiteSpace="nowrap">
+          {doneCount} of {stages.length} done
+        </Text>
+        {next && (
+          <>
+            <Text fontSize="13px" fontWeight={600} noOfLines={1} minW={0} flex="0 1 auto">
+              Next: {next.text}
+            </Text>
+            <Button size="xs" h="28px" px={3} rightIcon={<LuArrowRight />} onClick={() => onNext(next)} flexShrink={0}>
+              {next.actionLabel}
+            </Button>
+          </>
+        )}
+        <Button
+          size="xs"
+          h="28px"
+          variant="ghost"
+          ml="auto"
+          rightIcon={<LuChevronDown style={{ transform: steps.isOpen ? "rotate(180deg)" : undefined }} />}
+          onClick={steps.onToggle}
+          aria-expanded={steps.isOpen}
+          color="fg.muted"
+        >
+          Steps
+        </Button>
+      </Flex>
+      <Collapse in={steps.isOpen} animateOpacity unmountOnExit>
+        <Flex as="nav" aria-label="Trip progress" align="center" flexWrap="wrap" rowGap={1} minW={0} pt={2}>
+          {stages.map((stage, i) => (
+            <Fragment key={stage.key}>
+              {i > 0 && <Box w="18px" h="2px" mx="2px" flexShrink={0} bg={stages[i - 1].status === "done" ? "accent" : "border.line"} />}
+              <Flex
+                as="button"
+                type="button"
+                onClick={() => onStage(stage)}
+                align="center"
+                gap={2}
+                px="6px"
+                py="4px"
+                borderRadius="md"
+                textAlign="left"
+                _hover={{ bg: "bg.subtle" }}
+                _focusVisible={{ outline: "2px solid", outlineColor: "accent" }}
+                aria-label={`${stage.label}: ${stage.detail}`}
+              >
+                <StageIcon status={stage.status} />
+                <Flex direction="column" lineHeight={1.3}>
+                  <Text fontWeight={600} fontSize="13px" whiteSpace="nowrap">
+                    {stage.label}
+                  </Text>
+                  <Text fontSize="12px" whiteSpace="nowrap" color={stage.status === "warn" ? "warn" : "fg.muted"}>
+                    {stage.detail}
+                  </Text>
+                </Flex>
+              </Flex>
+            </Fragment>
+          ))}
+        </Flex>
+      </Collapse>
+    </Box>
   );
 }
 

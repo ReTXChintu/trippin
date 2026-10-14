@@ -233,12 +233,14 @@ export const DayCard = forwardRef<HTMLDivElement, DayCardProps>(function DayCard
                   <Text as="h2" fontFamily="heading" fontWeight={600} fontSize="20px" lineHeight={1.25}>
                     {formatDayDate(day.date, "EEE d MMM")}
                   </Text>
+                  {(isTravelDay || transferStop || isFreeDay || dayTrip) && (
                   <Pill
                     tone={dayTrip ? "accent" : "neutral"}
                     icon={isTravelDay || transferStop ? LuTrainFront : isFreeDay ? LuSun : dayTrip ? LuRoute : LuCamera}
                   >
                     {isTravelDay || transferStop ? "Travel day" : isFreeDay ? "Free day" : dayTrip ? `Day trip · ${dayTrip}` : "Sightseeing"}
                   </Pill>
+                  )}
                 </HStack>
                 {place && (
                   <Text fontSize="12px" color="fg.muted">

@@ -287,7 +287,7 @@ export function TripHeader({
               <Button as={Link} to={todayHref} leftIcon={<LuNavigation2 size={16} />}>
                 Today
               </Button>
-            ) : (
+            ) : daysToStart !== undefined && daysToStart !== null && daysToStart > 3 ? null : (
               <Button
                 as={Link}
                 to={todayHref}

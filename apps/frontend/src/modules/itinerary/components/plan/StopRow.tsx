@@ -517,6 +517,8 @@ function VisitRow({ stop, day, visitNumber, handle }: { stop: ItineraryStop; day
   const showCategory = stop.category && stop.category !== "Transfer";
   const farKm = plan.dayInsights(day).farStops.get(stop.id);
   const votes = stop.placeId ? (plan.trip.placeVotes?.[stop.placeId]?.length ?? 0) : 0;
+  // Voting and comments only matter when someone else is on the trip.
+  const shared = (plan.trip.memberIds?.length ?? 0) > 0;
 
   const marker = (
     <Flex
@@ -591,7 +593,7 @@ function VisitRow({ stop, day, visitNumber, handle }: { stop: ItineraryStop; day
                 {showCategory ? `${stop.category} · ` : ""}
                 {stop.fixedStartTime ? "fixed start" : fmtDur(stop.visitDurationMinutes)}
               </Text>
-              {stop.placeId && (
+              {stop.placeId && (shared || votes > 0) && (
                 <HStack spacing="4px" color="danger">
                   <Icon as={LuHeart} boxSize="12px" />
                   <Text>{votes}</Text>
@@ -647,8 +649,8 @@ function VisitRow({ stop, day, visitNumber, handle }: { stop: ItineraryStop; day
                 </Flex>
               </Box>
               <HStack spacing="2px" flexShrink={0}>
-                {stop.placeId && <VoteButton trip={plan.trip} placeId={stop.placeId} />}
-                <CommentButton stop={stop} />
+                {stop.placeId && (shared || votes > 0) && <VoteButton trip={plan.trip} placeId={stop.placeId} />}
+                {(shared || plan.commentCount(stop.id) > 0) && <CommentButton stop={stop} />}
                 <StopMenu stop={stop} day={day} canOpenDetails={canOpenDetails} />
               </HStack>
             </Flex>
@@ -706,46 +708,27 @@ function MealBlock({ stop, day, handle }: { stop: ItineraryStop; day: ItineraryD
 
   const anchor = suggestions.data?.anchorLabel;
   return (
-    <TimelineRow time={plan.compact ? undefined : stop.arrivalTime} marker={plan.compact ? <Box w="26px" /> : marker} offset={10}>
-      <Flex direction="column" gap={plan.compact ? "6px" : 2} borderWidth="1.5px" borderStyle="dashed" borderColor="border.line" borderRadius="xl" px={3} py="10px">
-        <Flex align="center" gap="10px" flexWrap={plan.compact ? "wrap" : "nowrap"}>
-          <Box flex={1} minW={0}>
-            <Text fontWeight={600}>{plan.compact ? `${meal} · ${stop.arrivalTime}` : meal}</Text>
-            <Text fontSize="12px" color="fg.muted">
-              {plan.compact
-                ? "Not picked yet"
-                : anchor
-                  ? `Around ${stop.arrivalTime} · ${anchor}${list.length ? `, ${list.length} place${list.length === 1 ? "" : "s"} nearby` : ""}`
-                  : `Placeholder · around ${stop.arrivalTime} · choose a place`}
-            </Text>
-          </Box>
-          {!plan.readOnly && (
-            <Button leftIcon={<LuUtensils size={16} />} onClick={() => plan.openMealPicker(stop, day)} h={plan.compact ? "40px" : undefined}>
-              Pick a place
-            </Button>
-          )}
-          {!plan.compact && !plan.readOnly && <StopMenu stop={stop} day={day} canOpenDetails={false} />}
-        </Flex>
-        {!plan.compact && (nearby.length > 0 || saved > 0) && (
-          <Flex gap="6px" flexWrap="wrap">
-            {nearby.map((s) => (
-              <SuggestionChip
-                key={s.googlePlaceId}
-                onClick={() => plan.chooseMeal(stop, day, s.googlePlaceId, s.name)}
-                soft
-                label={`Plan ${s.name} for ${meal.toLowerCase()}`}
-              >
-                {s.name}
-                {s.distanceKm !== undefined ? ` · ${s.distanceKm < 1 ? `${Math.round(s.distanceKm * 1000)} m` : `${s.distanceKm} km`}` : ""}
-              </SuggestionChip>
-            ))}
-            {saved > 0 && (
-              <SuggestionChip onClick={() => plan.openMealPicker(stop, day, "saved")} icon={LuHeart} label={`Saved restaurants (${saved})`}>
-                Saved ({saved})
-              </SuggestionChip>
-            )}
-          </Flex>
+    <TimelineRow time={stop.arrivalTime} marker={plan.compact ? <RingMarker icon={LuUtensils} size={26} /> : marker} offset={4}>
+      <Flex align="center" gap={2} minH="36px" flexWrap="wrap" px={1}>
+        <Text fontSize="13px" color="fg.muted" mr={1}>
+          <Text as="span" fontWeight={600} color="fg.default">
+            {meal}
+          </Text>{" "}
+          · not picked{!plan.compact && anchor ? ` · ${anchor}` : ""}
+        </Text>
+        {!plan.compact &&
+          nearby.map((s) => (
+            <SuggestionChip key={s.googlePlaceId} onClick={() => plan.chooseMeal(stop, day, s.googlePlaceId, s.name)} soft label={`Plan ${s.name} for ${meal.toLowerCase()}`}>
+              {s.name}
+            </SuggestionChip>
+          ))}
+        {!plan.readOnly && (
+          <Button size="xs" variant="ghost" color="accent.text" leftIcon={<LuUtensils size={13} />} onClick={() => plan.openMealPicker(stop, day, saved > 0 && nearby.length === 0 ? "saved" : "nearby")}>
+            Pick a place
+          </Button>
         )}
+        <Box flex={1} />
+        {!plan.compact && !plan.readOnly && <StopMenu stop={stop} day={day} canOpenDetails={false} />}
       </Flex>
     </TimelineRow>
   );

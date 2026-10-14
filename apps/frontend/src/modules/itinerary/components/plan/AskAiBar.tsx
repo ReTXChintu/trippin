@@ -5,7 +5,7 @@ import { LuArrowRight, LuCheck, LuSparkles, LuUndo2 } from "react-icons/lu";
 import { getApiErrorMessage } from "@/lib/api";
 import { useAiEditPlan, useUndoItinerary } from "@/modules/itinerary/hooks/useItinerary";
 import { Snackbar } from "@/components/ui/plan";
-import { AiWorkingPanel, KeyMissingNotice } from "@/components/states";
+import { AiWorkingPanel } from "@/components/states";
 
 interface AskAiBarProps {
   tripId: string;
@@ -78,7 +78,7 @@ export function AskAiBar({ tripId, hasAiKey, isOwner = true, examples = DEFAULT_
   };
 
   // ---------------- No AI key ----------------
-  if (!hasAiKey && compact) {
+  if (!hasAiKey) {
     return (
       <Flex align="center" gap={2} minH="44px">
         <Icon as={LuSparkles} boxSize="16px" color="accent.text" flexShrink={0} />
@@ -91,18 +91,6 @@ export function AskAiBar({ tripId, hasAiKey, isOwner = true, examples = DEFAULT_
           </Button>
         )}
       </Flex>
-    );
-  }
-  if (!hasAiKey) {
-    return (
-      <KeyMissingNotice
-        kind="ai"
-        variant="card"
-        canFix={isOwner}
-        feature="Ask AI to change the plan"
-        text="Needs an AI key. Everything else works — drag, lock and edit by hand."
-        boxShadow="raised"
-      />
     );
   }
 

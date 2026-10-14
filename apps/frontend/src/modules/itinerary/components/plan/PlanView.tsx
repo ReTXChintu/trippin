@@ -30,7 +30,6 @@ import {
   LuKanban,
   LuEye,
   LuFileText,
-  LuInfo,
   LuLayers,
   LuList,
   LuListChecks,
@@ -913,12 +912,6 @@ export function PlanView({ trip, canEdit, hasMapsKey, hasAiKey, isOwner = true, 
           {!compact && summaryCard}
           {compact ? (selectedDay ? dayCards([selectedDay], false) : null) : dayCards(days, !expandAll)}
           {didntFitCard}
-          {!hasMapsKey && (
-            <HStack spacing={2} fontSize="12px" color="fg.muted" align="flex-start">
-              <Icon as={LuInfo} boxSize="14px" mt="1px" />
-              <Text>Travel times are estimates from distance. With a Google Maps key they come from real routes.</Text>
-            </HStack>
-          )}
           {canEdit && itinerary && itinerary.days.length > 0 && !compact && (
             <Box position={hasAiKey ? "sticky" : "static"} bottom={4} zIndex={10} mt="auto">
               <AskAiBar tripId={trip.id} hasAiKey={hasAiKey} isOwner={isOwner} examples={aiExamples} />

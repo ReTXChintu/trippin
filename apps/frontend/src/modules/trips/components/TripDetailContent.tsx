@@ -1,10 +1,10 @@
-import { Box, Button, Stack, Text, useDisclosure } from "@chakra-ui/react";
+import { Box, Button, Flex, Icon, Link, Stack, Text, useDisclosure } from "@chakra-ui/react";
 import { useState } from "react";
-import { useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { LuBookOpen, LuListChecks, LuTicket, LuUtensils, LuWallet } from "react-icons/lu";
+import { Link as RouterLink, useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { LuBookOpen, LuInfo, LuListChecks, LuTicket, LuUtensils, LuWallet } from "react-icons/lu";
 import { LoadingState } from "@/components/ui/LoadingState";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { KeyMissingNotice, ViewOnlyBanner } from "@/components/states";
+import { ViewOnlyBanner } from "@/components/states";
 import { useBudgetQuery, useTripQuery } from "@/modules/trips/hooks/useTrips";
 import { useItineraryQuery } from "@/modules/itinerary/hooks/useItinerary";
 import { useAuthStore } from "@/store/authStore";
@@ -47,6 +47,23 @@ export function TripDetailContent() {
   const [visited, setVisited] = useState<Set<TripTab>>(() => new Set([tab]));
   if (!visited.has(tab)) setVisited(new Set(visited).add(tab));
 
+  const keysNoteKey = `trippin.keysNote.${id}`;
+  const [keysNoteDismissed, setKeysNoteDismissed] = useState(() => {
+    try {
+      return localStorage.getItem(keysNoteKey) === "1";
+    } catch {
+      return false;
+    }
+  });
+  const dismissKeysNote = () => {
+    setKeysNoteDismissed(true);
+    try {
+      localStorage.setItem(keysNoteKey, "1");
+    } catch {
+      // storage unavailable — it just shows again next time
+    }
+  };
+
   if (isLoading) return <LoadingState />;
   if (!trip) return <EmptyState title="Trip not found" />;
 
@@ -87,10 +104,31 @@ export function TripDetailContent() {
     checklist: trip.checklist.length > 0 ? { text: `${checklistDone}/${trip.checklist.length}` } : undefined,
   };
 
-  const banners = (missingGoogleKey || missingAiKey || !canEdit) && (
+  const showKeysNote = (missingGoogleKey || missingAiKey) && !keysNoteDismissed;
+  const banners = (showKeysNote || !canEdit) && (
     <Stack spacing={2} mb={3} mt={{ base: 3, lg: 0 }}>
-      {missingGoogleKey && <KeyMissingNotice kind="maps" canFix={isOwner} />}
-      {missingAiKey && <KeyMissingNotice kind="ai" canFix={isOwner} />}
+      {showKeysNote && (
+        <Flex align="center" gap={2} fontSize="12px" color="fg.muted" flexWrap="wrap">
+          <Icon as={LuInfo} boxSize="14px" flexShrink={0} />
+          <Text flex={1} minW="200px">
+            {[missingGoogleKey && "No Google Maps key — place search is limited and travel times are estimates", missingAiKey && "no AI key — AI plans and edits are off"]
+              .filter(Boolean)
+              .join("; ")
+              .replace(/^n/, "N")}
+            .{" "}
+            {isOwner ? (
+              <Link as={RouterLink} to="/profile" color="accent.text" fontWeight={600}>
+                Add keys in Profile
+              </Link>
+            ) : (
+              "The trip owner can add them."
+            )}
+          </Text>
+          <Button size="xs" variant="ghost" color="fg.muted" onClick={dismissKeysNote}>
+            Dismiss
+          </Button>
+        </Flex>
+      )}
       {!canEdit && (
         <ViewOnlyBanner
           action={
