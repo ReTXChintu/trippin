@@ -6,4 +6,6 @@ export interface VisitIntel {
   hypeLevel?: HypeLevel;
   why?: string;
   tips?: string[];
+  /** Typical entry fee, e.g. "Free" or "₹50 Indians / ₹600 foreigners" — AI-estimated. */
+  entryFee?: string;
 }

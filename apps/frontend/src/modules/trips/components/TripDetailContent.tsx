@@ -18,7 +18,6 @@ import { FoodView } from "@/modules/itinerary/components/FoodView";
 import { BookingsView } from "@/modules/trips/components/bookings/BookingsView";
 import { BudgetView } from "@/modules/trips/components/budget/BudgetView";
 import { ChecklistView } from "@/modules/trips/components/ChecklistView";
-import { ItineraryPrintContent } from "@/modules/itinerary/components/ItineraryExportMenu";
 import { useItineraryExport } from "@/modules/itinerary/components/useItineraryExport";
 import { MoreSheet, TripBottomNav, TripTabBar, type TabBadges } from "@/modules/trips/components/workspace/TripTabs";
 import { MORE_ICONS, TRIP_TABS } from "@/modules/trips/components/workspace/tabs";
@@ -183,7 +182,7 @@ export function TripDetailContent() {
     ...(canEdit && hasPlan
       ? [{ key: "compare", icon: MORE_ICONS.compare, label: "Compare with AI plan", onClick: () => navigate(`/trips/${trip.id}/itinerary/compare${cityId ? `?legId=${cityId}` : ""}`) }]
       : []),
-    ...(itinerary ? [{ key: "print", icon: MORE_ICONS.print, label: "Print itinerary", onClick: exportActions.print }] : []),
+    ...(itinerary ? [{ key: "print", icon: MORE_ICONS.print, label: "Download PDF", onClick: () => void exportActions.print() }] : []),
     { key: "share", icon: MORE_ICONS.share, label: "Share & members", onClick: settings.onOpen },
   ];
 
@@ -244,7 +243,6 @@ export function TripDetailContent() {
         ),
       )}
 
-      {itinerary && <ItineraryPrintContent trip={trip} itinerary={itinerary} />}
 
       <TripBottomNav
         tab={tab}

@@ -1039,6 +1039,7 @@ async function buildAiCandidateForScope(
         hypeLevel: note.hypeLevel,
         why: note.why,
         tips: note.tips,
+        entryFee: note.entryFee,
       };
       return { ...stop, visitIntel, aiNotes: buildVisitIntelSummary(visitIntel) };
     }),

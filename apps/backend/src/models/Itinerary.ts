@@ -6,6 +6,7 @@ export interface IVisitIntel {
   hypeLevel?: "overhyped" | "worth-it" | "hidden-gem";
   why?: string;
   tips?: string[];
+  entryFee?: string;
 }
 
 export interface IItineraryStop {
@@ -99,6 +100,7 @@ const VisitIntelSchema = new Schema<IVisitIntel>(
     hypeLevel: { type: String, enum: ["overhyped", "worth-it", "hidden-gem"] },
     why: { type: String },
     tips: { type: [String], default: [] },
+    entryFee: { type: String },
   },
   { _id: false },
 );

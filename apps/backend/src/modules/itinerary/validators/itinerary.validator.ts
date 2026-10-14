@@ -73,6 +73,7 @@ const visitIntelSchema = z.object({
   hypeLevel: z.enum(["overhyped", "worth-it", "hidden-gem"]).optional(),
   why: z.string().optional(),
   tips: z.array(z.string()).optional(),
+  entryFee: z.string().optional(),
 });
 
 const itineraryStopSchema = z.object({

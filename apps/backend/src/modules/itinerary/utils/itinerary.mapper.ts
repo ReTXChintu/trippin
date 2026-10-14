@@ -38,6 +38,7 @@ function toStopDTO(stop: IItineraryStop): ItineraryStop {
           hypeLevel: stop.visitIntel.hypeLevel,
           why: stop.visitIntel.why,
           tips: stop.visitIntel.tips ? [...stop.visitIntel.tips] : undefined,
+          entryFee: stop.visitIntel.entryFee,
         }
       : undefined,
     aiNotes: stop.aiNotes,
