@@ -16,7 +16,6 @@ import { getLegStartPoint } from "@/modules/trips/utils/trip-leg.utils";
 import { getUncoveredNights, syncLegacyHotelFields } from "@/modules/trips/utils/stay.utils";
 import type { Trip } from "@/modules/trips/types/trip.types";
 import type { TripLeg, TripStay } from "@/modules/trips/types/trip-leg.types";
-import { checkAndIncrementSearchLimit } from "@/utils/rate-limit";
 import { type Coordinates, estimateRoadKm, estimateTravelMinutes } from "@/utils/geo";
 
 type Result<T> = { success: true; data: T; message?: string } | { success: false; error: string };
@@ -162,9 +161,6 @@ export async function searchHotelsForLeg(
   try {
     const ownerKeys = await getOwnerApiKeysForTripDto(trip);
     assertGoogleMapsKey(ownerKeys, "trip");
-    if (!(await checkAndIncrementSearchLimit(userId))) {
-      return { success: false, error: "Daily search limit reached. Try again tomorrow." };
-    }
 
     const chosen = (await PlacesService.getCachedPlaces(leg.selectedPlaceIds)).filter((p) => p.coordinates);
     const pool = chosen.length > 0 ? chosen : (await PlacesService.getCachedPlaces(leg.discoveryPoolIds.slice(0, 30))).filter((p) => p.coordinates);

@@ -1,13 +1,14 @@
 import { Box, Flex, Heading, Icon, Stack } from "@chakra-ui/react";
 import { useState } from "react";
 import type { IconType } from "react-icons";
-import { FiUser } from "react-icons/fi";
+import { FiBarChart2, FiUser } from "react-icons/fi";
 import { LuKeyRound, LuSparkles } from "react-icons/lu";
 import { ProfileForm } from "@/modules/profile/components/ProfileForm";
 
 const SECTIONS: { id: string; label: string; icon: IconType }[] = [
   { id: "profile", label: "Profile", icon: FiUser },
   { id: "api-keys", label: "API keys", icon: LuKeyRound },
+  { id: "google-usage", label: "Google usage", icon: FiBarChart2 },
   { id: "ai-settings", label: "AI settings", icon: LuSparkles },
 ];
 

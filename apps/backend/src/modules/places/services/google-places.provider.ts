@@ -28,6 +28,7 @@ import {
   toPlaceIdPath,
 } from "@/modules/places/utils/google-places.mapper";
 import { buildPlacePhotoProxyUrls, RICH_DETAIL_VERSION } from "@/modules/places/utils/photo.utils";
+import { placesSku, recordGoogleUsage } from "@/modules/profile/services/google-usage.service";
 
 export class GooglePlacesProvider implements PlacesProvider {
   private apiKey: string;
@@ -56,6 +57,7 @@ export class GooglePlacesProvider implements PlacesProvider {
       throw new Error(`Google Places API error: ${response.status} ${errorText}`);
     }
 
+    recordGoogleUsage(this.apiKey, placesSku(url, fieldMask));
     return response.json() as Promise<T>;
   }
 
@@ -72,6 +74,7 @@ export class GooglePlacesProvider implements PlacesProvider {
       throw new Error(`Google Places API error: ${response.status} ${errorText}`);
     }
 
+    recordGoogleUsage(this.apiKey, placesSku(url, fieldMask));
     return response.json() as Promise<T>;
   }
 
@@ -276,6 +279,7 @@ export class GooglePlacesProvider implements PlacesProvider {
       const body = await response.text();
       throw new Error(`Place photo fetch failed: ${response.status} ${body}`);
     }
+    recordGoogleUsage(this.apiKey, "photos");
 
     const data = (await response.json()) as { photoUri?: string };
     if (!data.photoUri) {
@@ -297,6 +301,7 @@ export class GooglePlacesProvider implements PlacesProvider {
       status: string;
       results?: { geometry?: { location?: { lat: number; lng: number } } }[];
     };
+    if (data.status === "OK" || data.status === "ZERO_RESULTS") recordGoogleUsage(this.apiKey, "geocoding");
 
     if (data.status !== "OK" || !data.results?.[0]?.geometry?.location) {
       throw new Error(`Geocoding failed: ${data.status}`);

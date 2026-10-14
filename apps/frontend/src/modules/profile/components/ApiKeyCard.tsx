@@ -1,5 +1,6 @@
 import { Box, Button, Flex, HStack, Icon, Link, Text, useToast } from "@chakra-ui/react";
 import { useState } from "react";
+import { Link as RouterLink } from "react-router-dom";
 import { FiCheck, FiLock, FiShield } from "react-icons/fi";
 import { LuKeyRound } from "react-icons/lu";
 import { Pill, SurfaceCard } from "@/components/ui";
@@ -22,6 +23,7 @@ export function ApiKeyCard({
   placeholder,
   link,
   extraNote,
+  guideTo,
 }: {
   name: string;
   description: string;
@@ -34,6 +36,8 @@ export function ApiKeyCard({
   placeholder: string;
   link: { href: string; label: string };
   extraNote?: string;
+  /** In-app setup guide, shown instead of the external link. */
+  guideTo?: string;
 }) {
   const toast = useToast();
   const update = useUpdateApiKeys();
@@ -156,9 +160,15 @@ export function ApiKeyCard({
 
       <Text fontSize="12px" color="fg.muted">
         Stored encrypted.{extraNote ? ` ${extraNote}` : ""}{" "}
-        <Link href={link.href} isExternal color="accent.text" fontWeight={600} textDecoration="underline">
-          {link.label}
-        </Link>
+        {guideTo ? (
+          <Link as={RouterLink} to={guideTo} color="accent.text" fontWeight={600} textDecoration="underline">
+            {link.label}
+          </Link>
+        ) : (
+          <Link href={link.href} isExternal color="accent.text" fontWeight={600} textDecoration="underline">
+            {link.label}
+          </Link>
+        )}
       </Text>
     </SurfaceCard>
   );

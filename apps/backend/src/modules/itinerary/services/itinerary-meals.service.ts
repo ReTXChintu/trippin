@@ -24,7 +24,6 @@ import { mealSuggestionsSchema } from "@/modules/itinerary/validators/itinerary.
 import { getAggregatedFoodPoolIds } from "@/modules/trips/utils/trip-leg.utils";
 import type { MealType } from "@/modules/itinerary/types";
 import type { Place, PlaceSearchResult } from "@/modules/places/types/place.types";
-import { checkAndIncrementSearchLimit } from "@/utils/rate-limit";
 import { type Coordinates, estimateRoadKm, estimateTravelMinutes, parseTimeToMinutes } from "@/utils/geo";
 
 export interface MealSuggestion {
@@ -164,9 +163,6 @@ export async function getMealSuggestions(userId: string, input: unknown): Promis
   try {
     const ownerKeys = await getOwnerApiKeysForTripDto(trip);
     assertGoogleMapsKey(ownerKeys, "trip");
-
-    const allowed = await checkAndIncrementSearchLimit(userId);
-    if (!allowed) return { success: false, error: "Daily search limit reached. Try again tomorrow." };
 
     const includedTypes = TYPES_BY_MEAL[stop.mealType ?? "lunch"];
     let results: PlaceSearchResult[] = await PlacesService.searchNearby({

@@ -31,29 +31,12 @@ import {
   tripPlaceSchema,
 } from "@/modules/places/validators/places.validator";
 import type { Place, PlaceDetail, PlaceSearchResult } from "@/modules/places/types/place.types";
-import { checkAndIncrementDetailLimit, checkAndIncrementSearchLimit } from "@/utils/rate-limit";
 import { MAX_DISCOVERY_POOL_SIZE } from "@/constants/google-places";
 import type { Trip } from "@/modules/trips/types/trip.types";
 
 export type PlacesActionResult<T = void> =
   | { success: true; data?: T; message?: string }
   | { success: false; error: string };
-
-async function enforceRateLimit(userId: string): Promise<{ success: false; error: string } | null> {
-  const allowed = await checkAndIncrementSearchLimit(userId);
-  if (!allowed) {
-    return { success: false, error: "Daily search limit reached. Try again tomorrow." };
-  }
-  return null;
-}
-
-async function enforceDetailLimit(userId: string): Promise<{ success: false; error: string } | null> {
-  const allowed = await checkAndIncrementDetailLimit(userId);
-  if (!allowed) {
-    return { success: false, error: "Daily place detail limit reached. Try again tomorrow." };
-  }
-  return null;
-}
 
 function parseLocation(lat?: number, lng?: number) {
   if (lat !== undefined && lng !== undefined && !Number.isNaN(lat) && !Number.isNaN(lng)) {
@@ -176,8 +159,6 @@ export async function searchPlaces(
   userId: string,
   input: unknown,
 ): Promise<PlacesActionResult<{ results: PlaceSearchResult[] }>> {
-  const rateLimit = await enforceRateLimit(userId);
-  if (rateLimit) return rateLimit;
 
   const parsed = searchQuerySchema.safeParse(input);
   if (!parsed.success) {
@@ -254,8 +235,6 @@ export async function searchHotels(
   userId: string,
   input: unknown,
 ): Promise<PlacesActionResult<{ results: PlaceSearchResult[] }>> {
-  const rateLimit = await enforceRateLimit(userId);
-  if (rateLimit) return rateLimit;
 
   const parsed = searchQuerySchema.safeParse(input);
   if (!parsed.success) {
@@ -285,8 +264,6 @@ export async function getPlaceDetails(
   userId: string,
   input: unknown,
 ): Promise<PlacesActionResult<{ place: Place }>> {
-  const rateLimit = await enforceRateLimit(userId);
-  if (rateLimit) return rateLimit;
 
   const parsed = placeIdSchema.safeParse(input);
   if (!parsed.success) {
@@ -322,8 +299,6 @@ export async function getPlaceDetailRich(
       return { success: true, data: { place: cached } };
     }
 
-    const detailLimit = await enforceDetailLimit(userId);
-    if (detailLimit) return detailLimit;
 
     const ownerKeys = await getOwnerApiKeysForTripDto(trip);
     assertGoogleMapsKey(ownerKeys, "trip");
@@ -339,8 +314,6 @@ export async function geocodeHotel(
   userId: string,
   input: unknown,
 ): Promise<PlacesActionResult<{ coordinates: { lat: number; lng: number } }>> {
-  const rateLimit = await enforceRateLimit(userId);
-  if (rateLimit) return rateLimit;
 
   const parsed = geocodeSchema.safeParse(input);
   if (!parsed.success) {
@@ -392,8 +365,6 @@ export async function discoverPlacesForTrip(
     const ownerKeys = await getOwnerApiKeysForTripDto(trip);
     assertGoogleMapsKey(ownerKeys, "trip");
 
-    const rateLimit = await enforceRateLimit(userId);
-    if (rateLimit) return rateLimit;
 
     const legsToDiscover = targetLegId ? legs.filter((leg) => leg.id === targetLegId) : legs;
 
@@ -490,8 +461,6 @@ export async function discoverVehicleRentalsForLeg(
     const ownerKeys = await getOwnerApiKeysForTripDto(trip);
     assertGoogleMapsKey(ownerKeys, "trip");
 
-    const rateLimit = await enforceRateLimit(userId);
-    if (rateLimit) return rateLimit;
 
     const vehicleRentalSuggestions = await PlacesService.discoverVehicleRentalsNearStay({
       city: leg.baseCity,
@@ -768,8 +737,6 @@ export async function searchAreaForLeg(
   try {
     const ownerKeys = await getOwnerApiKeysForTripDto(trip);
     assertGoogleMapsKey(ownerKeys, "trip");
-    const rateLimit = await enforceRateLimit(userId);
-    if (rateLimit) return rateLimit;
 
     const results = await PlacesService.searchNearby({
       location: { lat, lng },

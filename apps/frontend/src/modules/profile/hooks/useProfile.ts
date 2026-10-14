@@ -27,6 +27,14 @@ export function useUpdateProfile() {
   });
 }
 
+export function useGoogleUsageQuery() {
+  return useQuery({
+    queryKey: ["profile", "google-usage"],
+    queryFn: profileApi.getGoogleUsage,
+    staleTime: 60_000,
+  });
+}
+
 export function useUpdateApiKeys() {
   const queryClient = useQueryClient();
   return useMutation({

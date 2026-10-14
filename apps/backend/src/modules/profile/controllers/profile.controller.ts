@@ -13,6 +13,9 @@ import {
   updateApiKeys,
   updateProfile,
 } from "@/modules/profile/services/profile.service";
+import { getGoogleUsageSummary } from "@/modules/profile/services/google-usage.service";
+import { getUserApiKeys, serverApiKeys } from "@/lib/services/trip-api-keys.service";
+import { UserRepository } from "@/repositories/user.repository";
 
 export async function getProfileHandler(req: Request, res: Response) {
   const profile = await getProfile(req.user!.sub);
@@ -73,4 +76,13 @@ export async function listAiModelsHandler(req: Request, res: Response) {
     return sendError(res, parsed.error.issues[0]?.message ?? "Invalid provider", 400);
   }
   return sendResult(res, await listAiModels(req.user!.sub, parsed.data.provider));
+}
+
+/** This month's Google Maps calls made with the key the user's trips run on. */
+export async function googleUsageHandler(req: Request, res: Response) {
+  const user = await UserRepository.findById(req.user!.sub);
+  const keys = await getUserApiKeys(req.user!.sub);
+  const source = user?.googleMapsApiKeyEncrypted ? "own" : serverApiKeys().googleMaps ? "server" : "none";
+  const usage = await getGoogleUsageSummary(keys.googleMaps);
+  return sendOk(res, { source, ...usage });
 }

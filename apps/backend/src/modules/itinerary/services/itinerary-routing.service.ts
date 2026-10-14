@@ -1,4 +1,5 @@
 import { DIRECTIONS_API_BASE } from "@/constants/google-places";
+import { recordGoogleUsage } from "@/modules/profile/services/google-usage.service";
 import { RouteCacheRepository, buildRouteCacheKey, type CachedRoute } from "@/repositories/route-cache.repository";
 import { hopKey, resolveDayStartPoint } from "@/modules/itinerary/services/itinerary-engine.service";
 import type { ItineraryDay } from "@/modules/itinerary/types";
@@ -125,6 +126,8 @@ async function fetchDirections(waypoints: RoutableStop[], mode: string, apiKey: 
     deniedApiKeys.set(apiKey, Date.now());
     return null;
   }
+  // Google bills answered requests only; refusals come back as 200 with an error status.
+  if (data.status === "OK" || data.status === "ZERO_RESULTS") recordGoogleUsage(apiKey, "directions");
   if (data.status !== "OK" || !data.routes?.[0]) return null;
 
   const route = data.routes[0];

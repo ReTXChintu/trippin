@@ -28,6 +28,32 @@ export interface AiModelOption {
   recommended: boolean;
 }
 
+export interface GoogleUsageLine {
+  sku: string;
+  label: string;
+  tier: string;
+  today: number;
+  month: number;
+  freePerMonth: number;
+  usdPer1000: number;
+  estimatedUsd: number;
+}
+
+export interface GoogleUsage {
+  /** Whose key the user's trips run on. */
+  source: "own" | "server" | "none";
+  month: string;
+  today: string;
+  lines: GoogleUsageLine[];
+  estimatedUsd: number;
+  pricing: { sku: string; label: string; tier: string; freePerMonth: number; usdPer1000: number }[];
+}
+
+export async function getGoogleUsage(): Promise<GoogleUsage> {
+  const res = await api.get("/profile/google-usage");
+  return res.data.data;
+}
+
 export async function getProfile(): Promise<{ profile: ProfileDTO }> {
   const res = await api.get("/profile");
   return res.data.data;

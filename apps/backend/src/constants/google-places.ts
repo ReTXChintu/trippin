@@ -1,4 +1,5 @@
-/** Field masks — Essentials/Pro only; avoids Enterprise SKU charges. */
+/** Field masks. Rating, price and hours make these Enterprise SKUs (summaries/reviews: Enterprise +
+ * Atmosphere) — google-usage.service counts calls under the right SKU from the mask. */
 export const PLACES_SEARCH_FIELD_MASK = [
   "places.id",
   "places.displayName",
@@ -50,13 +51,6 @@ export const MAX_SEARCH_RESULTS = 20;
 export const MAX_SEARCH_PAGES = 3;
 export const MAX_DISCOVERY_POOL_SIZE = 120;
 export const MAX_DISCOVERY_QUERIES = 5;
-/** Per-user daily caps on Google calls, from .env (0 = no cap). Read on use, after .env loads. */
-function envLimit(key: string, fallback: number): number {
-  const n = Number(process.env[key]);
-  return Number.isFinite(n) && n >= 0 && process.env[key]?.trim() ? n : fallback;
-}
-export const dailySearchLimit = () => envLimit("PLACES_DAILY_SEARCH_LIMIT", 100);
-export const dailyDetailLimit = () => envLimit("PLACES_DAILY_DETAIL_LIMIT", 50);
 export const MAX_PLACE_PHOTOS = 6;
 
 export const PLACE_DETAILS_RICH_FIELD_MASK = [

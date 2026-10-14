@@ -12,6 +12,7 @@ import { getApiErrorMessage } from "@/lib/api";
 import { profileSchema, type ProfileInput } from "@/modules/auth/validators/auth.validator";
 import { AiSettingsCard } from "@/modules/profile/components/AiSettingsCard";
 import { ApiKeyCard } from "@/modules/profile/components/ApiKeyCard";
+import { GoogleUsageCard } from "@/modules/profile/components/GoogleUsageCard";
 
 const UNLOCKS: { icon: IconType; title: string; text: string }[] = [
   { icon: LuSparkles, title: "OpenAI or Gemini", text: "Describe-a-trip, Ask AI, guides, summaries, compare" },
@@ -167,9 +168,11 @@ export function ProfileForm() {
         last4={profile.googleMapsApiKeyLast4}
         serverKey={profile.serverKeys?.googleMaps}
         placeholder="AIza…"
-        extraNote="Enable Places API (New) and Geocoding."
-        link={{ href: "https://developers.google.com/maps/documentation/places/web-service/get-api-key", label: "Get a key in Google Cloud console" }}
+        extraNote="Billed to your own Google Cloud account."
+        link={{ href: "/help/google-maps-key", label: "Step-by-step guide to get a key" }}
+        guideTo="/help/google-maps-key"
       />
+      <GoogleUsageCard id="google-usage" />
 
       <AiSettingsCard profile={profile} id="ai-settings" />
     </Stack>

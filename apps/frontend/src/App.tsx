@@ -11,6 +11,7 @@ import { ForgotPasswordPage } from "@/pages/ForgotPasswordPage";
 import { ResetPasswordPage } from "@/pages/ResetPasswordPage";
 import { DashboardPage } from "@/pages/DashboardPage";
 import { ProfilePage } from "@/pages/ProfilePage";
+import { GoogleMapsKeyGuidePage } from "@/pages/GoogleMapsKeyGuidePage";
 import { TripsPage } from "@/pages/TripsPage";
 import { NewTripPage } from "@/pages/NewTripPage";
 import { TripDetailPage } from "@/pages/TripDetailPage";
@@ -40,6 +41,7 @@ function App() {
             <Route element={<DashboardLayout />}>
               <Route path="/dashboard" element={<DashboardPage />} />
               <Route path="/profile" element={<ProfilePage />} />
+              <Route path="/help/google-maps-key" element={<GoogleMapsKeyGuidePage />} />
               <Route path="/trips" element={<TripsPage />} />
               <Route path="/trips/new" element={<NewTripPage />} />
               <Route path="/trips/:id" element={<TripDetailPage />} />
