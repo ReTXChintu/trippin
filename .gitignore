@@ -16,6 +16,8 @@ apps/mobile-app/ios/Flutter/Generated.xcconfig
 # Env files (single .env at the repo root)
 .env
 .env.local
+.env.*
+!.env.example
 apps/*/.env
 apps/*/.env.local
 

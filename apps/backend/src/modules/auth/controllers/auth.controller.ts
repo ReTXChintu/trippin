@@ -17,7 +17,9 @@ const COOKIE_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
 function setAccessTokenCookie(res: Response, token: string) {
   res.cookie(ACCESS_TOKEN_COOKIE, token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    // HTTPS-only when the site is served over HTTPS; a plain http://IP:port install needs it off or
+    // browsers drop the cookie and nobody stays signed in.
+    secure: (process.env.FRONTEND_URL ?? "").startsWith("https://"),
     sameSite: "lax",
     maxAge: COOKIE_MAX_AGE_MS,
     path: "/",
