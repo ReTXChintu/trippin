@@ -29,7 +29,6 @@ export function GoogleUsageCard({ id }: { id?: string }) {
           </Box>
         </HStack>
         {data?.source === "own" && <Pill tone="success">Your key</Pill>}
-        {data?.source === "server" && <Pill tone="accent">Shared server key</Pill>}
       </Flex>
 
       {isLoading || !data ? (
@@ -104,9 +103,7 @@ export function GoogleUsageCard({ id }: { id?: string }) {
           )}
 
           <Text fontSize="12px" color="fg.muted">
-            {data.source === "server"
-              ? "This is everyone’s usage on the shared key the server provides. "
-              : "Counts only what Trippin called with this key — if you use the key elsewhere, Google’s numbers will be higher. "}
+            Counts only what Trippin called with this key — if you use the key elsewhere, Google&rsquo;s numbers will be higher.
             Prices: Google&rsquo;s list prices per 1,000 calls, before taxes or credits. Your real bill is in Google Cloud.
           </Text>
           <Flex gap="8px" flexWrap="wrap">

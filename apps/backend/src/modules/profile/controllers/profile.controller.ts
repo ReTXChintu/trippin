@@ -14,7 +14,7 @@ import {
   updateProfile,
 } from "@/modules/profile/services/profile.service";
 import { getGoogleUsageSummary } from "@/modules/profile/services/google-usage.service";
-import { getUserApiKeys, serverApiKeys } from "@/lib/services/trip-api-keys.service";
+import { getUserApiKeys } from "@/lib/services/trip-api-keys.service";
 import { UserRepository } from "@/repositories/user.repository";
 
 export async function getProfileHandler(req: Request, res: Response) {
@@ -82,7 +82,7 @@ export async function listAiModelsHandler(req: Request, res: Response) {
 export async function googleUsageHandler(req: Request, res: Response) {
   const user = await UserRepository.findById(req.user!.sub);
   const keys = await getUserApiKeys(req.user!.sub);
-  const source = user?.googleMapsApiKeyEncrypted ? "own" : serverApiKeys().googleMaps ? "server" : "none";
+  const source = user?.googleMapsApiKeyEncrypted ? "own" : "none";
   const usage = await getGoogleUsageSummary(keys.googleMaps);
   return sendOk(res, { source, ...usage });
 }

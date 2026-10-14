@@ -166,7 +166,6 @@ export function ProfileForm() {
         clearField="clearGoogleMaps"
         hasKey={profile.hasGoogleMapsKey}
         last4={profile.googleMapsApiKeyLast4}
-        serverKey={profile.serverKeys?.googleMaps}
         placeholder="AIza…"
         extraNote="Billed to your own Google Cloud account."
         link={{ href: "/help/google-maps-key", label: "Step-by-step guide to get a key" }}

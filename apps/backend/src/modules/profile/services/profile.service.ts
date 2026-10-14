@@ -29,7 +29,7 @@ export async function getProfile(userId: string) {
     geminiApiKeyLast4: user.geminiApiKeyLast4,
     googleMapsApiKeyLast4: user.googleMapsApiKeyLast4,
     /** Keys this server provides for everyone — used when the user hasn't added their own. */
-    serverKeys: { openai: !!server.openai, gemini: !!server.gemini, googleMaps: !!server.googleMaps },
+    serverKeys: { openai: !!server.openai, gemini: !!server.gemini },
     ai: {
       /** What the user picked (may be unset). */
       preferredProvider: user.aiProvider ?? null,

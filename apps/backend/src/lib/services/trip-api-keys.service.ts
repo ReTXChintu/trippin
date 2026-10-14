@@ -32,13 +32,12 @@ function decryptOrUndefined(encrypted?: string): string | undefined {
   }
 }
 
-/** Optional shared keys from the root .env — used whenever a user hasn't added their own, so a
- * self-hosted install can work for everyone without each person pasting keys into Profile. */
-export function serverApiKeys(): Pick<UserApiKeys, "openai" | "gemini" | "googleMaps"> {
+/** Optional shared AI keys from the root .env — used whenever a user hasn't added their own.
+ * Google Maps has no shared key: every user brings their own, billed to their own account. */
+export function serverApiKeys(): Pick<UserApiKeys, "openai" | "gemini"> {
   return {
     openai: process.env.OPENAI_API_KEY?.trim() || undefined,
     gemini: process.env.GEMINI_API_KEY?.trim() || undefined,
-    googleMaps: process.env.GOOGLE_MAPS_API_KEY?.trim() || undefined,
   };
 }
 
@@ -47,7 +46,7 @@ export function apiKeysFromUser(user: IUserDocument): UserApiKeys {
   return {
     openai: decryptOrUndefined(user.openaiApiKeyEncrypted) ?? server.openai,
     gemini: decryptOrUndefined(user.geminiApiKeyEncrypted) ?? server.gemini,
-    googleMaps: decryptOrUndefined(user.googleMapsApiKeyEncrypted) ?? server.googleMaps,
+    googleMaps: decryptOrUndefined(user.googleMapsApiKeyEncrypted),
     aiProvider: user.aiProvider,
     openaiModel: user.openaiModel,
     geminiModel: user.geminiModel,
@@ -96,8 +95,8 @@ export function assertGoogleMapsKey(
   if (!keys.googleMaps?.trim()) {
     throw new ApiKeyError(
       context === "trip"
-        ? "Trip owner must add a Google Maps API key in Profile before using place discovery."
-        : "Add a Google Maps API key in Profile to use place search and discovery.",
+        ? "The trip owner needs to add their Google Maps key in Profile → API keys (there's a step-by-step guide there)."
+        : "Add your Google Maps key in Profile → API keys to search places — there's a step-by-step guide there.",
     );
   }
 }

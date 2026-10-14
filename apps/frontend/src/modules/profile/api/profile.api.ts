@@ -11,7 +11,7 @@ export interface ProfileDTO extends IUser {
   geminiApiKeyLast4?: string;
   googleMapsApiKeyLast4?: string;
   /** Shared keys the server provides when the user hasn't added their own. */
-  serverKeys?: { openai: boolean; gemini: boolean; googleMaps: boolean };
+  serverKeys?: { openai: boolean; gemini: boolean };
   ai: {
     preferredProvider: AiProviderName | null;
     /** What actually runs given the keys present; null = no AI key. */
@@ -40,8 +40,8 @@ export interface GoogleUsageLine {
 }
 
 export interface GoogleUsage {
-  /** Whose key the user's trips run on. */
-  source: "own" | "server" | "none";
+  /** Whether the user has added their Google Maps key. */
+  source: "own" | "none";
   month: string;
   today: string;
   lines: GoogleUsageLine[];

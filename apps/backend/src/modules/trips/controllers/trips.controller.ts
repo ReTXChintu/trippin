@@ -28,7 +28,7 @@ async function enrichTripWithOwnerKeys(trip: Trip) {
     ownerApiKeys: {
       hasOpenaiKey: !!(owner?.openaiApiKeyEncrypted || server.openai),
       hasAiKey: !!(owner?.openaiApiKeyEncrypted || owner?.geminiApiKeyEncrypted || server.openai || server.gemini),
-      hasGoogleMapsKey: !!(owner?.googleMapsApiKeyEncrypted || server.googleMaps),
+      hasGoogleMapsKey: !!owner?.googleMapsApiKeyEncrypted,
     },
   };
 }
