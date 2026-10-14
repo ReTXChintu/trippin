@@ -5,6 +5,12 @@ export const tripIdSchema = z.object({
   legId: z.string().optional(),
 });
 
+export const optimizeDaySchema = z.object({
+  tripId: z.string().min(1),
+  /** Omit to optimize every day. */
+  dayNumber: z.number().int().min(1).optional(),
+});
+
 export const aiCandidateSchema = z.object({
   tripId: z.string().min(1, "Trip ID is required"),
   legId: z.string().optional(),

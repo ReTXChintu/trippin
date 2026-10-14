@@ -515,6 +515,7 @@ function VisitRow({ stop, day, visitNumber, handle }: { stop: ItineraryStop; day
   const CatIcon = categoryIcon(stop.category, stop.stopType);
   const hoursClosed = stop.openingHoursToday === "Closed";
   const showCategory = stop.category && stop.category !== "Transfer";
+  const farKm = plan.dayInsights(day).farStops.get(stop.id);
   const votes = stop.placeId ? (plan.trip.placeVotes?.[stop.placeId]?.length ?? 0) : 0;
 
   const marker = (
@@ -630,6 +631,16 @@ function VisitRow({ stop, day, visitNumber, handle }: { stop: ItineraryStop; day
                   <Text>{fmtDur(stop.visitDurationMinutes)}</Text>
                   {stop.fixedStartTime && <Pill tone="warn">Fixed {stop.fixedStartTime}</Pill>}
                   {stop.userAdded && !stop.fixedStartTime && <Pill>Added by you</Pill>}
+                  {farKm !== undefined && (
+                    <Tooltip
+                      label="Much further than this day's other stops. If the pin is in the wrong place (a different place with the same name), remove it and search for the right one."
+                      hasArrow
+                    >
+                      <Pill tone="warn" icon={LuTriangleAlert} tabIndex={0}>
+                        {farKm} km from the rest of the day
+                      </Pill>
+                    </Tooltip>
+                  )}
                   {stop.openingHoursToday && (
                     <Text color={hoursClosed ? "danger" : undefined}>· {hoursClosed ? "Closed today" : `Open ${stop.openingHoursToday}`}</Text>
                   )}

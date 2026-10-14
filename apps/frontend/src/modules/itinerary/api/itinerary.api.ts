@@ -252,6 +252,11 @@ export async function aiEditPlan(
   return res.data.data;
 }
 
+export async function optimizeDay(tripId: string, dayNumber?: number): Promise<{ itinerary: Itinerary; savedKm: number; message?: string }> {
+  const res = await api.post(`/trips/${tripId}/itinerary`, { action: "optimizeDay", dayNumber });
+  return { ...res.data.data, message: res.data.message };
+}
+
 export async function replanFromNow(tripId: string, params: { dayNumber: number; time: string }): Promise<{ itinerary: Itinerary }> {
   const res = await api.post(`/trips/${tripId}/itinerary`, { action: "replanFromNow", ...params });
   return res.data.data;

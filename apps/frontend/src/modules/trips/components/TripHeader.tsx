@@ -5,6 +5,7 @@ import {
   DrawerBody,
   DrawerContent,
   DrawerOverlay,
+  Divider,
   Flex,
   HStack,
   Icon,
@@ -44,6 +45,7 @@ import { TripActionsMenu } from "@/modules/trips/components/TripActionsMenu";
 import { TripHeaderPanel } from "@/modules/trips/components/TripHeaderPanel";
 import { StageBanner, StageBar } from "@/modules/trips/components/workspace/StageBar";
 import { CityRow } from "@/modules/trips/components/workspace/CityRow";
+import { CitiesDatesSection } from "@/modules/trips/components/workspace/CitiesDatesSection";
 import type { Trip } from "@/modules/trips/types/trip.types";
 import type { TransportationMode } from "@/types";
 import type { NextStep, StageSummary, TripStage, TripTabKey } from "@/modules/trips/utils/trip-stage";
@@ -296,8 +298,8 @@ export function TripHeader({
                 Preview Today
               </Button>
             )}
-            <Button variant="outline" leftIcon={<LuSlidersHorizontal size={16} />} onClick={settings.onOpen}>
-              Trip settings
+            <Button variant="outline" leftIcon={<LuPencil size={16} />} onClick={settings.onOpen}>
+              {canEdit ? "Edit trip" : "Trip details"}
             </Button>
             <TripActionsMenu trip={trip} isOwner={isOwner} exportActions={exportActions} />
           </HStack>
@@ -334,7 +336,7 @@ export function TripHeader({
           </Box>
           <HStack spacing={0} flexShrink={0}>
             <IconButton aria-label="Discussion" icon={<LuMessageSquare size={18} />} variant="ghost" color="fg.default" size="lg" onClick={discussion.onOpen} />
-            <IconButton aria-label="Trip settings" icon={<LuSlidersHorizontal size={18} />} variant="ghost" color="fg.default" size="lg" onClick={settings.onOpen} />
+            <IconButton aria-label={canEdit ? "Edit trip" : "Trip details"} icon={<LuSlidersHorizontal size={18} />} variant="ghost" color="fg.default" size="lg" onClick={settings.onOpen} />
             <TripActionsMenu trip={trip} isOwner={isOwner} exportActions={exportActions} variant="ghost" size="lg" />
           </HStack>
         </Flex>
@@ -355,8 +357,10 @@ export function TripHeader({
       <Drawer isOpen={settings.isOpen} onClose={settings.onClose} size="md" placement="right">
         <DrawerOverlay />
         <DrawerContent maxW={{ base: "100vw", md: "540px" }} bg="bg.surface">
-          <PanelHeader title="Trip settings" subtitle={trip.title} onClose={settings.onClose} />
+          <PanelHeader title={canEdit ? "Edit trip" : "Trip details"} subtitle={trip.title} onClose={settings.onClose} />
           <DrawerBody px={6} py={5}>
+            <CitiesDatesSection trip={trip} canEdit={canEdit} onEditCity={setEditingLegId} onAddCity={canAddCity ? addCity.onOpen : undefined} />
+            <Divider borderColor="border.line" my={4} />
             <TripHeaderPanel trip={trip} currentUserId={currentUserId} isOwner={isOwner} embedded />
           </DrawerBody>
         </DrawerContent>

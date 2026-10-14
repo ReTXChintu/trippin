@@ -89,6 +89,7 @@ export const DayCard = forwardRef<HTMLDivElement, DayCardProps>(function DayCard
   );
 
   const summary = summarizeDay(day);
+  const insights = plan.dayInsights(day);
   const pinnedFirst = day.stops.filter((s) => s.stopType === "transfer");
   const pinnedLast = day.stops.filter((s) => s.stopType === "return");
   const middle = day.stops.filter((s) => s.stopType !== "transfer" && s.stopType !== "return");
@@ -162,6 +163,11 @@ export const DayCard = forwardRef<HTMLDivElement, DayCardProps>(function DayCard
           </Box>
         </HStack>
         <HStack spacing={2} flexShrink={0}>
+          {insights.overrunMinutes > 0 && (
+            <Pill tone="warn" icon={LuClock}>
+              Until {insights.endsAt}
+            </Pill>
+          )}
           {unbookedTransfer && (
             <Pill tone="warn" icon={LuTriangleAlert}>
               Not booked
@@ -293,6 +299,30 @@ export const DayCard = forwardRef<HTMLDivElement, DayCardProps>(function DayCard
               </Pill>
             )}
           </Flex>
+          {(insights.overrunMinutes > 0 || insights.savingKm > 0) && (
+            <Flex direction="column" gap={2} px="18px" pb={3}>
+              {insights.overrunMinutes > 0 && (
+                <Flex align="center" gap={2} px={3} py={2} borderRadius="md" bg="warn.soft" color="warn" fontSize="13px" flexWrap="wrap">
+                  <Icon as={LuClock} boxSize="15px" flexShrink={0} />
+                  <Text flex={1} minW="200px">
+                    <b>Runs until {insights.endsAt}</b> — {fmtDur(insights.overrunMinutes)} past your {plan.trip.dailyEndTime} end. Move a stop to another day
+                    {insights.savingKm > 0 ? ", or reorder for a shorter drive" : ""}.
+                  </Text>
+                </Flex>
+              )}
+              {insights.savingKm > 0 && !plan.readOnly && (
+                <Flex align="center" gap={2} px={3} py={2} borderRadius="md" bg="accent.soft" color="accent.text" fontSize="13px" flexWrap="wrap">
+                  <Icon as={LuRoute} boxSize="15px" flexShrink={0} />
+                  <Text flex={1} minW="180px">
+                    A better order saves about <b>{insights.savingKm} km</b> of driving.
+                  </Text>
+                  <Button size="xs" variant="outline" bg="bg.surface" onClick={() => plan.optimizeDay(day)}>
+                    Optimize route
+                  </Button>
+                </Flex>
+              )}
+            </Flex>
+          )}
           {day.dressCode && (
             <HStack px="18px" pb={3} mt="-6px" spacing="6px" fontSize="12px" color="fg.muted">
               <Icon as={LuShirt} boxSize="13px" />
@@ -422,6 +452,11 @@ function DayMenu({ day, mapsUrl }: { day: ItineraryDay; mapsUrl: string | null }
             <MenuItem icon={<LuPlus />} onClick={() => plan.openAddStop(day)}>
               Add a place or activity
             </MenuItem>
+            {day.stops.filter((s) => s.coordinates && s.stopType !== "meal" && s.stopType !== "transfer" && s.stopType !== "return").length >= 2 && (
+              <MenuItem icon={<LuRoute />} onClick={() => plan.optimizeDay(day)}>
+                Optimize route (shortest drive)
+              </MenuItem>
+            )}
             {day.legId && (
               <MenuItem icon={<LuRefreshCw />} onClick={() => plan.replanCity(day.legId!)}>
                 Replan {day.legName ?? "this city"}

@@ -17,6 +17,7 @@ import {
   generateItineraryDays,
   mealLabel,
   moveStopBetweenDays,
+  optimizeDayOrder,
   reorderDayStops,
   retimeDay,
   travelLookupWithRoutes,
@@ -36,6 +37,7 @@ import type { TripLeg } from "@/modules/trips/types/trip-leg.types";
 import {
   addStopSchema,
   aiCandidateSchema,
+  optimizeDaySchema,
   aiEditPlanSchema,
   applyMergedDaysSchema,
   generateLegGuideSchema,
@@ -233,6 +235,39 @@ export async function getPublicItinerary(
 // Generate
 // ---------------------------------------------------------------------------------------------
 
+/**
+ * Kept stops are stored by date. When a city's dates change (trip moved, a day added or removed), map
+ * each old day of a city to the same-numbered day of that city now; days that no longer exist release
+ * their stops back into the pool instead of losing them.
+ */
+function remapPreservedToTripDates(
+  preserved: Map<string, ItineraryStop[]>,
+  oldDays: ItineraryDay[],
+  dayPlans: ReturnType<typeof buildTripDayPlans>,
+): Map<string, ItineraryStop[]> {
+  const currentByLeg = new Map<string, string[]>();
+  for (const { date, plan } of dayPlans) {
+    if (plan.type !== "sightseeing") continue;
+    currentByLeg.set(plan.leg.id, [...(currentByLeg.get(plan.leg.id) ?? []), date]);
+  }
+  const oldByLeg = new Map<string, string[]>();
+  for (const d of oldDays) {
+    if (!d.legId || d.dayType === "transfer" || d.dayType === "free") continue;
+    oldByLeg.set(d.legId, [...(oldByLeg.get(d.legId) ?? []), d.date]);
+  }
+  const out = new Map<string, ItineraryStop[]>();
+  for (const [date, stops] of preserved) {
+    const legId = oldDays.find((d) => d.date === date)?.legId;
+    const oldDates = legId ? [...(oldByLeg.get(legId) ?? [])].sort() : [];
+    const newDates = legId ? [...(currentByLeg.get(legId) ?? [])].sort() : [];
+    const index = oldDates.indexOf(date);
+    const target = index >= 0 ? newDates[index] : newDates.includes(date) ? date : undefined;
+    if (!target) continue; // that day is gone — its stops go back into the pool
+    out.set(target, [...(out.get(target) ?? []), ...stops]);
+  }
+  return out;
+}
+
 export async function generateItinerary(
   userId: string,
   input: unknown,
@@ -257,8 +292,11 @@ export async function generateItinerary(
     const dayPlans = buildTripDayPlans(trip);
     const inScope = (date: string) => !legId || isDayOwnedByLeg(date, dayPlans, legId);
 
-    // Locked stops, hand-added activities and chosen restaurants survive a regenerate.
-    const preservedAll = existing ? collectPreservedStops(existing.days) : new Map<string, ItineraryStop[]>();
+    // Locked stops, hand-added activities and chosen restaurants survive a regenerate — and follow
+    // their city's days when the trip's dates moved since the plan was made.
+    const preservedAll = existing
+      ? remapPreservedToTripDates(collectPreservedStops(existing.days), existing.days, dayPlans)
+      : new Map<string, ItineraryStop[]>();
     const preserved = new Map([...preservedAll].filter(([date]) => inScope(date)));
 
     const env = await buildEnv(trip, [...selectedIds, ...placeIdsInDays(existing?.days ?? [])]);
@@ -646,6 +684,45 @@ export async function movePlaceFromOptional(
     optionalPlaces: existing.optionalPlaces.filter((p) => p.placeId !== placeId),
   });
   return { success: true, data: { itinerary }, message: "Place added to your itinerary." };
+}
+
+export async function optimizeDayRoute(
+  userId: string,
+  input: unknown,
+): Promise<ItineraryActionResult<{ itinerary: Itinerary; savedKm: number }>> {
+  const parsed = optimizeDaySchema.safeParse(input);
+  if (!parsed.success) return invalid(parsed.error.issues);
+
+  const { tripId, dayNumber } = parsed.data;
+  const loaded = await loadTripAndItinerary(userId, tripId);
+  if ("error" in loaded) return { success: false, error: loaded.error };
+  const { trip, itinerary: existing } = loaded;
+  if (!existing) return { success: false, error: "Itinerary not found" };
+
+  const targets = existing.days.filter((d) => isSchedulable(d) && (dayNumber === undefined || d.dayNumber === dayNumber));
+  if (targets.length === 0) return { success: false, error: "Day not found" };
+
+  const env = await buildEnv(trip, placeIdsInDays(targets));
+  let saved = 0;
+  const changed: ItineraryDay[] = [];
+  for (const day of targets) {
+    const result = optimizeDayOrder(day, env);
+    if (result.day !== day) {
+      changed.push(result.day);
+      saved += result.beforeKm - result.afterKm;
+    }
+  }
+  if (changed.length === 0) {
+    return { success: true, data: { itinerary: existing, savedKm: 0 }, message: "Already the shortest order." };
+  }
+  const label = dayNumber !== undefined ? `Optimize route of ${dayLabel(targets[0])}` : "Optimize every day's route";
+  const itinerary = await applyDayEdit(trip, existing, changed, label);
+  const km = Math.round(saved);
+  return {
+    success: true,
+    data: { itinerary, savedKm: km },
+    message: km > 0 ? `Reordered for a shorter drive — about ${km} km less.` : "Reordered for a shorter drive.",
+  };
 }
 
 export async function undoItineraryChange(

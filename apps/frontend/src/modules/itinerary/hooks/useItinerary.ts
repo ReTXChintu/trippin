@@ -245,6 +245,14 @@ export function useAiEditPlan(tripId: string) {
   });
 }
 
+export function useOptimizeDay(tripId: string) {
+  const setItinerary = useSetItinerary(tripId);
+  return useMutation({
+    mutationFn: (dayNumber?: number) => itineraryApi.optimizeDay(tripId, dayNumber),
+    onSuccess: (data) => setItinerary(data.itinerary),
+  });
+}
+
 export function useReplanFromNow(tripId: string) {
   const setItinerary = useSetItinerary(tripId);
   return useMutation({

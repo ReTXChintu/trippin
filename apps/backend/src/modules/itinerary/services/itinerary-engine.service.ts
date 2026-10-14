@@ -1138,6 +1138,35 @@ export function reorderDayStops(day: ItineraryDay, stopIds: string[], env: Engin
   return retimeDay({ ...day, stops: [...reordered, ...missing] }, env).day;
 }
 
+/**
+ * Reorders a day's visits for the shortest drive (stay → visits → stay). Meals, stops with a fixed
+ * start time, stops already done/skipped and stops without a location keep their slots; only the
+ * other visits are shuffled between the remaining slots. Returns the re-timed day and the
+ * straight-line route length before and after (km).
+ */
+export function optimizeDayOrder(day: ItineraryDay, env: EngineEnv): { day: ItineraryDay; beforeKm: number; afterKm: number } {
+  const { leading, middle, trailing } = splitDay(day.stops);
+  const movable = (s: ItineraryStop) => s.stopType !== "meal" && !s.fixedStartTime && !s.status && Boolean(s.coordinates);
+  const start = resolveDayStartPoint(day, env.trip);
+  const leg = legForDate(env.trip, day.date, day.legId);
+  const end = (leg ? getDayEndStay(leg, day.date)?.coordinates : undefined) ?? start;
+  const route = (stops: ItineraryStop[]) =>
+    pathLength([...(start ? [start] : []), ...stops.filter((s) => s.coordinates && s.stopType !== "meal").map((s) => s.coordinates!), ...(end ? [end] : [])]);
+
+  const visits = middle.filter(movable);
+  const beforeKm = route(middle);
+  if (visits.length < 2 || !start) return { day, beforeKm, afterKm: beforeKm };
+
+  const asPlaces = visits.map((s) => ({ googlePlaceId: s.id, name: s.placeName, coordinates: s.coordinates }) as Place);
+  const order = optimizeDayRoute(asPlaces, start, end).map((p) => visits.find((s) => s.id === p.googlePlaceId)!);
+  let next = 0;
+  const reordered = middle.map((s) => (movable(s) ? order[next++] : s));
+  const afterKm = route(reordered);
+  // Keep the old order unless the new one is actually shorter.
+  if (afterKm >= beforeKm - 0.05) return { day, beforeKm, afterKm: beforeKm };
+  return { day: retimeDay({ ...day, stops: [...leading, ...reordered, ...trailing] }, env).day, beforeKm, afterKm };
+}
+
 /** Resolves the routing start point (the stay you woke up in, trip hotel, or first stop). */
 export function resolveDayStartPoint(day: ItineraryDay, trip: Trip): Coordinates | null {
   const leg = legForDate(trip, day.date, day.legId);

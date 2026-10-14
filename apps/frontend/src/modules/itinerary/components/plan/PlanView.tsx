@@ -25,6 +25,7 @@ import {
   LuBedDouble,
   LuCheck,
   LuChevronDown,
+  LuCalendarClock,
   LuColumns2,
   LuKanban,
   LuEye,
@@ -37,6 +38,7 @@ import {
   LuMapPin,
   LuNavigation2,
   LuRefreshCw,
+  LuRoute,
   LuSparkles,
   LuTrainFront,
   LuUndo2,
@@ -55,6 +57,7 @@ import {
   useReorderItineraryStops,
   useSetStopLock,
   useSetStopStatus,
+  useOptimizeDay,
   useSummarizeItinerary,
   useUndoItinerary,
   useUpdateMealSlot,
@@ -64,6 +67,7 @@ import { CommentsDrawer, type CommentThreadTarget } from "@/modules/trips/compon
 import { ItineraryExportMenu } from "@/modules/itinerary/components/ItineraryExportMenu";
 import { MapView } from "@/modules/itinerary/components/MapView";
 import { mapChromeSx } from "@/modules/itinerary/components/map-pins";
+import { dayRouteInsights, type DayRouteInsights } from "@/modules/itinerary/utils/route-insights";
 import { PlanTabBoard } from "@/modules/itinerary/components/board/PlanTabBoard";
 import { AskAiBar } from "@/modules/itinerary/components/plan/AskAiBar";
 import { TripMapView } from "@/modules/itinerary/components/TripMapView";
@@ -198,6 +202,7 @@ export function PlanView({ trip, canEdit, hasMapsKey, hasAiKey, isOwner = true, 
   const summarize = useSummarizeItinerary(trip.id);
   const addStop = useAddStop(trip.id);
   const setStopStatus = useSetStopStatus(trip.id);
+  const optimize = useOptimizeDay(trip.id);
   const updateMealSlot = useUpdateMealSlot(trip.id);
   const { data: weatherData } = useWeatherQuery(trip.id);
   const weatherByDate = new Map((weatherData?.days ?? []).map((w) => [w.date, w]));
@@ -240,6 +245,8 @@ export function PlanView({ trip, canEdit, hasMapsKey, hasAiKey, isOwner = true, 
     : undefined;
   const selectedStop = selectedStopId ? selectedDay?.stops.find((s) => s.id === selectedStopId) : undefined;
 
+  const insightsCache = new WeakMap<ItineraryDay, DayRouteInsights>();
+  const planIsStale = Boolean(itinerary) && (itinerary?.days ?? []).map((d) => d.date).join() !== dayPlans.map((p) => p.date).join();
   const optionalPlaces = (itinerary?.optionalPlaces ?? []).filter((p) => !activeLeg || p.legId === activeLeg.id);
 
   const run = async <T,>(fn: () => Promise<T>, success?: string, stopId?: string) => {
@@ -352,6 +359,18 @@ export function PlanView({ trip, canEdit, hasMapsKey, hasAiKey, isOwner = true, 
         })),
     goTo: (tab, legId) => onGoTo(tab, legId),
     replanCity: (legId) => void handleGenerate(legId),
+    optimizeDay: (day) =>
+      void run(async () => {
+        const result = await optimize.mutateAsync(day?.dayNumber);
+        toast({ title: result.message ?? "Route optimized", description: result.savedKm > 0 ? "Use Undo to go back." : undefined, status: result.savedKm > 0 ? "success" : "info", duration: 4000 });
+      }),
+    dayInsights: (day) => {
+      const cached = insightsCache.get(day);
+      if (cached) return cached;
+      const value = dayRouteInsights(day, trip.dailyEndTime, startStayFor(day)?.coordinates ?? trip.hotelCoordinates);
+      insightsCache.set(day, value);
+      return value;
+    },
     showDayOnMap: (day) => {
       selectDay(day.dayNumber);
       if (compact) setMobileView("map");
@@ -483,6 +502,9 @@ export function PlanView({ trip, canEdit, hasMapsKey, hasAiKey, isOwner = true, 
           )}
           <MenuItem icon={<LuRefreshCw />} onClick={() => handleGenerate()}>
             Replan the whole trip
+          </MenuItem>
+          <MenuItem icon={<LuRoute />} onClick={() => actions.optimizeDay()}>
+            Shortest route for every day
           </MenuItem>
           <MenuDivider />
           <MenuItem icon={<LuColumns2 />} onClick={() => navigate(`/trips/${trip.id}/itinerary/compare${activeLeg ? `?legId=${activeLeg.id}` : ""}`)}>
@@ -847,6 +869,22 @@ export function PlanView({ trip, canEdit, hasMapsKey, hasAiKey, isOwner = true, 
           </HStack>
         </Flex>
       </Box>
+
+      {/* The trip's dates or cities changed since this plan was made. */}
+      {itinerary && itinerary.days.length > 0 && planIsStale && (
+        <Flex mx={{ base: 4, lg: 7 }} mt={{ base: 0, lg: 4 }} mb={{ base: 3, lg: 0 }} align="center" gap={3} px={4} py={3} borderRadius="lg" bg="warn.soft" color="warn" fontSize="13px" flexWrap="wrap">
+          <Icon as={LuCalendarClock} boxSize="18px" flexShrink={0} />
+          <Text flex={1} minW="220px">
+            <b>Your trip&apos;s dates or cities changed</b> — this plan still has the old days. Replan to rebuild it; locked stops, things you
+            added and chosen restaurants follow their city&apos;s days.
+          </Text>
+          {canEdit && (
+            <Button size="sm" leftIcon={<LuRefreshCw size={14} />} onClick={() => handleGenerate()} isLoading={generate.isPending}>
+              Replan now
+            </Button>
+          )}
+        </Flex>
+      )}
 
       {/* ---------------- Board (days as columns) ---------------- */}
       {itinerary && (compact ? mobileView === "board" : desktopView === "board") && (

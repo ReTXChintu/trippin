@@ -178,7 +178,7 @@ export function TripHeaderPanel({ trip, currentUserId, isOwner, embedded = false
                 <FormLabel>Dates</FormLabel>
                 <Input value={dates} isReadOnly tabIndex={-1} color="fg.muted" />
                 <FormHelperText fontSize="12px" color="fg.muted">
-                  Change per city (edit a city chip)
+                  Change in Cities &amp; dates above
                 </FormHelperText>
               </FormControl>
               <FormControl>

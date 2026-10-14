@@ -9,6 +9,8 @@ export interface MoveTarget {
 }
 
 /** Actions a stop row can trigger — provided once by PlanView instead of drilling through DayCard. */
+import type { DayRouteInsights } from "@/modules/itinerary/utils/route-insights";
+
 export interface PlanActions {
   trip: Trip;
   readOnly: boolean;
@@ -40,6 +42,10 @@ export interface PlanActions {
   /** Jump to another tab (e.g. Stays when a night has no stay). */
   goTo: (tab: "stays" | "places" | "bookings", legId?: string) => void;
   replanCity: (legId: string) => void;
+  /** Reorder a day (or every day) for the shortest drive. */
+  optimizeDay: (day?: ItineraryDay) => void;
+  /** Route checks for a day: saving from reordering, overrun past the day's end, far-off stops. */
+  dayInsights: (day: ItineraryDay) => DayRouteInsights;
   showDayOnMap: (day: ItineraryDay) => void;
 }
 
