@@ -170,7 +170,28 @@ export async function searchPlaces(
     const keys = await getUserApiKeys(userId);
     assertGoogleMapsKey(keys, "profile");
 
-    const { query, city, country, sessionToken, lat, lng } = parsed.data;
+    const { query, city, country, sessionToken, lat, lng, areas } = parsed.data;
+    // Day-trip towns are searched too — "Mamleshwar" from an Indore trip should find the temple at
+    // Omkareshwar, not a small namesake in Indore. Results from every place are merged in turn.
+    if (areas.length > 0) {
+      const lists = await Promise.all(
+        [city, ...areas].map((area) =>
+          PlacesService.autocomplete({ query, city: area, country, sessionToken, googleMapsApiKey: keys.googleMaps }).catch(() => []),
+        ),
+      );
+      const seen = new Set<string>();
+      const merged: PlaceSearchResult[] = [];
+      for (let i = 0; merged.length < 10 && lists.some((l) => l.length > i); i++) {
+        for (const list of lists) {
+          const r = list[i];
+          if (r && !seen.has(r.googlePlaceId)) {
+            seen.add(r.googlePlaceId);
+            merged.push(r);
+          }
+        }
+      }
+      if (merged.length > 0) return { success: true, data: { results: merged } };
+    }
     const results = await PlacesService.autocomplete({
       query,
       city,

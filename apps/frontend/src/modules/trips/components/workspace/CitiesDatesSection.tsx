@@ -48,6 +48,7 @@ export function CitiesDatesSection({
           startDate: shift(l.startDate, offset),
           endDate: shift(l.endDate, offset),
           stays: (l.stays ?? []).map((s) => ({ ...s, checkInDate: shift(s.checkInDate, offset), checkOutDate: shift(s.checkOutDate, offset) })),
+          dayTrips: (l.dayTrips ?? []).map((d) => (d.date ? { ...d, date: shift(d.date, offset) } : d)),
         })),
         transfers: (trip.transfers ?? []).map((t) => ({ ...t, date: shift(t.date, offset) })),
       });

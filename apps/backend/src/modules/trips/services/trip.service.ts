@@ -15,6 +15,8 @@ import {
   syncTripDatesFromLegs,
 } from "@/modules/trips/utils/trip-leg.utils";
 import { syncLegacyHotelFields } from "@/modules/trips/utils/stay.utils";
+import { locateDayTrips, normalizeDayTrips } from "@/modules/trips/utils/day-trips";
+import type { TripLeg } from "@/modules/trips/types/trip-leg.types";
 import { defaultCurrencyFor } from "@/utils/currency";
 import { deleteExpensesForTrip } from "@/modules/trips/services/trip-budget.service";
 import { deleteCollabDataForTrip } from "@/modules/trips/services/trip-collab.service";
@@ -75,6 +77,9 @@ export async function createTripFromRaw(
     return { success: false, error: parsed.error.issues[0]?.message ?? "Invalid input" };
   }
 
+  parsed.data.legs = (await Promise.all(
+    parsed.data.legs.map((leg) => locateDayTrips(normalizeDayTrips(leg as TripLeg))),
+  )) as typeof parsed.data.legs;
   const trip = await TripRepository.create({ userId, ...toTripPayload(parsed.data) });
   return { success: true, data: { trip }, message: "Trip created successfully" };
 }
@@ -93,13 +98,18 @@ export async function updateTripFromRaw(
   // stored instead of letting the schema default wipe it to [].
   const rawLegs = buildTripInputFromRaw(raw).legs as Array<Record<string, unknown>>;
   const legsWithoutStays = new Set(rawLegs.filter((l) => !("stays" in l)).map((l) => String(l.id)));
+  const existing = await TripRepository.findByIdForUser(tripId, userId);
   if (legsWithoutStays.size > 0) {
-    const existing = await TripRepository.findByIdForUser(tripId, userId);
     const storedStays = new Map((existing?.legs ?? []).map((l) => [l.id, l.stays]));
     parsed.data.legs = parsed.data.legs.map((leg) =>
       legsWithoutStays.has(leg.id) ? { ...leg, stays: storedStays.get(leg.id) ?? [] } : leg,
     );
   }
+  // Day trips: keep dates/locations for clients that only send names, locate new ones.
+  const storedLegs = new Map((existing?.legs ?? []).map((l) => [l.id, l]));
+  parsed.data.legs = (await Promise.all(
+    parsed.data.legs.map((leg) => locateDayTrips(normalizeDayTrips(leg as TripLeg, storedLegs.get(leg.id)))),
+  )) as typeof parsed.data.legs;
 
   const trip = await TripRepository.update(tripId, userId, toTripPayload(parsed.data));
   if (!trip) return { success: false, error: "Trip not found" };

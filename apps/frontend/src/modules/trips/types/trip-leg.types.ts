@@ -25,11 +25,22 @@ export interface TripStay {
   rating?: number;
 }
 
+/** A day out from a city's base, back at the same stay in the evening. */
+export interface TripDayTrip {
+  id: string;
+  name: string;
+  /** YYYY-MM-DD — the fixed day; omitted = the planner picks one. */
+  date?: string;
+  coordinates?: { lat: number; lng: number };
+}
+
 export interface TripLeg {
   id: string;
   name: string;
   baseCity: string;
   dayTripAreas: string[];
+  /** Day trips with optional fixed days (`dayTripAreas` mirrors the names). */
+  dayTrips?: TripDayTrip[];
   startDate: string;
   endDate: string;
   /** HH:mm — when you reach this leg (first sightseeing day only). */

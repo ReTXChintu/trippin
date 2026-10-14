@@ -234,6 +234,7 @@ export function DiscoveryPlacesPanel({
                   mode="place"
                   city={leg.baseCity}
                   country={leg.country}
+                  areas={leg.dayTripAreas}
                   value={searchPrefill}
                   onSelect={handleAddFromSearch}
                   onClear={() => setSearchPrefill(null)}
@@ -284,6 +285,7 @@ export function DiscoveryPlacesPanel({
           mode="place"
           city={leg.baseCity}
           country={leg.country}
+          areas={leg.dayTripAreas}
           onSelect={handleAddFromSearch}
           hideLabel
         />

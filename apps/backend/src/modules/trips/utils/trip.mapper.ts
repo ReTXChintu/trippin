@@ -66,6 +66,15 @@ function toTripLeg(leg: NonNullable<ITripDocument["legs"]>[number]): TripLeg {
     name: leg.name,
     baseCity: leg.baseCity,
     dayTripAreas: toStringArray(leg.dayTripAreas),
+    // Trips saved before day trips had dates only have the names — list those.
+    dayTrips: leg.dayTrips?.length
+      ? leg.dayTrips.map((d) => ({
+          id: d.id,
+          name: d.name,
+          date: d.date || undefined,
+          coordinates: d.coordinates ? { lat: d.coordinates.lat, lng: d.coordinates.lng } : undefined,
+        }))
+      : toStringArray(leg.dayTripAreas).map((name, i) => ({ id: `area-${i}`, name })),
     startDate: leg.startDate,
     endDate: leg.endDate,
     arrivalTime: leg.arrivalTime,

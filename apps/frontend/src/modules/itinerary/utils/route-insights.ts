@@ -112,3 +112,25 @@ export function dayRouteInsights(day: ItineraryDay, dayEnd: string, start?: Poin
 
   return { savingKm, overrunMinutes, endsAt, farStops };
 }
+
+/** "Ujjain" when this day is a day trip from its city: the day's fixed date, or most of its visits are
+ * closer to that town than to the stay. */
+export function dayTripName(
+  day: ItineraryDay,
+  dayTrips: { name: string; date?: string; coordinates?: Point }[] | undefined,
+  base?: Point | null,
+): string | undefined {
+  if (!dayTrips?.length) return undefined;
+  const fixed = dayTrips.find((d) => d.date === day.date);
+  if (fixed) return fixed.name;
+  const located = dayTrips.filter((d) => d.coordinates);
+  const visits = day.stops.filter(isVisitWithPoint);
+  if (!base || located.length === 0 || visits.length === 0) return undefined;
+  const counts = new Map<string, number>();
+  for (const v of visits) {
+    const nearest = [...located].sort((a, b) => haversineKm(v.coordinates!, a.coordinates!) - haversineKm(v.coordinates!, b.coordinates!))[0];
+    if (haversineKm(v.coordinates!, nearest.coordinates!) < haversineKm(v.coordinates!, base)) counts.set(nearest.name, (counts.get(nearest.name) ?? 0) + 1);
+  }
+  const [top] = [...counts].sort((a, b) => b[1] - a[1]);
+  return top && top[1] / visits.length >= 0.6 ? top[0] : undefined;
+}

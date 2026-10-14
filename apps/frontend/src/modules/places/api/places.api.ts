@@ -11,6 +11,8 @@ export async function searchPlaces(params: {
   lat?: number;
   lng?: number;
   type?: "places" | "hotels";
+  /** Day-trip towns to search as well ("Ujjain,Omkareshwar"). */
+  areas?: string;
 }): Promise<{ results: PlaceSearchResult[] }> {
   const res = await api.get("/places/search", { params });
   return res.data.data;

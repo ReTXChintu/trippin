@@ -226,7 +226,7 @@ export class LlmAIProvider implements AIProvider {
         system:
           'Design an alternative day-by-day sightseeing plan. Return JSON: { "days": [{ "date": "YYYY-MM-DD", "placeIds": ["id1","id2"], "dressCode": string }], "stopNotes": [{ "placeId": "id1", "bestTime": string?, "avoidTime": string?, "hypeLevel": "overhyped"|"worth-it"|"hidden-gem"?, "why": string?, "tips": string[]? }] }. ' +
           "Only use placeIds from the input list — never invent places. Assign each place to exactly one date; it's fine to leave out places that don't fit well. Group nearby places on the same date and order placeIds within a day in a sensible visiting sequence starting near the stay, minimizing backtracking. Each date has limited daily hours (given) — favor fewer well-paced stops over overpacking a day. dressCode is a 1-2 sentence practical outfit suggestion for that day's activities/season/destination, geared toward good photos. stopNotes give practical best-time-to-visit, crowd-avoidance, and hype-level guidance per place. " +
-          "If the input has \"instructions\" (the traveller's own words), follow them first — they override every guideline above except: only given placeIds, only given dates. \"Day 1\" means the first date in the list, and so on; match place names loosely. Also return \"pinnedPlaceIds\": the placeIds the instructions explicitly tie to a particular date (empty if none), and \"instructionNote\": one or two plain sentences telling the traveller how you applied the instructions, mentioning anything you couldn't do and why (e.g. a place that isn't in their list). Without instructions return pinnedPlaceIds: [] and instructionNote: null.",
+          "Places of a day trip (input dayTrips: a town visited from the base and back the same day) go together on ONE date — the given date when there is one — and never mixed with base-city places. If the input has \"instructions\" (the traveller's own words), follow them first — they override every guideline above except: only given placeIds, only given dates. \"Day 1\" means the first date in the list, and so on; match place names loosely. Also return \"pinnedPlaceIds\": the placeIds the instructions explicitly tie to a particular date (empty if none), and \"instructionNote\": one or two plain sentences telling the traveller how you applied the instructions, mentioning anything you couldn't do and why (e.g. a place that isn't in their list). Without instructions return pinnedPlaceIds: [] and instructionNote: null.",
         user: JSON.stringify({
           destination: params.leg?.baseCity ?? params.trip.destinationCity,
           country: params.leg?.country ?? params.trip.destinationCountry,
@@ -236,6 +236,10 @@ export class LlmAIProvider implements AIProvider {
           excludedPlaces: params.trip.excludedPlaces,
           dates: params.eligibleDates.map((d, i) => ({ ...d, dayNumber: i + 1 })),
           instructions: params.instructions || undefined,
+          // Day trips from the base: their places belong together on one day (fixed dates must be kept).
+          dayTrips: (params.leg ? [params.leg] : params.trip.legs).flatMap((l) =>
+            (l.dayTrips ?? []).map((d) => ({ from: l.baseCity, town: d.name, date: d.date ?? null })),
+          ),
           places: params.places
             .filter((p) => p.googlePlaceId)
             .map((p) => ({

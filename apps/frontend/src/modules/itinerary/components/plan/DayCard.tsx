@@ -48,6 +48,7 @@ import type { DayWeather, TripBooking } from "@/modules/trips/types/trip-extras.
 import { BOOKING_META } from "@/modules/trips/components/bookings/bookingMeta";
 import { dayGoogleMapsUrl, formatDayDate, isVisit, summarizeDay, toMinutes } from "@/modules/itinerary/utils/plan.utils";
 import { DayBadge, Pill } from "@/components/ui";
+import { dayTripName } from "@/modules/itinerary/utils/route-insights";
 import { fmtDur, modeIcon, weatherIcon } from "@/components/ui/plan.utils";
 import { StayRow, StopRow, TravelConnector } from "./StopRow";
 import { usePlan } from "./PlanContext";
@@ -90,6 +91,8 @@ export const DayCard = forwardRef<HTMLDivElement, DayCardProps>(function DayCard
 
   const summary = summarizeDay(day);
   const insights = plan.dayInsights(day);
+  const dayLeg = plan.trip.legs.find((l) => l.id === day.legId);
+  const dayTrip = dayTripName(day, dayLeg?.dayTrips, startStay?.coordinates ?? dayLeg?.hotelCoordinates);
   const pinnedFirst = day.stops.filter((s) => s.stopType === "transfer");
   const pinnedLast = day.stops.filter((s) => s.stopType === "return");
   const middle = day.stops.filter((s) => s.stopType !== "transfer" && s.stopType !== "return");
@@ -230,8 +233,11 @@ export const DayCard = forwardRef<HTMLDivElement, DayCardProps>(function DayCard
                   <Text as="h2" fontFamily="heading" fontWeight={600} fontSize="20px" lineHeight={1.25}>
                     {formatDayDate(day.date, "EEE d MMM")}
                   </Text>
-                  <Pill icon={isTravelDay || transferStop ? LuTrainFront : isFreeDay ? LuSun : LuCamera}>
-                    {isTravelDay || transferStop ? "Travel day" : isFreeDay ? "Free day" : "Sightseeing"}
+                  <Pill
+                    tone={dayTrip ? "accent" : "neutral"}
+                    icon={isTravelDay || transferStop ? LuTrainFront : isFreeDay ? LuSun : dayTrip ? LuRoute : LuCamera}
+                  >
+                    {isTravelDay || transferStop ? "Travel day" : isFreeDay ? "Free day" : dayTrip ? `Day trip · ${dayTrip}` : "Sightseeing"}
                   </Pill>
                 </HStack>
                 {place && (

@@ -32,6 +32,8 @@ interface PlaceSearchInputProps {
   mode: "hotel" | "place";
   city?: string;
   country?: string;
+  /** Day-trip towns to search as well as the city. */
+  areas?: string[];
   value?: string;
   onSelect: (selection: PlaceSelection) => void;
   onClear?: () => void;
@@ -50,6 +52,7 @@ export function PlaceSearchInput({
   mode,
   city,
   country,
+  areas,
   value,
   onSelect,
   onClear,
@@ -97,6 +100,7 @@ export function PlaceSearchInput({
           country,
           sessionToken,
           type: mode === "hotel" ? "hotels" : "places",
+          areas: mode === "place" && areas?.length ? areas.join(",") : undefined,
         });
         setResults(data.results);
         setIsOpen(true);
@@ -106,7 +110,7 @@ export function PlaceSearchInput({
         setIsLoading(false);
       }
     },
-    [city, country, mode, sessionToken],
+    [city, country, mode, sessionToken, areas],
   );
 
   const handleChange = (text: string) => {

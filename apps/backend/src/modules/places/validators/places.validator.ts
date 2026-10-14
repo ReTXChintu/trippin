@@ -8,6 +8,11 @@ export const searchQuerySchema = z.object({
   sessionToken: z.string().optional(),
   lat: z.coerce.number().optional(),
   lng: z.coerce.number().optional(),
+  /** Day-trip towns to search as well as the city ("Ujjain,Omkareshwar"). */
+  areas: z
+    .string()
+    .optional()
+    .transform((v) => (v ? v.split(",").map((a) => a.trim()).filter(Boolean).slice(0, 5) : [])),
 });
 
 export const placeIdSchema = z.object({

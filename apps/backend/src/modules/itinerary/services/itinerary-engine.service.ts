@@ -157,6 +157,82 @@ export interface EngineEnv {
   trip: Trip;
   placesById: Map<string, Place>;
   travel: TravelLookup;
+  /** Day-trip areas per city (legId) with their centres and fixed dates; see `withDayTripZones`. */
+  legZones?: Map<string, LegZones>;
+}
+
+// ---------------------------------------------------------------------------------------------
+// Day trips: places near a day-trip town get that town's day; the rest stay on base-city days.
+// ---------------------------------------------------------------------------------------------
+
+export interface DayTripZone {
+  name: string;
+  center: Coordinates;
+  /** Fixed day (YYYY-MM-DD); omitted = the planner picks one. */
+  date?: string;
+}
+
+export interface LegZones {
+  /** Where the city's days start (the stay); places are compared against it. */
+  base?: Coordinates;
+  zones: DayTripZone[];
+}
+
+/** Which day trip a place belongs to (-1 = the base city): it must be closer to that town than to
+ * the base, and within about 60% of the base→town distance of it (at least 25 km). */
+export function zoneIndexFor(place: { coordinates?: Coordinates }, lz: LegZones | undefined): number {
+  if (!place.coordinates || !lz || lz.zones.length === 0) return -1;
+  let best = -1;
+  let bestKm = Infinity;
+  lz.zones.forEach((z, i) => {
+    const km = haversineKm(place.coordinates!, z.center);
+    if (km < bestKm) {
+      bestKm = km;
+      best = i;
+    }
+  });
+  if (best < 0) return -1;
+  const toBase = lz.base ? haversineKm(place.coordinates, lz.base) : Infinity;
+  const span = lz.base ? haversineKm(lz.base, lz.zones[best].center) : 60;
+  return bestKm < toBase && bestKm <= Math.max(25, span * 0.6) ? best : -1;
+}
+
+export interface LegZonePlan {
+  zoneOf: (place: { coordinates?: Coordinates }) => number;
+  /** zone index → the date it's on. */
+  dateOfZone: Map<number, string>;
+  /** Dates given to day trips (base-city places stay off them). */
+  reserved: Set<string>;
+}
+
+/** Gives every day trip that has places a date: its fixed one if it's in the city's dates, else the
+ * free date nearest the middle of the stay (arrival and departure days are picked last). */
+export function planLegZones(lz: LegZones | undefined, dates: string[], legPlaces: { coordinates?: Coordinates }[]): LegZonePlan {
+  const zoneOf = (p: { coordinates?: Coordinates }) => zoneIndexFor(p, lz);
+  const dateOfZone = new Map<number, string>();
+  if (!lz || lz.zones.length === 0 || dates.length === 0) return { zoneOf, dateOfZone, reserved: new Set() };
+
+  const used = new Set(legPlaces.map(zoneOf).filter((i) => i >= 0));
+  lz.zones.forEach((z, i) => {
+    if (z.date && dates.includes(z.date)) dateOfZone.set(i, z.date);
+  });
+  const middle = (dates.length - 1) / 2;
+  const byPreference = dates
+    .map((d, i) => ({ d, i }))
+    .sort((a, b) => {
+      const edge = (i: number) => (i === 0 || i === dates.length - 1 ? 1 : 0);
+      return edge(a.i) - edge(b.i) || Math.abs(a.i - middle) - Math.abs(b.i - middle) || a.i - b.i;
+    })
+    .map((x) => x.d);
+  for (const i of used) {
+    if (dateOfZone.has(i)) continue;
+    const taken = new Set(dateOfZone.values());
+    const free = byPreference.find((d) => !taken.has(d));
+    // Keep at least one day for the base city when there's more than one day.
+    const enoughLeft = dates.length - taken.size > 1 || dates.length === 1;
+    if (free && enoughLeft) dateOfZone.set(i, free);
+  }
+  return { zoneOf, dateOfZone, reserved: new Set(dateOfZone.values()) };
 }
 
 interface DayContext {
@@ -957,16 +1033,58 @@ export function generateItineraryDays(
     );
     const capacity = dates.map((_, i) => Math.max(maxPerDay, seeded[i].length));
 
-    const ranked = rankPlacesRuleBased({
+    const lz = env.legZones?.get(leg.id);
+    const zonePlan = planLegZones(lz, dates, legPlaces);
+
+    if (zonePlan.dateOfZone.size === 0) {
+      const ranked = rankPlacesRuleBased({
+        places: legPlaces.filter((p) => !preservedPlaceIds.has(p.googlePlaceId!)),
+        interests: trip.interests,
+        travelStyle: trip.travelStyle,
+        mustVisitPlaces: trip.mustVisitPlaces,
+        excludedPlaces: trip.excludedPlaces,
+        limit: dates.length * maxPerDay,
+      });
+      const buckets = allocateToDays(ranked, dates, capacity, startPoint, seeded);
+      dates.forEach((date, i) => bucketsByDate.set(date, buckets[i]));
+      continue;
+    }
+
+    // Day trips: each town's places fill its day; base-city places share the other days.
+    const rankedAll = rankPlacesRuleBased({
       places: legPlaces.filter((p) => !preservedPlaceIds.has(p.googlePlaceId!)),
       interests: trip.interests,
       travelStyle: trip.travelStyle,
       mustVisitPlaces: trip.mustVisitPlaces,
       excludedPlaces: trip.excludedPlaces,
-      limit: dates.length * maxPerDay,
+      limit: legPlaces.length,
     });
-
-    const buckets = allocateToDays(ranked, dates, capacity, startPoint, seeded);
+    const buckets = seeded.map((b) => [...b]);
+    const basePlaces: Place[] = [];
+    for (const place of rankedAll) {
+      const zone = zonePlan.zoneOf(place);
+      const zoneDate = zone >= 0 ? zonePlan.dateOfZone.get(zone) : undefined;
+      if (zone >= 0 && zoneDate) {
+        const idx = dates.indexOf(zoneDate);
+        if (buckets[idx].length < capacity[idx] && !isClosedOnDate(place, zoneDate)) buckets[idx].push(place);
+        // A day trip that's full leaves the rest for the "didn't fit" list — never a base day.
+      } else if (zone < 0) {
+        basePlaces.push(place);
+      }
+    }
+    const baseIdx = dates.map((d, i) => i).filter((i) => !zonePlan.reserved.has(dates[i]));
+    if (baseIdx.length > 0) {
+      const baseBuckets = allocateToDays(
+        basePlaces.slice(0, baseIdx.length * maxPerDay),
+        baseIdx.map((i) => dates[i]),
+        baseIdx.map((i) => capacity[i]),
+        startPoint,
+        baseIdx.map((i) => buckets[i]),
+      );
+      baseIdx.forEach((i, k) => {
+        buckets[i] = baseBuckets[k];
+      });
+    }
     dates.forEach((date, i) => bucketsByDate.set(date, buckets[i]));
   }
 
@@ -1014,6 +1132,26 @@ function keptDroppableCount(stops: ItineraryStop[]): number {
 
 /** Tries to fit every selected place that isn't scheduled anywhere onto a day of its leg that has
  * room (strictly — without pushing anything else out). The rest become "optional" with a reason. */
+/** For leftovers: a day-trip place may only go on its town's day; a base place stays off them. */
+function zoneDateFilter(env: EngineEnv, leg: TripLeg, place: Place, allPlaces: Place[], days: ItineraryDay[]): (date: string) => boolean {
+  const lz = env.legZones?.get(leg.id);
+  if (!lz || lz.zones.length === 0) return () => true;
+  const dates = days
+    .filter((d) => d.dayType === "sightseeing" && d.legId === leg.id && !getDayBounds(env.trip, leg, d.date).skipSightseeing)
+    .map((d) => d.date);
+  const legs = getEffectiveLegs(env.trip);
+  const hints = buildPlaceLegHints(env.trip);
+  const legPlaces = allPlaces.filter((p) => assignPlaceToLeg(p, legs, hints)?.id === leg.id);
+  const plan = planLegZones(lz, dates, legPlaces);
+  if (plan.dateOfZone.size === 0) return () => true;
+  const zone = plan.zoneOf(place);
+  if (zone >= 0) {
+    const date = plan.dateOfZone.get(zone);
+    return (d) => d === date;
+  }
+  return plan.reserved.size < dates.length ? (d) => !plan.reserved.has(d) : () => true;
+}
+
 export function fillUnscheduledPlaces(
   days: ItineraryDay[],
   places: Place[],
@@ -1031,9 +1169,10 @@ export function fillUnscheduledPlaces(
     if (!place.googlePlaceId || !place.coordinates || scheduledIds.has(place.googlePlaceId)) continue;
 
     const leg = assignPlaceToLeg(place, legs, placeLegHints);
+    const allowedDate = leg ? zoneDateFilter(env, leg, place, places, updatedDays) : () => true;
     const candidates = updatedDays
       .map((d, idx) => ({ d, idx }))
-      .filter(({ d }) => d.dayType === "sightseeing" && (!leg || d.legId === leg.id));
+      .filter(({ d }) => d.dayType === "sightseeing" && (!leg || d.legId === leg.id) && allowedDate(d.date));
 
     let placed = false;
     for (const { d, idx } of candidates) {

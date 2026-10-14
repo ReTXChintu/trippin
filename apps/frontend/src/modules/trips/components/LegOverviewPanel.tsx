@@ -7,18 +7,15 @@ import {
   Input,
   SimpleGrid,
   Stack,
-  Tag,
-  TagCloseButton,
   Text,
   useDisclosure,
   useToast,
-  Wrap,
-  WrapItem,
 } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
 import { FiTrash2 } from "react-icons/fi";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { getApiErrorMessage } from "@/lib/api";
+import { DayTripsEditor } from "@/modules/trips/components/workspace/DayTripsEditor";
 import { useDeleteTripLeg, useUpdateTrip } from "@/modules/trips/hooks/useTrips";
 import type { Trip } from "@/modules/trips/types/trip.types";
 import type { TripLeg } from "@/modules/trips/types/trip-leg.types";
@@ -37,7 +34,6 @@ export function LegOverviewPanel({ trip, leg }: LegOverviewPanelProps) {
   const [isDeleting, setIsDeleting] = useState(false);
 
   const [draft, setDraft] = useState<TripLeg>(leg);
-  const [dayTripAreaInput, setDayTripAreaInput] = useState("");
   const [isDirty, setIsDirty] = useState(false);
 
   useEffect(() => {
@@ -75,13 +71,6 @@ export function LegOverviewPanel({ trip, leg }: LegOverviewPanelProps) {
     }
   };
 
-  const addDayTripArea = () => {
-    const area = dayTripAreaInput.trim();
-    if (area && !draft.dayTripAreas.includes(area)) {
-      patch({ dayTripAreas: [...draft.dayTripAreas, area] });
-    }
-    setDayTripAreaInput("");
-  };
 
   const canDelete = trip.legs.length > 1;
 
@@ -134,35 +123,17 @@ export function LegOverviewPanel({ trip, leg }: LegOverviewPanelProps) {
       </SimpleGrid>
 
 
-      <FormControl>
-        <FormLabel fontSize="sm">Day-trip areas</FormLabel>
-        <HStack>
-          <Input
-            size="sm"
-            value={dayTripAreaInput}
-            onChange={(e) => setDayTripAreaInput(e.target.value)}
-            placeholder="e.g. Pushkar"
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                addDayTripArea();
-              }
-            }}
-          />
-          <Button size="sm" onClick={addDayTripArea}>
-            Add
-          </Button>
-        </HStack>
-        <Wrap mt={2}>
-          {draft.dayTripAreas.map((area) => (
-            <WrapItem key={area}>
-              <Tag size="sm">
-                {area}
-                <TagCloseButton onClick={() => patch({ dayTripAreas: draft.dayTripAreas.filter((a) => a !== area) })} />
-              </Tag>
-            </WrapItem>
-          ))}
-        </Wrap>
+      <FormControl as="fieldset">
+        <FormLabel as="legend" fontSize="sm">
+          Day trips from {draft.baseCity || "here"}
+        </FormLabel>
+        <DayTripsEditor
+          value={draft.dayTrips?.length ? draft.dayTrips : draft.dayTripAreas.map((name, i) => ({ id: `area-${i}`, name }))}
+          onChange={(next) => patch({ dayTrips: next, dayTripAreas: next.map((d) => d.name).filter(Boolean) })}
+          startDate={draft.startDate}
+          endDate={draft.endDate}
+          country={draft.country}
+        />
       </FormControl>
 
       <Box pt={4} borderTopWidth="1px">

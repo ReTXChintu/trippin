@@ -23,7 +23,9 @@ import {
   travelLookupWithRoutes,
   type AiPlaceAssignment,
   type EngineEnv,
+  type LegZones,
 } from "@/modules/itinerary/services/itinerary-engine.service";
+import { legBasePoint, locateDayTrips, normalizeDayTrips } from "@/modules/trips/utils/day-trips";
 import { buildVisitIntelSummary } from "@/modules/itinerary/services/itinerary-enrichment.service";
 import {
   getRoutesForDays,
@@ -107,6 +109,19 @@ async function buildEnv(trip: Trip, placeIds: string[], extraPlaces: Place[] = [
   }
 
   return { trip, placesById, travel: estimateTravelLookup(trip.transportationMode), googleMapsKey };
+}
+
+/** Adds day-trip areas (located, with fixed dates) so generation keeps each town on its own day. */
+async function withDayTripZones(env: ScheduleEnv): Promise<ScheduleEnv> {
+  const legZones = new Map<string, LegZones>();
+  for (const leg of getEffectiveLegs(env.trip)) {
+    const located = await locateDayTrips(normalizeDayTrips(leg));
+    const zones = (located.dayTrips ?? [])
+      .filter((d) => d.coordinates)
+      .map((d) => ({ name: d.name, center: d.coordinates!, date: d.date }));
+    if (zones.length > 0) legZones.set(leg.id, { base: await legBasePoint(leg), zones });
+  }
+  return { ...env, legZones };
 }
 
 function isSchedulable(day: ItineraryDay): boolean {
@@ -299,7 +314,7 @@ export async function generateItinerary(
       : new Map<string, ItineraryStop[]>();
     const preserved = new Map([...preservedAll].filter(([date]) => inScope(date)));
 
-    const env = await buildEnv(trip, [...selectedIds, ...placeIdsInDays(existing?.days ?? [])]);
+    const env = await withDayTripZones(await buildEnv(trip, [...selectedIds, ...placeIdsInDays(existing?.days ?? [])]));
     const places = selectedIds.map((id) => env.placesById.get(id)).filter((p): p is Place => Boolean(p));
     if (!places.some((p) => p.coordinates)) {
       return { success: false, error: "No cached place coordinates found. Try discovering places again." };
@@ -985,7 +1000,7 @@ async function buildAiCandidateForScope(
 ): Promise<{ days: ItineraryDay[]; optionalPlaces: OptionalItineraryPlace[]; instructionNote?: string }> {
   const dayPlans = legId ? buildTripDayPlans(trip) : null;
   const placeIds = leg ? leg.selectedPlaceIds : getAggregatedSelectedPlaceIds(trip);
-  const env = await buildEnv(trip, placeIds);
+  const env = await withDayTripZones(await buildEnv(trip, placeIds));
   const places = placeIds.map((id) => env.placesById.get(id)).filter((p): p is Place => Boolean(p));
 
   const eligibleDatesForAi = computeEligibleDates(trip, legId).map((d) => ({

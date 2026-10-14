@@ -62,11 +62,19 @@ export interface ITripStay {
   rating?: number;
 }
 
+export interface ITripDayTrip {
+  id: string;
+  name: string;
+  date?: string;
+  coordinates?: { lat: number; lng: number };
+}
+
 export interface ITripLeg {
   id: string;
   name: string;
   baseCity: string;
   dayTripAreas: string[];
+  dayTrips?: ITripDayTrip[];
   startDate: string;
   endDate: string;
   arrivalTime?: string;
@@ -212,12 +220,23 @@ const TripStaySchema = new Schema<ITripStay>(
   { _id: false },
 );
 
+const TripDayTripSchema = new Schema<ITripDayTrip>(
+  {
+    id: { type: String, required: true },
+    name: { type: String, required: true, trim: true },
+    date: { type: String },
+    coordinates: { type: CoordinatesSchema },
+  },
+  { _id: false },
+);
+
 const TripLegSchema = new Schema<ITripLeg>(
   {
     id: { type: String, required: true },
     name: { type: String, required: true, trim: true },
     baseCity: { type: String, required: true, trim: true },
     dayTripAreas: { type: [String], default: [] },
+    dayTrips: { type: [TripDayTripSchema], default: [] },
     startDate: { type: String, required: true },
     endDate: { type: String, required: true },
     arrivalTime: { type: String, trim: true },

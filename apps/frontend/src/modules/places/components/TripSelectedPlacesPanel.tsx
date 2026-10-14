@@ -99,6 +99,7 @@ export function TripSelectedPlacesPanel({ trip, leg, selectedPlaces, onSelectedC
         mode="place"
         city={leg.baseCity || trip.destinationCity}
         country={leg.country || trip.destinationCountry}
+        areas={leg.dayTripAreas}
         onSelect={handleAddFromSearch}
         hideLabel
       />
