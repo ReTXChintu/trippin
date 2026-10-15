@@ -23,9 +23,7 @@
   "hooks": {
     "before:init": "cd apps/mobile-app && flutter pub get",
     "after:bump": [
-      "node scripts/sync-all-versions.js",
-      "npm run build:apk --prefix apps/mobile-app",
-      "node apps/mobile-app/scripts/copy-apk.js"
+      "node scripts/sync-all-versions.js"
     ]
   }
 }

@@ -1,52 +1,172 @@
-name: Deploy to VPS
+name: Release — Android app + deploy
 
-# Deploys when a version tag is pushed (e.g. `git push origin v1.2.3`, as release-it creates) or a
-# GitHub release is published. Both can fire for the same tag; the concurrency group runs them one
-# at a time and deploying the same tag twice is harmless.
+# Runs when a GitHub release is published (or by hand from the Actions tab with a tag):
+#   1. checks the web build and builds the signed Android APK,
+#   2. copies trippin.apk + trippin-apk.json (version info the app checks for updates) to the server's
+#      apps/frontend/public, so they're served at <website>/trippin.apk,
+#   3. SSHes in, checks out the release, installs, builds and reloads PM2 (scripts/deploy.sh).
 on:
-  push:
-    tags: ["v*"]
   release:
     types: [published]
   workflow_dispatch:
     inputs:
       ref:
-        description: Tag or commit to deploy
+        description: Tag to release (e.g. v1.2.3)
         required: true
 
 concurrency:
   group: deploy-production
   cancel-in-progress: false
 
+env:
+  REF: ${{ github.event.inputs.ref || github.event.release.tag_name }}
+
 jobs:
-  build:
-    name: Build check
+  web:
+    name: Build check (web)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.inputs.ref || github.event.release.tag_name || github.ref }}
-
+          ref: ${{ env.REF }}
       - uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc
           cache: npm
-
       - run: npm ci --no-audit --no-fund
       # Catches type and bundling errors before anything touches the server.
       - run: npm run build
 
+  apk:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # attach the APK to the GitHub release
+    defaults:
+      run:
+        working-directory: apps/mobile-app
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.REF }}
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: ${{ vars.FLUTTER_VERSION || '3.47.2' }}
+          cache: true
+
+      - name: App settings (.env baked into the APK)
+        env:
+          API_BASE_URL: ${{ vars.MOBILE_API_BASE_URL }}
+          WEB_URL: ${{ vars.MOBILE_WEB_URL }}
+          MAP_TILE_URL: ${{ vars.MOBILE_MAP_TILE_URL }}
+        run: |
+          if [ -z "$API_BASE_URL" ]; then
+            echo "::error::Set the MOBILE_API_BASE_URL repository variable (e.g. http://<server-ip>:<PORT>/api/v1)."
+            exit 1
+          fi
+          {
+            echo "API_BASE_URL=$API_BASE_URL"
+            if [ -n "$WEB_URL" ]; then echo "WEB_URL=$WEB_URL"; fi
+            if [ -n "$MAP_TILE_URL" ]; then echo "MAP_TILE_URL=$MAP_TILE_URL"; fi
+          } > .env
+
+      - name: Signing key
+        # Every release must be signed with the same key, or phones refuse to install the update.
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          if [ -z "$KEYSTORE_BASE64" ]; then
+            echo "::error::Add the ANDROID_KEYSTORE_BASE64 / _PASSWORD / ANDROID_KEY_ALIAS / ANDROID_KEY_PASSWORD secrets (see README)."
+            exit 1
+          fi
+          echo "$KEYSTORE_BASE64" | base64 -d > android/app/upload-keystore.jks
+          {
+            echo "storeFile=upload-keystore.jks"
+            echo "storePassword=$KEYSTORE_PASSWORD"
+            echo "keyAlias=$KEY_ALIAS"
+            echo "keyPassword=${KEY_PASSWORD:-$KEYSTORE_PASSWORD}"
+          } > android/key.properties
+
+      - run: flutter pub get
+      - run: flutter analyze
+      - run: flutter test
+
+      - name: Build APK
+        # Version name from the tag (v1.2.3 → 1.2.3); the build number only ever goes up, which is what
+        # the app compares to offer an update.
+        run: |
+          NAME="${REF#v}"
+          flutter build apk --release --build-name "$NAME" --build-number "${{ github.run_number }}"
+          mkdir -p ../../release
+          cp build/app/outputs/flutter-apk/app-release.apk ../../release/trippin.apk
+
+      - name: Version file for in-app updates
+        env:
+          NOTES: ${{ github.event.release.name }}
+        run: |
+          jq -n \
+            --arg version "${REF#v}" \
+            --argjson buildNumber "${{ github.run_number }}" \
+            --arg url "trippin.apk" \
+            --arg releasedAt "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            --arg notes "${NOTES:-}" \
+            '{version: $version, buildNumber: $buildNumber, url: $url, releasedAt: $releasedAt, notes: $notes}' \
+            > ../../release/trippin-apk.json
+          cat ../../release/trippin-apk.json
+
+      - name: Attach the APK to the GitHub release
+        if: github.event_name == 'release'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "$REF" ../../release/trippin.apk --clobber
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android
+          path: release/
+          retention-days: 14
+
   deploy:
-    name: Deploy
-    needs: build
+    name: Deploy to the server
+    needs: [web, apk]
     runs-on: ubuntu-latest
     environment: production
+    env:
+      APP_DIR: ${{ vars.VPS_APP_DIR || secrets.VPS_APP_DIR || '/opt/var/trippin' }}
     steps:
-      - name: Deploy over SSH
+      - uses: actions/download-artifact@v4
+        with:
+          name: android
+          path: release
+
+      - name: Copy the APK to apps/frontend/public
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          port: ${{ secrets.VPS_PORT || 22 }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          passphrase: ${{ secrets.VPS_SSH_PASSPHRASE }}
+          source: release/trippin.apk,release/trippin-apk.json
+          target: ${{ env.APP_DIR }}/apps/frontend/public
+          strip_components: 1
+          overwrite: true
+
+      - name: Update the code, build and reload PM2
         uses: appleboy/ssh-action@v1.2.0
         env:
-          DEPLOY_REF: ${{ github.event.inputs.ref || github.event.release.tag_name || github.ref_name }}
-          APP_DIR: ${{ secrets.VPS_APP_DIR }}
+          DEPLOY_REF: ${{ env.REF }}
+          APP_DIR: ${{ env.APP_DIR }}
         with:
           host: ${{ secrets.VPS_HOST }}
           port: ${{ secrets.VPS_PORT || 22 }}
@@ -61,6 +181,9 @@ jobs:
             [ -s "$HOME/.nvm/nvm.sh" ] && . "$HOME/.nvm/nvm.sh"
             [ -f "$HOME/.profile" ] && . "$HOME/.profile" || true
             cd "$APP_DIR"
+            # The release's code: fetch and check out its tag (the APK above is git-ignored, so it stays).
             git fetch --tags --force origin
             git checkout --force --detach "$DEPLOY_REF"
+            # npm ci → npm run build (the frontend build copies public/trippin.apk into dist) → pm2 reload → health check
             bash scripts/deploy.sh "$DEPLOY_REF"
+            ls -la apps/frontend/dist/trippin.apk apps/frontend/dist/trippin-apk.json

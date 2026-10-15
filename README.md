@@ -64,20 +64,43 @@ Put a reverse proxy (nginx, Caddy…) with TLS in front of both ports, and set `
 **One-time server setup**
 
 1. Install Node.js (the major version in `.nvmrc`), git and PM2 (`npm install -g pm2`).
-2. Clone the repo, e.g. `git clone git@github.com:ReTXChintu/trippin.git /var/www/trippin`, and give the server read access (a deploy key).
+2. Clone the repo, e.g. `git clone git@github.com:ReTXChintu/trippin.git /opt/var/trippin`, and give the server read access (a deploy key).
 3. `cp .env.example .env` and fill it in, including `PORT` and `FRONTEND_PORT`.
 4. Run `bash scripts/deploy.sh <tag>` once, then `pm2 startup` so the processes come back after a reboot.
 
-**Automatic deploys** (`.github/workflows/deploy.yml`) run when a `v*` tag is pushed or a GitHub release is published (or manually from the Actions tab with a tag). The workflow builds the project on GitHub first, then SSHes into the server and runs `scripts/deploy.sh <tag>`, which checks out the tag, runs `npm ci` and `npm run build`, reloads PM2 and waits for both health checks. Add these repository secrets (Settings → Secrets and variables → Actions):
+**Releases** (`.github/workflows/deploy.yml`) run when a GitHub release is published (or by hand from the Actions tab with a tag). The workflow:
+
+1. checks the web build and builds the signed Android APK (version = the tag, build number = the run number),
+2. copies `trippin.apk` and `trippin-apk.json` (the version the app checks for updates) to `apps/frontend/public` on the server — both are git-ignored, so they survive the checkout and are served at `<website>/trippin.apk`,
+3. SSHes in, checks out the release tag and runs `scripts/deploy.sh <tag>`: `npm ci`, `npm run build` (which copies the APK into the frontend's `dist`), PM2 reload, health checks.
+
+The app shows its version in Settings and offers **Update** when a newer `trippin-apk.json` is on the server. Android asks once to allow installs from the browser.
+
+Add in Settings → Secrets and variables → Actions:
 
 | Secret | Value |
 |--------|-------|
 | `VPS_HOST` | Server hostname or IP |
 | `VPS_USER` | SSH user that owns the checkout |
 | `VPS_SSH_KEY` | Private key for that user (its public key in `~/.ssh/authorized_keys`) |
-| `VPS_APP_DIR` | Absolute path of the checkout, e.g. `/var/www/trippin` |
 | `VPS_PORT` | SSH port (optional, defaults to 22) |
 | `VPS_SSH_PASSPHRASE` | Key passphrase (optional) |
+| `ANDROID_KEYSTORE_BASE64` | The app's signing keystore, base64 (`base64 -w0 trippin-upload.jks`) |
+| `ANDROID_KEYSTORE_PASSWORD` / `ANDROID_KEY_ALIAS` / `ANDROID_KEY_PASSWORD` | Its passwords and alias |
 
-Release flow: `npm run release:patch` (bumps versions, writes the changelog, commits and tags), then `git push --follow-tags` — the tag push deploys it.
+| Variable | Value |
+|----------|-------|
+| `VPS_APP_DIR` | Checkout on the server (optional, default `/opt/var/trippin`) |
+| `MOBILE_API_BASE_URL` | API the app talks to, e.g. `http://187.127.179.114:50008/api/v1` |
+| `MOBILE_WEB_URL` | The website, e.g. `http://187.127.179.114:50009` — also where the app looks for updates |
+| `MOBILE_MAP_TILE_URL` | Map tiles (optional, defaults to OpenStreetMap) |
+| `FLUTTER_VERSION` | Optional, defaults to 3.47.2 |
+
+Create the signing key once and keep it safe — every release must be signed with it, or phones refuse the update:
+
+```bash
+keytool -genkey -v -keystore trippin-upload.jks -keyalg RSA -keysize 2048 -validity 10000 -alias trippin
+```
+
+Release flow: `npm run release:patch` (bumps versions, writes the changelog, commits and tags), `git push --follow-tags`, then publish a GitHub release for the tag — that runs the pipeline.
 

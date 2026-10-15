@@ -34,3 +34,8 @@ apps/*/.env.local
 node_modules/.tmp/
 *.tsbuildinfo
 .env.dummy.txt
+
+# The Android app, uploaded to the server by the release pipeline (served at /trippin.apk)
+apps/frontend/public/trippin.apk
+apps/frontend/public/trippin-apk.json
+/release/

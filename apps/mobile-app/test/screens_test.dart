@@ -17,6 +17,7 @@ import 'package:itinerary_planner/data/app_state.dart';
 import 'package:itinerary_planner/data/models.dart';
 import 'package:itinerary_planner/data/offline_store.dart';
 import 'package:itinerary_planner/data/tile_service.dart';
+import 'package:itinerary_planner/data/updates.dart';
 import 'package:itinerary_planner/features/navigate/location.dart';
 import 'package:itinerary_planner/router.dart';
 import 'package:itinerary_planner/shared/widgets.dart';
@@ -96,6 +97,8 @@ void main() {
       bundleProvider.overrideWith((ref, id) async => bundle),
       locationProvider.overrideWith((ref) => Stream.value(const Fix(me, 8, 0, 0))),
       headingProvider.overrideWith((ref) => Stream.value(35.0)),
+      appVersionProvider.overrideWith((ref) async => '0.1.0 (1)'),
+      updateProvider.overrideWith((ref) async => AppUpdate(version: '0.2.0', buildNumber: 2, url: 'http://example.test/trippin.apk')),
     ];
     overrides = [
       ...base,

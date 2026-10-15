@@ -6,6 +6,8 @@ import '../../core/theme.dart';
 import '../../data/app_state.dart';
 import '../../data/models.dart';
 import '../../data/offline_store.dart';
+import '../../data/updates.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../shared/widgets.dart';
 import '../trip/today_card.dart';
 
@@ -35,6 +37,7 @@ class _TripsScreenState extends ConsumerState<TripsScreen> with WidgetsBindingOb
   }
 
   Future<void> _refresh() async {
+    ref.invalidate(updateProvider);
     await ref.read(tripServiceProvider).sync();
     ref.invalidate(tripListProvider);
     await ref.read(tripListProvider.future).catchError((_) => TripList(const []));
@@ -58,6 +61,8 @@ class _TripsScreenState extends ConsumerState<TripsScreen> with WidgetsBindingOb
     final savedIds = saved.map((s) => s.summary.id).toSet();
     final others = (list.valueOrNull?.trips ?? const <TripSummary>[]).where((t) => !savedIds.contains(t.id)).toList();
     final firstName = session.name.split(' ').first;
+    final update = ref.watch(updateProvider).valueOrNull;
+    final showUpdate = update != null && ref.watch(dismissedUpdateProvider) != update.buildNumber;
 
     return Scaffold(
       appBar: AppBar(
@@ -79,6 +84,21 @@ class _TripsScreenState extends ConsumerState<TripsScreen> with WidgetsBindingOb
               Padding(
                 padding: const EdgeInsets.fromLTRB(4, 4, 4, 12),
                 child: Text('Hi $firstName', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700)),
+              ),
+            if (showUpdate)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Notice(
+                  text: 'Trippin ${update.version} is available${update.notes != null ? ' — ${update.notes}' : ''}',
+                  icon: Icons.system_update_outlined,
+                  action: Row(mainAxisSize: MainAxisSize.min, children: [
+                    TextButton(onPressed: () => ref.read(dismissedUpdateProvider.notifier).state = update.buildNumber, child: const Text('Later')),
+                    FilledButton(
+                      onPressed: () => launchUrl(Uri.parse(update.url), mode: LaunchMode.externalApplication),
+                      child: const Text('Update'),
+                    ),
+                  ]),
+                ),
               ),
             if (session.needsSignIn)
               Padding(

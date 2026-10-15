@@ -6,6 +6,7 @@ import '../../core/config.dart';
 import '../../core/theme.dart';
 import '../../data/app_state.dart';
 import '../../data/offline_store.dart';
+import '../../data/updates.dart';
 import '../../shared/widgets.dart';
 
 final _tileSizeProvider = FutureProvider.autoDispose<double>((ref) => ref.read(tilesProvider).sizeMb().catchError((_) => 0.0));
@@ -27,6 +28,8 @@ class SettingsScreen extends ConsumerWidget {
     final saved = ref.watch(savedTripsProvider);
     final tiles = ref.watch(_tileSizeProvider).valueOrNull;
     final dataKb = saved.fold<int>(0, (a, t) => a + t.sizeKb);
+    final version = ref.watch(appVersionProvider).valueOrNull;
+    final update = ref.watch(updateProvider);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Settings')),
@@ -110,8 +113,23 @@ class SettingsScreen extends ConsumerWidget {
                 subtitle: Text(AppConfig.webUrl),
                 onTap: () => launchUrl(Uri.parse(AppConfig.webUrl), mode: LaunchMode.externalApplication),
               ),
+              ListTile(
+                leading: const Icon(Icons.info_outline),
+                title: Text('Trippin ${version ?? ''}'),
+                subtitle: Text(update.isLoading
+                    ? 'Checking for updates…'
+                    : update.valueOrNull != null
+                        ? 'Version ${update.value!.version} is available'
+                        : 'Up to date'),
+                trailing: update.valueOrNull != null
+                    ? FilledButton(
+                        onPressed: () => launchUrl(Uri.parse(update.value!.url), mode: LaunchMode.externalApplication),
+                        child: const Text('Update'),
+                      )
+                    : TextButton(onPressed: () => ref.invalidate(updateProvider), child: const Text('Check')),
+              ),
               const ListTile(
-                leading: Icon(Icons.info_outline),
+                leading: Icon(Icons.map_outlined),
                 title: Text('Map data © OpenStreetMap contributors'),
               ),
             ]),
