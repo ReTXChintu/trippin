@@ -83,4 +83,7 @@ export interface DayWeather {
   rainChance?: number;
   rainMm?: number;
   kind: "forecast" | "typical";
+  /** Local time, HH:mm. */
+  sunrise?: string;
+  sunset?: string;
 }

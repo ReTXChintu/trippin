@@ -27,6 +27,9 @@ export interface DayWeather {
   rainMm?: number;
   /** "forecast" = real forecast; "typical" = same dates last year. */
   kind: "forecast" | "typical";
+  /** Local time, HH:mm. From last year's date when "typical" (differs by a minute at most). */
+  sunrise?: string;
+  sunset?: string;
 }
 
 const cache = new Map<string, { at: number; data: DayWeather[] }>();
@@ -79,7 +82,13 @@ interface DailyBlock {
   temperature_2m_min?: number[];
   precipitation_probability_max?: number[];
   precipitation_sum?: number[];
+  /** ISO local datetimes, e.g. "2026-10-16T06:22". */
+  sunrise?: string[];
+  sunset?: string[];
 }
+
+/** "2026-10-16T06:22" → "06:22". */
+const clock = (iso: string | undefined) => (iso && iso.length >= 16 ? iso.slice(11, 16) : undefined);
 
 async function fetchDaily(url: string, params: Record<string, string>): Promise<DailyBlock | null> {
   try {
@@ -106,6 +115,8 @@ function toDays(block: DailyBlock | null, kind: DayWeather["kind"], legId: strin
       rainChance: block.precipitation_probability_max?.[i] ?? undefined,
       rainMm: block.precipitation_sum?.[i] !== undefined ? Math.round(block.precipitation_sum[i] * 10) / 10 : undefined,
       kind,
+      sunrise: clock(block.sunrise?.[i]),
+      sunset: clock(block.sunset?.[i]),
     };
   });
 }
@@ -142,7 +153,7 @@ export async function getTripWeatherForTrip(trip: Trip): Promise<DayWeather[]> {
     if (forecastDates.length > 0) {
       const block = await fetchDaily(FORECAST_API, {
         ...coords,
-        daily: "weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max",
+        daily: "weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,sunrise,sunset",
         start_date: forecastDates[0],
         end_date: forecastDates[forecastDates.length - 1],
       });
@@ -157,7 +168,7 @@ export async function getTripWeatherForTrip(trip: Trip): Promise<DayWeather[]> {
       if (group.length === 0) continue;
       const block = await fetchDaily(ARCHIVE_API, {
         ...coords,
-        daily: "weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum",
+        daily: "weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,sunrise,sunset",
         start_date: shiftYear(group[0], -yearsBack),
         end_date: shiftYear(group[group.length - 1], -yearsBack),
       });

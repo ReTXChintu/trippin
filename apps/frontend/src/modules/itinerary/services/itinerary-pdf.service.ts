@@ -78,9 +78,11 @@ function outfitFor(day: ItineraryDay, weather: DayWeather | undefined, places: M
 function weatherChip(w: DayWeather | undefined): string {
   if (!w) return "";
   const rain = w.kind === "forecast" && w.rainChance !== undefined ? ` · ${w.rainChance}% rain` : "";
+  const sun = w.sunrise && w.sunset ? `<div class="w-sun">↑ Sunrise ${esc(w.sunrise)} &nbsp;·&nbsp; ↓ Sunset ${esc(w.sunset)}</div>` : "";
   return `<div class="weather">
     <span class="w-icon">${esc(w.icon)}</span>
     <div><b>${Math.round(w.tempMaxC)}° / ${Math.round(w.tempMinC)}°</b> · ${esc(w.summary)}${rain}
+    ${sun}
     <div class="w-kind">${w.kind === "forecast" ? "Forecast" : "Typical for these dates — the forecast appears ~2 weeks before"}</div></div>
   </div>`;
 }
@@ -248,6 +250,7 @@ h1, h2 { font-family: 'Fraunces', Georgia, serif; font-weight: 600; letter-spaci
 .day-sub { color: #55625F; font-size: 11px; margin-top: 1px; }
 .weather { display: flex; gap: 8px; align-items: center; background: #F5F3EE; border: 1px solid #E2DDD1; border-radius: 12px; padding: 7px 11px; max-width: 46%; }
 .w-icon { font-size: 20px; } .w-kind { font-size: 9px; color: #55625F; }
+.w-sun { font-size: 10.5px; font-weight: 600; color: #8A4B08; margin-top: 2px; }
 .outfit { background: #DCF0ED; color: #0A544E; border-radius: 10px; padding: 8px 11px; margin-bottom: 10px; }
 .o-label { display: block; font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; margin-bottom: 1px; }
 .timeline { display: flex; flex-direction: column; }

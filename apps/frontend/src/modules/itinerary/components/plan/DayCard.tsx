@@ -39,6 +39,8 @@ import {
   LuShirt,
   LuSmartphone,
   LuSun,
+  LuSunrise,
+  LuSunset,
   LuTrainFront,
   LuTriangleAlert,
 } from "react-icons/lu";
@@ -295,6 +297,16 @@ export const DayCard = forwardRef<HTMLDivElement, DayCardProps>(function DayCard
                   {summary.start} – {summary.end}
                 </Text>
               </HStack>
+            )}
+            {weather?.sunrise && weather.sunset && (
+              <Tooltip label={`Sunrise ${weather.sunrise} · sunset ${weather.sunset}${weather.kind === "typical" ? " (last year's times for these dates)" : ""}`} hasArrow>
+                <HStack spacing="6px" tabIndex={0} aria-label={`Sunrise ${weather.sunrise}, sunset ${weather.sunset}`}>
+                  <Icon as={LuSunrise} boxSize="14px" />
+                  <Text fontWeight={600}>{weather.sunrise}</Text>
+                  <Icon as={LuSunset} boxSize="14px" ml="2px" />
+                  <Text fontWeight={600}>{weather.sunset}</Text>
+                </HStack>
+              </Tooltip>
             )}
             {summary.warnings > 0 && (
               <Pill tone="warn" icon={LuTriangleAlert}>

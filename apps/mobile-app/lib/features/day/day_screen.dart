@@ -45,6 +45,8 @@ class DayScreen extends ConsumerWidget {
               Wrap(spacing: 6, runSpacing: 6, children: [
                 if (weather != null)
                   Pill('${weather.icon} ${weather.max}° / ${weather.min}° · ${weather.summary}${weather.forecast && weather.rainChance != null ? ' · ${weather.rainChance}% rain' : ''}'),
+                if (weather?.sunrise != null && weather?.sunset != null)
+                  Pill('${weather!.sunrise} – ${weather.sunset}', icon: Icons.wb_twilight_outlined),
                 Pill('${day.visits.length} place${day.visits.length == 1 ? '' : 's'}', icon: Icons.place_outlined),
                 if (route != null) Pill('${route.km.round()} km · ${formatMinutes(route.minutes)} on the road', icon: Icons.route_outlined),
               ]),

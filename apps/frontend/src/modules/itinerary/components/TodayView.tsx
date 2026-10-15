@@ -182,7 +182,7 @@ export function TodayView() {
     isToday && `Day ${day.dayNumber}`,
     day.legName,
     dayWeather &&
-      `${dayWeather.tempMaxC}° ${dayWeather.summary}${(dayWeather.rainChance ?? 0) >= 30 ? ` · ${dayWeather.rainChance}% rain` : ""}`,
+      `${dayWeather.tempMaxC}° ${dayWeather.summary}${(dayWeather.rainChance ?? 0) >= 30 ? ` · ${dayWeather.rainChance}% rain` : ""}${dayWeather.sunrise && dayWeather.sunset ? ` · ☀ ${dayWeather.sunrise}–${dayWeather.sunset}` : ""}`,
   ]
     .filter(Boolean)
     .join(" · ");

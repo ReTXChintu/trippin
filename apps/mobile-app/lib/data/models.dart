@@ -266,7 +266,7 @@ class DayRoute {
 }
 
 class DayWeather {
-  DayWeather({required this.date, required this.icon, required this.summary, required this.max, required this.min, this.rainChance, required this.forecast});
+  DayWeather({required this.date, required this.icon, required this.summary, required this.max, required this.min, this.rainChance, required this.forecast, this.sunrise, this.sunset});
   factory DayWeather.fromJson(Json j) => DayWeather(
         date: j['date'] as String,
         icon: j['icon'] as String? ?? '',
@@ -275,11 +275,15 @@ class DayWeather {
         min: (j['tempMinC'] as num?)?.round() ?? 0,
         rainChance: (j['rainChance'] as num?)?.round(),
         forecast: j['kind'] == 'forecast',
+        sunrise: _str(j['sunrise']),
+        sunset: _str(j['sunset']),
       );
   final String date, icon, summary;
   final int max, min;
   final int? rainChance;
   final bool forecast;
+  /// Local time, HH:mm.
+  final String? sunrise, sunset;
 }
 
 class SafetyPlace {
