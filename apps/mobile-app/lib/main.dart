@@ -1,35 +1,43 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:itinerary_planner/core/router/app_router.dart';
-import 'package:itinerary_planner/shared/providers/theme_provider.dart';
+
+import 'core/theme.dart';
+import 'data/app_state.dart';
+import 'router.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: '.env');
-  runApp(const ProviderScope(child: ItineraryPlannerApp()));
+  final container = ProviderContainer();
+  // Map tiles and reminders get ready in the background; nothing waits on the network.
+  container.read(tilesProvider).init().catchError((_) {});
+  container.read(remindersProvider).init().catchError((_) {});
+  runApp(UncontrolledProviderScope(container: container, child: const TrippinApp()));
 }
 
-class ItineraryPlannerApp extends ConsumerWidget {
-  const ItineraryPlannerApp({super.key});
+class TrippinApp extends ConsumerWidget {
+  const TrippinApp({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final router = ref.watch(routerProvider);
-    final themeMode = ref.watch(themeModeProvider);
-
+    final loading = ref.watch(sessionProvider.select((s) => s.loading));
+    final theme = buildTheme(Brightness.light);
+    final dark = buildTheme(Brightness.dark);
+    if (loading) {
+      return MaterialApp(
+        debugShowCheckedModeBanner: false,
+        theme: theme,
+        darkTheme: dark,
+        home: const Scaffold(body: Center(child: CircularProgressIndicator())),
+      );
+    }
     return MaterialApp.router(
-      title: 'Itinerary Planner',
-      themeMode: themeMode,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.teal),
-        useMaterial3: true,
-      ),
-      darkTheme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.teal, brightness: Brightness.dark),
-        useMaterial3: true,
-      ),
-      routerConfig: router,
+      title: 'Trippin',
+      debugShowCheckedModeBanner: false,
+      theme: theme,
+      darkTheme: dark,
+      routerConfig: ref.watch(routerProvider),
     );
   }
 }

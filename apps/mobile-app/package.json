@@ -3,6 +3,6 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "build:apk": "flutter build apk --release"
+    "build:apk": "flutter build apk --release && node scripts/copy-apk.js"
   }
 }

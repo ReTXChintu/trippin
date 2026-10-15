@@ -138,8 +138,21 @@ const SAFETY_KINDS: { kind: SafetyPlace["kind"]; type: string; keep: number; ran
   { kind: "pharmacy", type: "pharmacy", keep: 3, rank: "DISTANCE" },
 ];
 
+/** Hospitals don't move: reuse a lookup for a week so re-saving a trip costs no Google calls. */
+const SAFETY_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+const safetyCache = new Map<string, { at: number; places: Omit<SafetyPlace, "near">[] }>();
+
 /** Google first (the trip owner's key, cheapest fields), OpenStreetMap when there's no key or it fails. */
 async function safetyNear(point: { lat: number; lng: number }, near: string, googleKey: string | undefined): Promise<SafetyPlace[]> {
+  const key = `${point.lat.toFixed(3)},${point.lng.toFixed(3)}`;
+  const hit = safetyCache.get(key);
+  if (hit && Date.now() - hit.at < SAFETY_TTL_MS) return hit.places.map((p) => ({ ...p, near }));
+  const found = await lookupSafety(point, near, googleKey);
+  if (found.length) safetyCache.set(key, { at: Date.now(), places: found.map(({ near: _n, ...p }) => p) });
+  return found;
+}
+
+async function lookupSafety(point: { lat: number; lng: number }, near: string, googleKey: string | undefined): Promise<SafetyPlace[]> {
   if (googleKey) {
     try {
       const provider = new GooglePlacesProvider(googleKey);

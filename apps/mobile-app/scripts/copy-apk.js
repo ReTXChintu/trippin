@@ -4,7 +4,7 @@ const path = require("path");
 const root = path.join(__dirname, "..");
 const src = path.join(root, "build", "app", "outputs", "flutter-apk", "app-release.apk");
 const destDir = path.join(root, "dist");
-const dest = path.join(destDir, "tripplanner.apk");
+const dest = path.join(destDir, "trippin.apk");
 
 if (!fs.existsSync(src)) {
   console.error(`APK not found: ${src}`);
