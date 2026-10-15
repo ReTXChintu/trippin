@@ -57,7 +57,7 @@ Production runs two PM2 processes defined in `ecosystem.config.cjs`, both config
 | Process | What | Port |
 |---------|------|------|
 | `trippin-backend` | The API bundle (`apps/backend/dist/index.js`, `NODE_ENV=production`) | `PORT` |
-| `trippin-frontend` | The built frontend (`apps/frontend/dist`), served by PM2 with SPA fallback | `FRONTEND_PORT` |
+| `trippin-frontend` | The built frontend (`apps/frontend/dist`), served by `scripts/serve-frontend.cjs` (SPA fallback, APK download headers) | `FRONTEND_PORT` |
 
 Put a reverse proxy (nginx, Caddy…) with TLS in front of both ports, and set `FRONTEND_URL`, `BACKEND_URL` and `VITE_API_BASE_URL` in the server's `.env` to the public URLs — the frontend reads `VITE_*` values at build time, so they're baked in on each deploy.
 

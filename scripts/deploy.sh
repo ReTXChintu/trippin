@@ -27,6 +27,18 @@ if ! command -v pm2 >/dev/null 2>&1; then
   npm install -g pm2
 fi
 
+# PM2 keeps a process's original script across reloads. The frontend moved from PM2's built-in
+# `serve` to scripts/serve-frontend.cjs, so drop a stale definition before reloading.
+APP_NAME="$(node -e 'console.log(require("./scripts/read-env.cjs").readEnv().PM2_APP_NAME || "trippin")')"
+if pm2 jlist 2>/dev/null | node -e '
+  let s = ""; process.stdin.on("data", (d) => (s += d)).on("end", () => {
+    const p = JSON.parse(s || "[]").find((x) => x.name === process.argv[1]);
+    process.exit(p && !/serve-frontend\.cjs$/.test(p.pm2_env?.pm_exec_path || "") ? 0 : 1);
+  });' "$APP_NAME-frontend"; then
+  echo "==> Replacing the old $APP_NAME-frontend process"
+  pm2 delete "$APP_NAME-frontend"
+fi
+
 echo "==> Starting / reloading with PM2"
 npm run pm2:reload
 pm2 save

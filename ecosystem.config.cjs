@@ -33,18 +33,19 @@ module.exports = {
     },
     {
       name: `${name}-frontend`,
-      // PM2's built-in static server.
-      script: "serve",
+      // Our own small static server (SPA fallback, right content types — PM2's `serve` made
+      // browsers save trippin.apk as a .zip).
+      script: path.join(ROOT, "scripts/serve-frontend.cjs"),
       cwd: ROOT,
       exec_mode: "fork",
       instances: 1,
       autorestart: true,
+      max_restarts: 10,
       time: true,
       env: {
-        PM2_SERVE_PATH: path.join(ROOT, "apps/frontend/dist"),
-        PM2_SERVE_PORT: String(frontendPort),
-        PM2_SERVE_SPA: "true",
-        PM2_SERVE_HOMEPAGE: "/index.html",
+        NODE_ENV: "production",
+        FRONTEND_DIST: path.join(ROOT, "apps/frontend/dist"),
+        FRONTEND_PORT: String(frontendPort),
       },
     },
   ],
