@@ -189,6 +189,24 @@ export class GooglePlacesProvider implements PlacesProvider {
       .filter((p): p is PlaceSearchResult => p !== null);
   }
 
+  /** Closest places of one type by distance — name and location only (Pro tier), for the offline
+   * safety list (hospitals, police, pharmacies). */
+  async nearestOfType(location: Coordinates, type: string, radiusMeters: number, limit: number, rank: "DISTANCE" | "POPULARITY" = "DISTANCE"): Promise<{ name: string; coordinates: Coordinates }[]> {
+    const data = await this.postJson<{ places?: { displayName?: { text?: string }; location?: { latitude: number; longitude: number } }[] }>(
+      `${PLACES_API_BASE}/places:searchNearby`,
+      {
+        includedTypes: [type],
+        maxResultCount: limit,
+        rankPreference: rank,
+        locationRestriction: { circle: { center: { latitude: location.lat, longitude: location.lng }, radius: radiusMeters } },
+      },
+      "places.displayName,places.location",
+    );
+    return (data.places ?? [])
+      .filter((p) => p.displayName?.text && p.location)
+      .map((p) => ({ name: p.displayName!.text!, coordinates: { lat: p.location!.latitude, lng: p.location!.longitude } }));
+  }
+
   async autocomplete(options: SearchPlacesOptions): Promise<PlaceSearchResult[]> {
     if (options.query.trim().length < SEARCH_MIN_QUERY_LENGTH) return [];
 

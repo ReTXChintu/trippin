@@ -9,6 +9,7 @@ import {
 } from "@/modules/trips/services/trip-checklist.service";
 import { addExpense, getBudgetSummary, removeExpense, updateExpense } from "@/modules/trips/services/trip-budget.service";
 import { getTripWeather } from "@/modules/trips/services/trip-weather.service";
+import { getOfflineBundle, getOfflineBundleVersion } from "@/modules/trips/services/trip-offline.service";
 
 const uid = (req: Request) => req.user!.sub;
 
@@ -37,3 +38,8 @@ export const deleteExpense = async (req: Request, res: Response) =>
   sendResult(res, await removeExpense(uid(req), req.params.id, req.params.expenseId));
 
 export const weather = async (req: Request, res: Response) => sendResult(res, await getTripWeather(uid(req), req.params.id));
+
+/** Mobile: the whole trip for offline use, and a cheap check of whether a saved copy is current. */
+export const offlineBundle = async (req: Request, res: Response) => sendResult(res, await getOfflineBundle(uid(req), req.params.id));
+export const offlineBundleVersion = async (req: Request, res: Response) =>
+  sendResult(res, await getOfflineBundleVersion(uid(req), req.params.id));

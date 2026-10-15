@@ -75,5 +75,7 @@ router.put("/:id/expenses/:expenseId", logistics.editExpense);
 router.delete("/:id/expenses/:expenseId", logistics.deleteExpense);
 
 router.get("/:id/weather", logistics.weather);
+router.get("/:id/offline-bundle", logistics.offlineBundle);
+router.get("/:id/offline-bundle/version", logistics.offlineBundleVersion);
 
 export default router;
