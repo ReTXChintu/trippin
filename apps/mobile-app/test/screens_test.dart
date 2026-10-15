@@ -63,18 +63,23 @@ Json _shiftedBundle() {
 }
 
 /// Real fonts (Roboto, Material icons) so the PNGs look like the app — from the Flutter SDK's cache.
-/// Skipped (with the test still passing) when they can't be found, e.g. on a CI runner.
-Future<void> _loadFonts() async {
+/// Returns false when they can't be found (e.g. a CI runner without the font cache): the fallback
+/// test font draws every glyph as a wide box, so text overflows and the screenshots mean nothing —
+/// the screenshot tests then mark themselves skipped.
+Future<bool> _loadFonts() async {
   final exe = Platform.resolvedExecutable; // <flutter>/bin/cache/artifacts/engine/<platform>/flutter_tester
   final candidates = <String>[
     if (Platform.environment['FLUTTER_ROOT'] != null) '${Platform.environment['FLUTTER_ROOT']}/bin/cache/artifacts/material_fonts',
     '${File(exe).parent.parent.parent.path}/material_fonts',
     'D:/flutter/bin/cache/artifacts/material_fonts',
   ];
-  final fonts = candidates.where((d) => File('$d/materialicons-regular.otf').existsSync()).firstOrNull;
+  // TRIPPIN_SCREENS_NO_FONTS=1 reproduces a runner without the SDK's font cache.
+  final fonts = Platform.environment['TRIPPIN_SCREENS_NO_FONTS'] == '1'
+      ? null
+      : candidates.where((d) => File('$d/materialicons-regular.otf').existsSync()).firstOrNull;
   if (fonts == null) {
-    debugPrint('screens_test: Flutter material fonts not found — rendering with the test font instead');
-    return;
+    debugPrint('screens_test: Flutter material fonts not found — screenshot tests skipped');
+    return false;
   }
   try {
     final roboto = FontLoader('Roboto');
@@ -85,8 +90,10 @@ Future<void> _loadFonts() async {
     await roboto.load();
     final icons = FontLoader('MaterialIcons')..addFont(Future.value(ByteData.sublistView(File('$fonts/materialicons-regular.otf').readAsBytesSync())));
     await icons.load();
+    return true;
   } catch (e) {
-    debugPrint('screens_test: could not load fonts ($e) — rendering with the test font instead');
+    debugPrint('screens_test: could not load fonts ($e) — screenshot tests skipped');
+    return false;
   }
 }
 
@@ -94,12 +101,13 @@ void main() {
   late TripBundle bundle;
   late List<Override> overrides;
   late List<Override> base;
+  var fontsLoaded = false;
   final out = Directory('build/screens')..createSync(recursive: true);
 
   setUpAll(() async {
     TestWidgetsFlutterBinding.ensureInitialized();
     dotenv.testLoad(fileInput: 'API_BASE_URL=http://example.test/api/v1\nWEB_URL=http://example.test');
-    await _loadFonts();
+    fontsLoaded = await _loadFonts();
     bundle = TripBundle.fromJson(_shiftedBundle());
     final saved = SavedTrip(summary: bundle.summary, version: bundle.version, savedAt: DateTime.now().subtract(const Duration(hours: 2)), mapsSaved: true, sizeKb: 52);
     // Near Ujjain's Ram Ghat, a little off the road into Kal Bhairav.
@@ -125,6 +133,10 @@ void main() {
   });
 
   Future<void> shoot(WidgetTester tester, String name, String location, {Future<void> Function(WidgetTester)? then}) async {
+    if (!fontsLoaded) {
+      markTestSkipped('Flutter fonts not available — run locally with the Flutter SDK for screenshots');
+      return;
+    }
     tester.view.physicalSize = const Size(1080, 2340);
     tester.view.devicePixelRatio = 2.625;
     addTearDown(tester.view.reset);
@@ -182,6 +194,10 @@ void main() {
   testWidgets('safety', (t) => shoot(t, '7-safety', '/trip/${bundle.id}/safety'));
   testWidgets('settings', (t) => shoot(t, '8-settings', '/settings'));
   testWidgets('login', (t) async {
+    if (!fontsLoaded) {
+      markTestSkipped('Flutter fonts not available — run locally with the Flutter SDK for screenshots');
+      return;
+    }
     final container = ProviderContainer(overrides: [
       ...base,
       sessionProvider.overrideWith((ref) => SessionNotifier(ref, initial: const Session(loading: false))),
