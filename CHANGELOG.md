@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.1](https://github-personal/ReTXChintu/trippin/compare/v0.2.0...v0.2.1) (2026-10-15)
+
+
+### Features
+
+* "Download app" downloads the APK; release on tag push ([c721c39](https://github-personal/ReTXChintu/trippin/commit/c721c39aaf2507b4d8bef663e2da187b5ca9d0f3))
+* sunrise and sunset for every day of the plan ([0840606](https://github-personal/ReTXChintu/trippin/commit/0840606e2c0e9babd3594e816b9bc37217edcb51))
+
 # 0.2.0 (2026-10-15)
 
 
