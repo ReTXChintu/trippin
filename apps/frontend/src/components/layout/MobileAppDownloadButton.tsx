@@ -1,7 +1,6 @@
 import { Button, Icon } from "@chakra-ui/react";
 import { FiSmartphone } from "react-icons/fi";
-
-const downloadUrl = import.meta.env.VITE_MOBILE_APP_DOWNLOAD_URL;
+import { useApkInfo } from "@/components/layout/useApkInfo";
 
 interface MobileAppDownloadButtonProps {
   size?: "sm" | "md";
@@ -14,23 +13,22 @@ export function MobileAppDownloadButton({
   variant = "outline",
   fullWidth = false,
 }: MobileAppDownloadButtonProps) {
-  if (!downloadUrl?.trim()) {
-    return null;
-  }
+  const apk = useApkInfo();
+  if (!apk) return null;
 
   return (
     <Button
       as="a"
-      href={downloadUrl}
-      target="_blank"
-      rel="noopener noreferrer"
+      href={apk.url}
+      download="trippin.apk"
+      title={`Trippin for Android, version ${apk.version}`}
       size={size}
       variant={variant}
       colorScheme="brand"
       leftIcon={<Icon as={FiSmartphone} />}
       width={fullWidth ? "full" : undefined}
     >
-      Download app
+      Download app · v{apk.version}
     </Button>
   );
 }

@@ -1,13 +1,14 @@
 name: Release — Android app + deploy
 
-# Runs when a GitHub release is published (or by hand from the Actions tab with a tag):
+# Runs when a version tag is pushed — `npm run release:patch && git push --follow-tags` — or by hand
+# from the Actions tab with a tag:
 #   1. checks the web build and builds the signed Android APK,
 #   2. copies trippin.apk + trippin-apk.json (version info the app checks for updates) to the server's
 #      apps/frontend/public, so they're served at <website>/trippin.apk,
 #   3. SSHes in, checks out the release, installs, builds and reloads PM2 (scripts/deploy.sh).
 on:
-  release:
-    types: [published]
+  push:
+    tags: ["v*"]
   workflow_dispatch:
     inputs:
       ref:
@@ -19,7 +20,7 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  REF: ${{ github.event.inputs.ref || github.event.release.tag_name }}
+  REF: ${{ github.event.inputs.ref || github.ref_name }}
 
 jobs:
   web:
@@ -40,8 +41,6 @@ jobs:
   apk:
     name: Build Android APK
     runs-on: ubuntu-latest
-    permissions:
-      contents: write # attach the APK to the GitHub release
     defaults:
       run:
         working-directory: apps/mobile-app
@@ -111,9 +110,10 @@ jobs:
           cp build/app/outputs/flutter-apk/app-release.apk ../../release/trippin.apk
 
       - name: Version file for in-app updates
-        env:
-          NOTES: ${{ github.event.release.name }}
+        # notes: the tag's annotation, if the tag has one (release-it writes "Release v1.2.3" — skipped).
         run: |
+          NOTES="$(git tag -l --format='%(contents:subject)' "$REF" 2>/dev/null || true)"
+          case "$NOTES" in Release*|"") NOTES="";; esac
           jq -n \
             --arg version "${REF#v}" \
             --argjson buildNumber "${{ github.run_number }}" \
@@ -123,12 +123,6 @@ jobs:
             '{version: $version, buildNumber: $buildNumber, url: $url, releasedAt: $releasedAt, notes: $notes}' \
             > ../../release/trippin-apk.json
           cat ../../release/trippin-apk.json
-
-      - name: Attach the APK to the GitHub release
-        if: github.event_name == 'release'
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: gh release upload "$REF" ../../release/trippin.apk --clobber
 
       - uses: actions/upload-artifact@v4
         with:

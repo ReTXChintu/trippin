@@ -6,8 +6,7 @@ import { BrandLogo, BrandMark } from "@/components/brand/BrandLogo";
 import { MAIN_NAV_ITEMS } from "@/constants/navigation";
 import { useDashboardQuery } from "@/modules/trips/hooks/useTrips";
 import { getTripStages } from "@/modules/trips/utils/trip-stage";
-
-const downloadUrl = import.meta.env.VITE_MOBILE_APP_DOWNLOAD_URL as string | undefined;
+import { useApkInfo } from "@/components/layout/useApkInfo";
 
 function isActive(pathname: string, href: string) {
   if (href === "/trips") return pathname === "/trips" || (pathname.startsWith("/trips/") && pathname !== "/trips/new");
@@ -48,6 +47,7 @@ function NextTripCard() {
 
 /** Full sidebar for app pages (Dashboard, My trips, Profile, New trip). */
 export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
+  const apk = useApkInfo();
   const { pathname } = useLocation();
   return (
     <Flex as="nav" aria-label="Main" direction="column" w="236px" h="full" bg="bg.surface" borderRightWidth="1px" borderColor="border.line" px={4} py={5} gap={1.5}>
@@ -85,8 +85,8 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
       </VStack>
       <Box flex={1} />
       <NextTripCard />
-      {downloadUrl?.trim() && (
-        <Flex as="a" href={downloadUrl} target="_blank" rel="noopener noreferrer" align="center" gap={3} h="40px" px={3} mt={1.5} borderRadius="md" color="fg.muted" fontWeight={500} _hover={{ bg: "bg.subtle" }}>
+      {apk && (
+        <Flex as="a" href={apk.url} download="trippin.apk" title={`Android app, version ${apk.version}`} align="center" gap={3} h="40px" px={3} mt={1.5} borderRadius="md" color="fg.muted" fontWeight={500} _hover={{ bg: "bg.subtle" }}>
           <Icon as={FiDownload} boxSize="18px" />
           Download app
         </Flex>
@@ -121,6 +121,7 @@ function RailLink({ to, icon, label, active, solid }: { to: string; icon: typeof
 
 /** Slim rail used inside the trip workspace, so the plan gets the width. */
 export function Rail() {
+  const apk = useApkInfo();
   const { pathname } = useLocation();
   return (
     <Flex as="nav" aria-label="Main" direction="column" align="center" w="76px" h="full" bg="bg.surface" borderRightWidth="1px" borderColor="border.line" px="10px" py="14px" gap="6px">
@@ -132,8 +133,8 @@ export function Rail() {
         <RailLink key={item.href} to={item.href} icon={item.icon} label={item.shortLabel ?? item.label} active={isActive(pathname, item.href)} />
       ))}
       <Box flex={1} />
-      {downloadUrl?.trim() && (
-        <Flex as="a" href={downloadUrl} target="_blank" rel="noopener noreferrer" direction="column" align="center" gap="2px" py={2} w="56px" borderRadius="md" fontSize="12px" fontWeight={500} color="fg.muted" _hover={{ bg: "bg.subtle" }}>
+      {apk && (
+        <Flex as="a" href={apk.url} download="trippin.apk" title={`Android app, version ${apk.version}`} direction="column" align="center" gap="2px" py={2} w="56px" borderRadius="md" fontSize="12px" fontWeight={500} color="fg.muted" _hover={{ bg: "bg.subtle" }}>
           <Icon as={FiDownload} boxSize="18px" />
           <span>App</span>
         </Flex>

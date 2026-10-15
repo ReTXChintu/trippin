@@ -8,6 +8,7 @@ import { BRAND_NAME, BrandLogo } from "@/components/brand/BrandLogo";
 import { Overline, Pill, SurfaceCard } from "@/components/ui";
 import { IllustratedMap } from "./IllustratedMap";
 import { savePendingTripPrompt } from "../pending-prompt";
+import { useApkInfo } from "@/components/layout/useApkInfo";
 
 const STAGES: { icon: IconType; title: string; text: string }[] = [
   { icon: LuSparkles, title: "Set up", text: "Say it in a sentence or fill a short form." },
@@ -21,7 +22,6 @@ const STAGES: { icon: IconType; title: string; text: string }[] = [
 
 const TICKS = ["Free to start", "AI is optional", "Works offline on the trip"];
 
-const downloadUrl = (import.meta.env.VITE_MOBILE_APP_DOWNLOAD_URL as string | undefined)?.trim();
 
 /** Illustration only: a sample day on a drawn map, the way the planner shows a real one. */
 function HeroMap() {
@@ -74,6 +74,7 @@ function HeroMap() {
 }
 
 export function LandingPage() {
+  const apk = useApkInfo();
   const navigate = useNavigate();
   const [prompt, setPrompt] = useState("");
 
@@ -252,8 +253,8 @@ export function LandingPage() {
           <Link as={RouterLink} to="/register" textDecoration="underline">
             Sign up
           </Link>
-          {downloadUrl && (
-            <Link href={downloadUrl} isExternal textDecoration="underline">
+          {apk && (
+            <Link href={apk.url} download="trippin.apk" title={`Android app, version ${apk.version}`} textDecoration="underline">
               Download app
             </Link>
           )}
