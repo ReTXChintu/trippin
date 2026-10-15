@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:ui' as ui;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
@@ -61,15 +62,32 @@ Json _shiftedBundle() {
   return jsonDecode(text) as Json;
 }
 
+/// Real fonts (Roboto, Material icons) so the PNGs look like the app — from the Flutter SDK's cache.
+/// Skipped (with the test still passing) when they can't be found, e.g. on a CI runner.
 Future<void> _loadFonts() async {
-  final fonts = '${Platform.environment['FLUTTER_ROOT'] ?? 'D:/flutter'}/bin/cache/artifacts/material_fonts';
-  final roboto = FontLoader('Roboto');
-  for (final f in ['roboto-regular.ttf', 'roboto-medium.ttf', 'roboto-bold.ttf', 'roboto-black.ttf', 'roboto-italic.ttf']) {
-    roboto.addFont(Future.value(ByteData.sublistView(File('$fonts/$f').readAsBytesSync())));
+  final exe = Platform.resolvedExecutable; // <flutter>/bin/cache/artifacts/engine/<platform>/flutter_tester
+  final candidates = <String>[
+    if (Platform.environment['FLUTTER_ROOT'] != null) '${Platform.environment['FLUTTER_ROOT']}/bin/cache/artifacts/material_fonts',
+    '${File(exe).parent.parent.parent.path}/material_fonts',
+    'D:/flutter/bin/cache/artifacts/material_fonts',
+  ];
+  final fonts = candidates.where((d) => File('$d/materialicons-regular.otf').existsSync()).firstOrNull;
+  if (fonts == null) {
+    debugPrint('screens_test: Flutter material fonts not found — rendering with the test font instead');
+    return;
   }
-  await roboto.load();
-  final icons = FontLoader('MaterialIcons')..addFont(Future.value(ByteData.sublistView(File('$fonts/materialicons-regular.otf').readAsBytesSync())));
-  await icons.load();
+  try {
+    final roboto = FontLoader('Roboto');
+    for (final f in ['roboto-regular.ttf', 'roboto-medium.ttf', 'roboto-bold.ttf', 'roboto-black.ttf', 'roboto-italic.ttf']) {
+      final file = File('$fonts/$f');
+      if (file.existsSync()) roboto.addFont(Future.value(ByteData.sublistView(file.readAsBytesSync())));
+    }
+    await roboto.load();
+    final icons = FontLoader('MaterialIcons')..addFont(Future.value(ByteData.sublistView(File('$fonts/materialicons-regular.otf').readAsBytesSync())));
+    await icons.load();
+  } catch (e) {
+    debugPrint('screens_test: could not load fonts ($e) — rendering with the test font instead');
+  }
 }
 
 void main() {
