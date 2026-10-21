@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.2.4](https://github-personal/ReTXChintu/trippin/compare/v0.2.3...v0.2.4) (2026-10-21)
+
+
+### Bug Fixes
+
+* serve the frontend ourselves so trippin.apk downloads as an .apk ([be09878](https://github-personal/ReTXChintu/trippin/commit/be09878f92d62d86e38ddad54c7eded474b9f171))
+
+
+### Features
+
+* sign in through the shared identity server ([642b20b](https://github-personal/ReTXChintu/trippin/commit/642b20b15a19121170421d11a0aaecfac984d352))
+
 ## [0.2.3](https://github-personal/ReTXChintu/trippin/compare/v0.2.2...v0.2.3) (2026-10-15)
 
 ## [0.2.2](https://github-personal/ReTXChintu/trippin/compare/v0.2.1...v0.2.2) (2026-10-15)
