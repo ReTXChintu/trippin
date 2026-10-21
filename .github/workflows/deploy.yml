@@ -61,11 +61,15 @@ jobs:
           cache: true
 
       - name: App settings (.env baked into the APK)
+        # The public HTTPS addresses since the move to trip-pin.duckdns.org and
+        # one sign-in. The old MOBILE_API_BASE_URL / MOBILE_WEB_URL variables
+        # still point at plain http on the bare IP, so they're not read here;
+        # MOBILE_OIDC_ISSUER overrides the identity server if it's ever set.
         env:
-          API_BASE_URL: ${{ vars.MOBILE_API_BASE_URL }}
-          WEB_URL: ${{ vars.MOBILE_WEB_URL }}
+          API_BASE_URL: https://trip-pin.duckdns.org:50008/api/v1
+          WEB_URL: https://trip-pin.duckdns.org:50009
           MAP_TILE_URL: ${{ vars.MOBILE_MAP_TILE_URL }}
-          OIDC_ISSUER: ${{ vars.MOBILE_OIDC_ISSUER }}
+          OIDC_ISSUER: ${{ vars.MOBILE_OIDC_ISSUER || 'https://pass-port.duckdns.org:50011' }}
         run: |
           if [ -z "$API_BASE_URL" ]; then
             echo "::error::Set the MOBILE_API_BASE_URL repository variable (e.g. https://<name>.duckdns.org:<PORT>/api/v1)."
