@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.2.5](https://github-personal/ReTXChintu/trippin/compare/v0.2.4...v0.2.5) (2026-10-21)
+
+
+### Bug Fixes
+
+* **deploy:** read PM2's process list past its out-of-date banner ([495b81b](https://github-personal/ReTXChintu/trippin/commit/495b81b205f5dd48647a8e9b19e0e0bebb5956f7))
+
+
+### Features
+
+* Trippin as the hub - link a trip to SpendLog and InFrame ([bb5119e](https://github-personal/ReTXChintu/trippin/commit/bb5119ef3dc0192fde31d4a765057300c04851bb))
+
 ## [0.2.4](https://github-personal/ReTXChintu/trippin/compare/v0.2.3...v0.2.4) (2026-10-21)
 
 
