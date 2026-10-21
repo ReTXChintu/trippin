@@ -125,12 +125,12 @@ export function TripSelectedPlacesPanel({ trip, leg, selectedPlaces, onSelectedC
       />
 
       {selectedPlaces.length === 0 ? (
-        <Box bg="bg.surface" borderWidth="1px" borderColor="border.line" borderRadius="xl">
+        <Box bg="sf" borderWidth="1px" borderColor="ln" borderRadius="xl">
           <EmptyState icon={FiMapPin} title="No places picked yet" text="Add places from Discover, the map, or search above." compact />
         </Box>
       ) : (
         <>
-          <Flex align="center" gap={2} fontSize="12px" color="fg.muted" flexWrap="wrap" minH="28px">
+          <Flex align="center" gap={2} fontSize="12px" color="tx3" flexWrap="wrap" minH="28px">
             <Text flex={1} minW="200px">
               Open a place to set preferred arrival and departure times. Turn on &ldquo;Plan by place best times&rdquo; in trip settings to ignore the fixed daily start.
             </Text>

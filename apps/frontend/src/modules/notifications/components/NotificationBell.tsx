@@ -61,8 +61,9 @@ export function NotificationBell() {
       <MenuButton
         as={IconButton}
         aria-label={unreadCount > 0 ? `Notifications, ${unreadCount} unread` : "Notifications"}
-        icon={<FiBell size={18} />}
+        icon={<FiBell size={20} />}
         variant="ghost"
+        colorScheme="gray"
         position="relative"
       >
         {unreadCount > 0 && (
@@ -75,11 +76,11 @@ export function NotificationBell() {
             h="16px"
             px="3px"
             borderRadius="8px"
-            bg="danger"
-            color="bg.surface"
+            bg="critFill"
+            color="#fff"
             fontSize="11px"
             lineHeight="16px"
-            fontWeight={700}
+            fontWeight={600}
             textAlign="center"
           >
             {unreadCount > 9 ? "9+" : unreadCount}
@@ -95,7 +96,7 @@ export function NotificationBell() {
         <MenuDivider />
         {notifications.length === 0 ? (
           <Box px={3} py={4}>
-            <Text fontSize="sm" color="fg.muted">
+            <Text fontSize="sm" color="tx3">
               No notifications yet.
             </Text>
           </Box>
@@ -107,12 +108,12 @@ export function NotificationBell() {
               flexDirection="column"
               alignItems="flex-start"
               whiteSpace="normal"
-              bg={notification.read ? undefined : "accent.soft"}
+              bg={notification.read ? undefined : "acSoft"}
             >
               <Text fontSize="sm" fontWeight={notification.read ? "normal" : "semibold"}>
                 {notification.title}
               </Text>
-              <Text fontSize="xs" color="fg.muted" mt={1}>
+              <Text fontSize="xs" color="tx3" mt={1}>
                 {notification.message}
               </Text>
             </MenuItem>

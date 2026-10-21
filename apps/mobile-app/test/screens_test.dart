@@ -109,7 +109,7 @@ Json _shiftedBundle() {
   return jsonDecode(text) as Json;
 }
 
-/// Real fonts (Roboto, Material icons) so the PNGs look like the app — from the Flutter SDK's cache.
+/// Real fonts (IBM Plex from assets/fonts; Roboto and Material icons from the Flutter SDK cache) so the PNGs look like the app.
 /// Returns false when they can't be found (e.g. a CI runner without the font cache): the fallback
 /// test font draws every glyph as a wide box, so text overflows and the screenshots mean nothing —
 /// the screenshot tests then mark themselves skipped.
@@ -135,6 +135,17 @@ Future<bool> _loadFonts() async {
       if (file.existsSync()) roboto.addFont(Future.value(ByteData.sublistView(file.readAsBytesSync())));
     }
     await roboto.load();
+    // The app's own typeface, bundled under assets/fonts.
+    for (final (family, files) in [
+      ('IBM Plex Sans', ['IBMPlexSans-Regular.ttf', 'IBMPlexSans-Medium.ttf', 'IBMPlexSans-SemiBold.ttf', 'IBMPlexSans-Bold.ttf']),
+      ('IBM Plex Mono', ['IBMPlexMono-Regular.ttf', 'IBMPlexMono-Medium.ttf']),
+    ]) {
+      final loader = FontLoader(family);
+      for (final f in files) {
+        loader.addFont(Future.value(ByteData.sublistView(File('assets/fonts/$f').readAsBytesSync())));
+      }
+      await loader.load();
+    }
     final icons = FontLoader('MaterialIcons')..addFont(Future.value(ByteData.sublistView(File('$fonts/materialicons-regular.otf').readAsBytesSync())));
     await icons.load();
     return true;

@@ -35,7 +35,8 @@ class TodayCard extends ConsumerWidget {
     final next = nextStop(day);
     final where = bundle.dayTripName(day);
     final done = day.visits.where((s) => s.done).length;
-    final color = TrippinColors.day(day.number);
+    final c = context.ds;
+    final tt = Theme.of(context).textTheme;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
@@ -43,28 +44,29 @@ class TodayCard extends ConsumerWidget {
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: () => context.push('/trip/$tripId/day/${day.number}'),
-          child: Container(
-            decoration: BoxDecoration(border: Border(left: BorderSide(color: color, width: 5))),
-            padding: const EdgeInsets.all(16),
+          child: Padding(
+            padding: const EdgeInsets.all(Ds.s16),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Row(children: [
-                Pill('Today · Day ${day.number}', bg: color, fg: Colors.white),
+                DayNumberTile(day.number, size: 24),
+                const SizedBox(width: 8),
+                Pill('Today · Day ${day.number}', tone: DsTone.accent),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(where != null ? 'Day trip to $where' : (day.legName ?? bundle.city),
-                      style: TextStyle(color: context.muted, fontWeight: FontWeight.w600), overflow: TextOverflow.ellipsis),
+                      style: TextStyle(color: c.tx2, fontSize: 13, fontWeight: FontWeight.w500), overflow: TextOverflow.ellipsis),
                 ),
-                Text('$done/${day.visits.length}', style: TextStyle(color: context.muted, fontWeight: FontWeight.w600)),
+                Text('$done/${day.visits.length}', style: TextStyle(color: c.tx3, fontSize: 13, fontWeight: FontWeight.w600, fontFeatures: Ds.tabular)),
               ]),
               const SizedBox(height: 12),
               if (next == null)
-                Text('All done for today 🎉', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700))
+                Text('All done for today 🎉', style: tt.titleMedium)
               else ...[
-                Text('Next', style: TextStyle(color: context.muted, fontSize: 12.5, fontWeight: FontWeight.w600)),
+                Text('Next', style: tt.labelMedium),
                 const SizedBox(height: 2),
-                Text(next.title, style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
+                Text(next.title, style: tt.titleLarge),
                 Text('${next.arrival} – ${next.departure}${next.hoursToday != null ? ' · open ${next.hoursToday}' : ''}',
-                    style: TextStyle(color: context.muted)),
+                    style: TextStyle(color: c.tx3, fontSize: 13, height: 18 / 13, fontFeatures: Ds.tabular)),
                 const SizedBox(height: 12),
                 Row(children: [
                   Expanded(

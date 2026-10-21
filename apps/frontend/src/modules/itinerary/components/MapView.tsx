@@ -205,7 +205,7 @@ export function MapView({
           position={hop.position}
           icon={L.divIcon({
             className: "",
-            html: `<div style="background:${V.surface};color:${V.muted};padding:1px 7px;border-radius:999px;font:600 11px 'DM Sans',sans-serif;white-space:nowrap;border:1px solid ${V.line};box-shadow:0 1px 3px rgba(0,0,0,0.15);transform:translate(-50%,-50%)">${hop.durationMinutes} min</div>`,
+            html: `<div style="background:${V.surface};color:${V.muted};padding:1px 7px;border-radius:999px;font:600 11px 'IBM Plex Sans',sans-serif;white-space:nowrap;border:1px solid ${V.line};box-shadow:0 1px 3px rgba(0,0,0,0.15);transform:translate(-50%,-50%)">${hop.durationMinutes} min</div>`,
             iconSize: [0, 0],
           })}
           interactive={false}

@@ -31,7 +31,7 @@ export function PlaceVoteHeart({ trip, placeId, placeName }: { trip: Trip; place
         h="32px"
         minW="32px"
         borderRadius="full"
-        color={mine || voters.length > 0 ? "danger" : "fg.muted"}
+        color={mine || voters.length > 0 ? "crit" : "tx3"}
         isLoading={vote.isPending}
         onClick={(e) => {
           e.stopPropagation();
@@ -65,10 +65,10 @@ export function PlaceTile({ trip, place, inTrip, aiMatch, busy, onToggle, onOpen
   return (
     <Flex
       direction="column"
-      bg="bg.surface"
+      bg="sf"
       borderWidth="1px"
-      borderColor={selectable && checked ? "accent" : "border.line"}
-      boxShadow={selectable && checked ? "0 0 0 1px var(--chakra-colors-accent)" : undefined}
+      borderColor={selectable && checked ? "ac" : "ln"}
+      boxShadow={selectable && checked ? "0 0 0 1px var(--chakra-colors-ac)" : undefined}
       borderRadius="xl"
       overflow="hidden"
       minW={0}
@@ -76,7 +76,7 @@ export function PlaceTile({ trip, place, inTrip, aiMatch, busy, onToggle, onOpen
       <Box position="relative">
         <Box as="button" type="button" display="block" w="100%" onClick={onOpen} aria-label={`Details for ${place.name}`} tabIndex={-1}>
           {place.imageUrl ? (
-            <Box h="108px" bg="bg.subtle">
+            <Box h="108px" bg="sunk">
               <img src={place.imageUrl} alt="" loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
             </Box>
           ) : (
@@ -88,12 +88,12 @@ export function PlaceTile({ trip, place, inTrip, aiMatch, busy, onToggle, onOpen
           )}
         </Box>
         {selectable ? (
-          <Flex position="absolute" left="8px" top="8px" bg="bg.surface" borderRadius="md" p="6px" boxShadow="raised">
+          <Flex position="absolute" left="8px" top="8px" bg="sf" borderRadius="md" p="6px" boxShadow="ds1">
             <Checkbox isChecked={checked} onChange={(e) => onCheck?.(e.target.checked)} aria-label={`Select ${place.name}`} />
           </Flex>
         ) : (
           aiMatch && (
-            <Pill tone="accent" icon={LuSparkles} bg="bg.surface" position="absolute" left="8px" top="8px">
+            <Pill tone="accent" icon={LuSparkles} bg="sf" position="absolute" left="8px" top="8px">
               AI match
             </Pill>
           )
@@ -113,11 +113,11 @@ export function PlaceTile({ trip, place, inTrip, aiMatch, busy, onToggle, onOpen
           textAlign="left"
           noOfLines={2}
           _hover={{ textDecoration: "underline" }}
-          _focusVisible={{ outline: "2px solid", outlineColor: "accent", outlineOffset: "2px", borderRadius: "4px" }}
+          _focusVisible={{ outline: "2px solid", outlineColor: "ac", outlineOffset: "2px", borderRadius: "4px" }}
         >
           {place.name}
         </Text>
-        <Flex align="center" gap={2} fontSize="12px" color="fg.muted" flexWrap="wrap">
+        <Flex align="center" gap={2} fontSize="12px" color="tx3" flexWrap="wrap">
           <Flex align="center" gap={1} minW={0}>
             <Icon as={CatIcon} boxSize="13px" flexShrink={0} />
             <Text noOfLines={1}>{place.category}</Text>
@@ -134,7 +134,7 @@ export function PlaceTile({ trip, place, inTrip, aiMatch, busy, onToggle, onOpen
             </>
           )}
           {votes > 0 && (
-            <Flex align="center" gap={1} color="danger" aria-label={`${votes} vote${votes === 1 ? "" : "s"}`}>
+            <Flex align="center" gap={1} color="crit" aria-label={`${votes} vote${votes === 1 ? "" : "s"}`}>
               <Icon as={FiHeart} boxSize="12px" />
               <Text>{votes}</Text>
             </Flex>

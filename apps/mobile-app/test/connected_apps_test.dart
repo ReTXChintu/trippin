@@ -148,7 +148,7 @@ void main() {
     final calls = <Map<String, bool>>[];
     await pump(tester, _Links(_view(spendlog: _app('spendlog'), inframe: _app('inframe')), calls: calls));
 
-    expect(find.text('CONNECTED APPS'), findsOneWidget);
+    expect(find.text('Connected apps'), findsOneWidget);
     expect(find.text('Track spending in SpendLog'), findsOneWidget);
     expect(find.text('Share photos in InFrame'), findsOneWidget);
     expect(find.text('Split and settle the trip’s spending in SpendLog.'), findsOneWidget);
@@ -260,7 +260,7 @@ void main() {
 
   testWidgets('someone who already uses the app gets no promo, and an empty section hides', (tester) async {
     await pump(tester, _Links(_view(canManage: false, spendlog: _app('spendlog', promo: true), inframe: _app('inframe', promo: true))));
-    expect(find.text('CONNECTED APPS'), findsNothing);
+    expect(find.text('Connected apps'), findsNothing);
     expect(find.byType(PromoCard), findsNothing);
   });
 

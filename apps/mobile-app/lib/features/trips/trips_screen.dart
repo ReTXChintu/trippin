@@ -67,9 +67,9 @@ class _TripsScreenState extends ConsumerState<TripsScreen> with WidgetsBindingOb
     return Scaffold(
       appBar: AppBar(
         title: Row(children: [
-          ClipRRect(borderRadius: BorderRadius.circular(8), child: Image.asset('assets/brand/logo.png', width: 30, height: 30)),
+          const BrandMark(),
           const SizedBox(width: 10),
-          const Text('Trippin'),
+          const Text('Trippin', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, letterSpacing: -0.18)),
         ]),
         actions: [
           IconButton(tooltip: 'Settings', icon: const Icon(Icons.settings_outlined), onPressed: () => context.push('/settings')),
@@ -82,8 +82,8 @@ class _TripsScreenState extends ConsumerState<TripsScreen> with WidgetsBindingOb
           children: [
             if (firstName.isNotEmpty)
               Padding(
-                padding: const EdgeInsets.fromLTRB(4, 4, 4, 12),
-                child: Text('Hi $firstName', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700)),
+                padding: const EdgeInsets.fromLTRB(0, 12, 0, 12),
+                child: Text('Hi $firstName', style: Theme.of(context).textTheme.headlineSmall),
               ),
             if (showUpdate)
               Padding(
@@ -133,8 +133,8 @@ class _TripsScreenState extends ConsumerState<TripsScreen> with WidgetsBindingOb
               )
             else if (others.isEmpty)
               Padding(
-                padding: const EdgeInsets.all(8),
-                child: Text('All your trips are saved on this phone.', style: TextStyle(color: context.muted)),
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Text('All your trips are saved on this phone.', style: TextStyle(color: context.ds.tx2)),
               )
             else
               for (final t in others) ...[_TripTile(trip: t, busy: progress[t.id], onSave: () => _save(t)), const SizedBox(height: 10)],
@@ -163,20 +163,21 @@ class _SavedTile extends ConsumerWidget {
           padding: const EdgeInsets.all(16),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Row(children: [
-              Expanded(child: Text(t.title, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700))),
-              if (running) Pill('On now', bg: context.successSoft, fg: context.success, icon: Icons.circle),
+              Expanded(child: Text(t.title, style: Theme.of(context).textTheme.titleMedium)),
+              if (running) const Pill('On now', tone: DsTone.accent, icon: Icons.circle),
             ]),
-            const SizedBox(height: 4),
-            Text('${t.city} · ${dateRange(t.startDate, t.endDate)}', style: TextStyle(color: context.muted)),
-            const SizedBox(height: 10),
+            const SizedBox(height: 2),
+            Text('${t.city} · ${dateRange(t.startDate, t.endDate)}',
+                style: TextStyle(color: context.ds.tx3, fontSize: 13, height: 18 / 13, fontFeatures: Ds.tabular)),
+            const SizedBox(height: 12),
             if (busy != null) ...[
-              Text(busy!.label, style: TextStyle(fontSize: 12.5, color: context.accentText, fontWeight: FontWeight.w600)),
+              Text(busy!.label, style: TextStyle(fontSize: 12, height: 16 / 12, color: context.ds.tx2, fontWeight: FontWeight.w600)),
               const SizedBox(height: 6),
-              LinearProgressIndicator(value: busy!.value, borderRadius: BorderRadius.circular(4)),
+              LinearProgressIndicator(value: busy!.value),
             ] else
               Wrap(spacing: 6, runSpacing: 6, children: [
-                Pill('Saved ${ago(trip.savedAt)}', icon: Icons.offline_pin_outlined, bg: context.accentSoft, fg: context.accentText),
-                Pill(trip.mapsSaved ? 'Maps saved' : 'No offline maps', icon: trip.mapsSaved ? Icons.map_outlined : Icons.map_outlined),
+                Pill('Saved ${ago(trip.savedAt)}', icon: Icons.offline_pin_outlined, tone: DsTone.good),
+                Pill(trip.mapsSaved ? 'Maps saved' : 'No offline maps', icon: Icons.map_outlined),
               ]),
           ]),
         ),
@@ -197,16 +198,17 @@ class _TripTile extends StatelessWidget {
         child: InkWell(
           onTap: () => context.push('/trip/${trip.id}'),
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 14, 10, 14),
+            padding: const EdgeInsets.fromLTRB(16, 12, 12, 12),
             child: Row(children: [
               Expanded(
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(trip.title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
-                  const SizedBox(height: 3),
-                  Text('${trip.city} · ${dateRange(trip.startDate, trip.endDate)}', style: TextStyle(color: context.muted, fontSize: 13)),
+                  Text(trip.title, style: Theme.of(context).textTheme.titleSmall),
+                  const SizedBox(height: 2),
+                  Text('${trip.city} · ${dateRange(trip.startDate, trip.endDate)}',
+                      style: TextStyle(color: context.ds.tx3, fontSize: 13, height: 18 / 13, fontFeatures: Ds.tabular)),
                   if (busy != null) ...[
                     const SizedBox(height: 8),
-                    LinearProgressIndicator(value: busy!.value, borderRadius: BorderRadius.circular(4)),
+                    LinearProgressIndicator(value: busy!.value),
                   ],
                 ]),
               ),

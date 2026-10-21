@@ -51,7 +51,7 @@ function hashIndex(seed: string): number {
 }
 
 function CommentItem({ comment, canDelete, onDelete }: { comment: TripComment; canDelete: boolean; onDelete: () => void }) {
-  const muted = "fg.muted";
+  const muted = "tx3";
   return (
     <Flex gap={3} role="group">
       <Flex
@@ -89,6 +89,7 @@ function CommentItem({ comment, canDelete, onDelete }: { comment: TripComment; c
           icon={<LuTrash2 />}
           size="xs"
           variant="ghost"
+          colorScheme="gray"
           opacity={0}
           _groupHover={{ opacity: 1 }}
           _focusVisible={{ opacity: 1 }}
@@ -109,8 +110,8 @@ export function CommentsDrawer({ trip, target, onClose }: { trip: Trip; target: 
   const remove = useDeleteComment(trip.id);
   const [text, setText] = useState("");
   const endRef = useRef<HTMLDivElement>(null);
-  const muted = "fg.muted";
-  const border = "border.line";
+  const muted = "tx3";
+  const border = "ln";
 
   const all = data?.comments ?? [];
   const thread = target ? all.filter((c) => c.targetType === target.type && c.targetId === target.id) : [];
@@ -133,7 +134,7 @@ export function CommentsDrawer({ trip, target, onClose }: { trip: Trip; target: 
   return (
     <Drawer isOpen={Boolean(target)} onClose={onClose} placement="right" size="sm">
       <DrawerOverlay />
-      <DrawerContent maxW={{ base: "100vw", md: "440px" }} bg="bg.surface">
+      <DrawerContent maxW={{ base: "100vw", md: "440px" }} bg="sf">
         <PanelHeader
           title={target?.type === "trip" ? "Discussion" : target?.label}
           subtitle={target?.type === "trip" ? "Everyone on the trip sees this" : "Comments on this stop"}
@@ -157,7 +158,7 @@ export function CommentsDrawer({ trip, target, onClose }: { trip: Trip; target: 
             <div ref={endRef} />
             {elsewhere.length > 0 && (
               <Box pt={4} borderTopWidth="1px" borderColor={border}>
-                <Text fontSize="12px" fontWeight={600} textTransform="uppercase" letterSpacing="0.06em" color={muted} mb={3}>
+                <Text fontSize="12px" lineHeight="16px" fontWeight={600} letterSpacing="0.02em" color="tx2" mb={3}>
                   Recent comments on places & stops
                 </Text>
                 <Stack spacing={3}>

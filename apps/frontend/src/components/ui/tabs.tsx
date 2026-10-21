@@ -45,11 +45,11 @@ export function TabSplit({
   );
 }
 
-/** Fraunces section heading with something (meta text, a pill) on the right. */
-export function SectionTitle({ children, aside, as = "h2", size = 20, ...rest }: { children: ReactNode; aside?: ReactNode; as?: "h2" | "h3"; size?: number } & FlexProps) {
+/** Section heading (17/24 600) with something (meta text, a badge) on the right. */
+export function SectionTitle({ children, aside, as = "h2", size = 17, ...rest }: { children: ReactNode; aside?: ReactNode; as?: "h2" | "h3"; size?: number } & FlexProps) {
   return (
     <Flex align="center" justify="space-between" gap={3} flexWrap="wrap" {...rest}>
-      <Text as={as} fontFamily="heading" fontWeight={600} fontSize={`${size}px`} lineHeight={1.25} letterSpacing="-0.01em">
+      <Text as={as} fontWeight={600} fontSize={`${size}px`} lineHeight={size >= 17 ? "24px" : "20px"}>
         {children}
       </Text>
       {aside}
@@ -65,11 +65,11 @@ export function RowCard({ children, dashed, tone, ...rest }: { children: ReactNo
       gap={3}
       px="14px"
       py="12px"
-      bg={tone === "warn" ? "warn.soft" : "bg.surface"}
+      bg={tone === "warn" ? "warnSoft" : "sf"}
       color={tone === "warn" ? "warn" : undefined}
       borderWidth={dashed && tone === "warn" ? "1.5px" : "1px"}
       borderStyle={dashed ? "dashed" : "solid"}
-      borderColor={tone === "warn" ? "warn" : "border.line"}
+      borderColor={tone === "warn" ? "warn" : "ln"}
       borderRadius="xl"
       minW={0}
       {...rest}
@@ -79,15 +79,15 @@ export function RowCard({ children, dashed, tone, ...rest }: { children: ReactNo
   );
 }
 
-/** Square icon tile (36px muted by default; `tone="accent"` for the 40px booking tile). */
+/** Icon tile (§7.5): radius 10, 36 neutral by default; `tone="accent"` for the 40px booking tile. */
 export function IconTile({ icon, size = 36, tone = "neutral", ...rest }: { icon: IconType; size?: number; tone?: "neutral" | "accent" } & FlexProps) {
   return (
     <Flex
       w={`${size}px`}
       h={`${size}px`}
-      borderRadius={size >= 40 ? "12px" : "10px"}
-      bg={tone === "accent" ? "accent.soft" : "bg.subtle"}
-      color={tone === "accent" ? "accent.text" : "fg.muted"}
+      borderRadius="md"
+      bg={tone === "accent" ? "acSoft" : "sunk"}
+      color={tone === "accent" ? "ac" : "tx2"}
       align="center"
       justify="center"
       flexShrink={0}
@@ -102,7 +102,7 @@ export function IconTile({ icon, size = 36, tone = "neutral", ...rest }: { icon:
 export function Thumb({ src, seed, icon, size = 48, alt = "" }: { src?: string | null; seed: string; icon?: IconType; size?: number; alt?: string }) {
   if (src) {
     return (
-      <Box w={`${size}px`} h={`${size}px`} borderRadius="10px" overflow="hidden" flexShrink={0} bg="bg.subtle">
+      <Box w={`${size}px`} h={`${size}px`} borderRadius="10px" overflow="hidden" flexShrink={0} bg="sunk">
         <img src={src} alt={alt} loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
       </Box>
     );
@@ -114,11 +114,11 @@ export function Thumb({ src, seed, icon, size = 48, alt = "" }: { src?: string |
 export function RowText({ title, sub, titleSize }: { title: ReactNode; sub?: ReactNode; titleSize?: string }) {
   return (
     <Flex direction="column" flex={1} minW={0}>
-      <Text fontWeight={600} fontSize={titleSize} noOfLines={1}>
+      <Text fontWeight={600} fontSize={titleSize ?? "15px"} lineHeight="20px" noOfLines={1}>
         {title}
       </Text>
       {sub && (
-        <Text fontSize="12px" color="fg.muted" noOfLines={2}>
+        <Text fontSize="13px" lineHeight="18px" color="tx3" noOfLines={2}>
           {sub}
         </Text>
       )}
@@ -127,10 +127,10 @@ export function RowText({ title, sub, titleSize }: { title: ReactNode; sub?: Rea
 }
 
 /** 6px progress track (`.bar`). */
-export function Bar({ value, color = "accent", ...rest }: { value: number; color?: string } & BoxProps) {
+export function Bar({ value, color = "ac", ...rest }: { value: number; color?: string } & BoxProps) {
   const pct = Math.max(0, Math.min(100, value));
   return (
-    <Box h="6px" borderRadius="full" bg="bg.subtle" overflow="hidden" role="progressbar" aria-valuenow={Math.round(pct)} aria-valuemin={0} aria-valuemax={100} {...rest}>
+    <Box h="6px" borderRadius="full" bg="sunk" overflow="hidden" role="progressbar" aria-valuenow={Math.round(pct)} aria-valuemin={0} aria-valuemax={100} {...rest}>
       <Box h="100%" w={`${pct}%`} bg={color} borderRadius="full" transition="width .3s" />
     </Box>
   );
@@ -156,7 +156,7 @@ export function Initials({ name, index = 0, size = 30 }: { name: string; index?:
       fontSize="12px"
       fontWeight={700}
       borderWidth="2px"
-      borderColor="bg.surface"
+      borderColor="sf"
       flexShrink={0}
       aria-hidden
     >
@@ -183,7 +183,7 @@ export function CityChips({
       {cities.map((c) => (
         <ChoiceChip key={c.id} selected={c.id === value} onClick={() => onChange(c.id)}>
           {c.name}
-          {c.warn && <Box as="span" w="8px" h="8px" borderRadius="full" bg="warn" display="inline-block" aria-label="needs attention" />}
+          {c.warn && <Box as="span" w="8px" h="8px" borderRadius="full" bg="warnFill" display="inline-block" aria-label="needs attention" />}
         </ChoiceChip>
       ))}
     </Flex>
@@ -200,8 +200,8 @@ export function NightTile({ top, bottom, covered, compact, title }: { top: React
       textAlign="center"
       py={compact ? "6px" : "8px"}
       borderRadius={compact ? "8px" : "10px"}
-      bg={covered ? "accent.soft" : "warn.soft"}
-      color={covered ? "accent.text" : "warn"}
+      bg={covered ? "acSoft" : "warnSoft"}
+      color={covered ? "ac" : "warn"}
       borderWidth={covered ? 0 : "1.5px"}
       borderStyle="dashed"
       borderColor="warn"
@@ -210,7 +210,7 @@ export function NightTile({ top, bottom, covered, compact, title }: { top: React
       <Text fontWeight={600} fontSize={compact ? "13px" : undefined}>
         {top}
       </Text>
-      <Text fontSize="12px" fontWeight={600} letterSpacing="0.02em" noOfLines={1} px={1}>
+      <Text fontSize="12px" fontWeight={600} letterSpacing="0.02em" noOfLines={1} px={1} className="num">
         {bottom}
       </Text>
     </Flex>

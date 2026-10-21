@@ -111,8 +111,8 @@ export function TripDetailContent() {
   const banners = (showKeysNote || !canEdit) && (
     <Stack spacing={2} mb={3} mt={{ base: 3, lg: 0 }}>
       {showKeysNote && (
-        <Flex align="center" gap={2} fontSize="12px" color="fg.muted" flexWrap="wrap">
-          <Icon as={LuInfo} boxSize="14px" flexShrink={0} />
+        <Flex align="center" gap={3} px={4} py={2} borderRadius="lg" bg="sunk" fontSize="13px" lineHeight="18px" color="tx2" flexWrap="wrap">
+          <Icon as={LuInfo} boxSize="18px" flexShrink={0} />
           <Text flex={1} minW="200px">
             {[missingGoogleKey && "No Google Maps key — place search is limited and travel times are estimates", missingAiKey && "no AI key — AI plans and edits are off"]
               .filter(Boolean)
@@ -120,14 +120,14 @@ export function TripDetailContent() {
               .replace(/^n/, "N")}
             .{" "}
             {isOwner ? (
-              <Link as={RouterLink} to="/profile" color="accent.text" fontWeight={600}>
+              <Link as={RouterLink} to="/profile" color="ac" fontWeight={600}>
                 Add keys in Profile
               </Link>
             ) : (
               "The trip owner can add them."
             )}
           </Text>
-          <Button size="xs" variant="ghost" color="fg.muted" onClick={dismissKeysNote}>
+          <Button size="xs" variant="outline" onClick={dismissKeysNote}>
             Dismiss
           </Button>
         </Flex>
@@ -135,7 +135,7 @@ export function TripDetailContent() {
       {!canEdit && (
         <ViewOnlyBanner
           action={
-            <Button variant="link" size="sm" fontSize="12px" color="accent.text" textDecoration="underline" onClick={discussion.onOpen} flexShrink={0}>
+            <Button variant="link" size="sm" fontSize="14px" onClick={discussion.onOpen} flexShrink={0}>
               Ask owner for edit access
             </Button>
           }
@@ -152,7 +152,7 @@ export function TripDetailContent() {
         id={`trip-panel-${key}`}
         aria-labelledby={`trip-tab-${key}`}
         display={tab === key ? "block" : "none"}
-        px={padded ? { base: 4, md: 7 } : 0}
+        px={padded ? { base: 4, md: 6, lg: 8 } : 0}
         pt={padded ? 6 : 0}
       >
         {content}
@@ -198,8 +198,8 @@ export function TripDetailContent() {
   ];
 
   return (
-    <Box mx={{ base: -4, md: -7 }} mt={{ base: -4, md: -5 }} mb={{ lg: -10 }}>
-      <Box bg="bg.surface" borderBottomWidth="1px" borderColor="border.line" px={{ base: 4, md: 7 }} pt={{ base: 0, lg: 4 }}>
+    <Box mx={{ base: -4, md: -6, lg: -8 }} mt={{ base: -4, md: -5 }} mb={{ lg: -12 }}>
+      <Box bg="bg" borderBottomWidth="1px" borderColor="ln" px={{ base: 4, md: 6, lg: 8 }} pt={{ base: 0, lg: 5 }}>
         <TripHeader
           trip={trip}
           currentUserId={currentUserId}
@@ -249,7 +249,7 @@ export function TripDetailContent() {
         focusedLeg && trip.legs.some((l) => l.id === focusedLeg.id) ? (
           <LegExplorePanel key={focusedLeg.id} trip={trip} leg={focusedLeg} onCityChange={setCity} />
         ) : (
-          <Text fontSize="sm" color="fg.muted">
+          <Text fontSize="sm" color="tx3">
             Add a city to this trip to get a local guide.
           </Text>
         ),

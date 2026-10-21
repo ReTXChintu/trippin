@@ -79,7 +79,7 @@ function InviteLinkBox({ trip }: { trip: Trip }) {
   }, [role]);
 
   return (
-    <Stack spacing={2} p={3} borderWidth="1px" borderColor="border.line" borderRadius="xl">
+    <Stack spacing={2} p={3} borderWidth="1px" borderColor="ln" borderRadius="xl">
       <Flex justify="space-between" align="center" gap={2} flexWrap="wrap">
         <Segmented
           size="sm"
@@ -91,7 +91,7 @@ function InviteLinkBox({ trip }: { trip: Trip }) {
           ]}
         />
         {link && (
-          <Text fontSize="12px" color="fg.muted">
+          <Text fontSize="12px" color="tx3">
             {expiresIn(link.expiresAt)} · used {link.uses}×
           </Text>
         )}
@@ -99,7 +99,7 @@ function InviteLinkBox({ trip }: { trip: Trip }) {
       {link ? (
         <Flex gap={2} flexWrap={{ base: "wrap", sm: "nowrap" }}>
           <InputGroup>
-            <InputLeftElement pointerEvents="none" color="fg.muted">
+            <InputLeftElement pointerEvents="none" color="tx3">
               <LuLink size={15} />
             </InputLeftElement>
             <Input value={link.url} isReadOnly aria-label="Invite link" onFocus={(e) => e.target.select()} />
@@ -116,7 +116,7 @@ function InviteLinkBox({ trip }: { trip: Trip }) {
           Get a {role === "editor" ? "“can edit”" : "“view only”"} link
         </Button>
       )}
-      <Text fontSize="12px" color="fg.muted">
+      <Text fontSize="12px" color="tx3">
         Anyone with this link can join after signing in.
       </Text>
     </Stack>
@@ -184,7 +184,7 @@ export function TripMembersPanel({ trip, currentUserId }: TripMembersPanelProps)
                 {member.name}
                 {member.id === currentUserId ? " (you)" : ""}
               </Text>
-              <Text fontSize="12px" color="fg.muted" noOfLines={1}>
+              <Text fontSize="12px" color="tx3" noOfLines={1}>
                 {member.email}
               </Text>
             </Box>
@@ -212,6 +212,7 @@ export function TripMembersPanel({ trip, currentUserId }: TripMembersPanelProps)
                   title={`Remove ${member.name}`}
                   icon={<LuTrash2 size={18} />}
                   variant="ghost"
+                  colorScheme="gray"
                   isLoading={busyId === member.id && removeMember.isPending}
                   onClick={() => void run(member.id, () => removeMember.mutateAsync(member.id), "Member removed")}
                 />
@@ -229,8 +230,8 @@ export function TripMembersPanel({ trip, currentUserId }: TripMembersPanelProps)
               borderRadius="full"
               borderWidth="1px"
               borderStyle="dashed"
-              borderColor="fg.muted"
-              color="fg.muted"
+              borderColor="tx3"
+              color="tx3"
               align="center"
               justify="center"
               flexShrink={0}
@@ -242,7 +243,7 @@ export function TripMembersPanel({ trip, currentUserId }: TripMembersPanelProps)
               <Text fontWeight={600} noOfLines={1}>
                 {invite.email}
               </Text>
-              <Text fontSize="12px" color="fg.muted" noOfLines={1}>
+              <Text fontSize="12px" color="tx3" noOfLines={1}>
                 Invited — joins when they first sign in
               </Text>
             </Box>
@@ -259,14 +260,14 @@ export function TripMembersPanel({ trip, currentUserId }: TripMembersPanelProps)
             )}
           </Flex>
         ))}
-        <Text fontSize="12px" color="fg.muted">
+        <Text fontSize="12px" color="tx3">
           Editors change the plan. Viewers see everything and can vote and comment. Only the owner changes roles or removes members.
         </Text>
       </Stack>
 
       {myRole !== "viewer" && (
         <>
-          <Divider borderColor="border.line" />
+          <Divider borderColor="ln" />
           <Stack as="section" spacing="10px" aria-label="Invite links">
             <SectionLabel>Invite links</SectionLabel>
             <InviteLinkBox trip={trip} />
@@ -274,7 +275,7 @@ export function TripMembersPanel({ trip, currentUserId }: TripMembersPanelProps)
               <FormControl>
                 <FormLabel>Invite by email — they join as an editor when they sign in</FormLabel>
                 <InputGroup>
-                  <InputLeftElement pointerEvents="none" color="fg.muted">
+                  <InputLeftElement pointerEvents="none" color="tx3">
                     <LuMail size={16} />
                   </InputLeftElement>
                   <Input
@@ -299,7 +300,7 @@ export function TripMembersPanel({ trip, currentUserId }: TripMembersPanelProps)
         </>
       )}
       {myRole === "viewer" && (
-        <HStack fontSize="12px" color="fg.muted">
+        <HStack fontSize="12px" color="tx3">
           <Text>You're a viewer on this trip.</Text>
         </HStack>
       )}

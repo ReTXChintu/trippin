@@ -66,10 +66,10 @@ export function CityInput({
   const [active, setActive] = useState(0);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const box = useRef<HTMLDivElement>(null);
-  const listBg = "bg.surface";
-  const border = "border.line";
-  const hover = "bg.subtle";
-  const muted = "fg.muted";
+  const listBg = "sf";
+  const border = "ln";
+  const hover = "sunk";
+  const muted = "tx3";
 
   useEffect(() => setQuery(value.city), [value.city]);
 
@@ -116,7 +116,7 @@ export function CityInput({
     <Box ref={box} position="relative" w="full">
       <InputGroup size={size}>
         {icon && (
-          <InputLeftElement pointerEvents="none" color="fg.muted" h={height}>
+          <InputLeftElement pointerEvents="none" color="tx3" h={height}>
             <Icon as={icon} boxSize="16px" />
           </InputLeftElement>
         )}

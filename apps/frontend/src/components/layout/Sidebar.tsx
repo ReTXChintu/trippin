@@ -24,20 +24,20 @@ function NextTripCard() {
       as={Link}
       to={`/trips/${trip.id}`}
       display="block"
-      p={3}
+      p="14px"
       borderWidth="1px"
-      borderColor="border.line"
+      borderColor="ln"
       borderRadius="xl"
-      bg="bg.canvas"
-      _hover={{ borderColor: "accent" }}
+      bg="sf2"
+      _hover={{ borderColor: "acLine" }}
     >
-      <Text fontSize="12px" fontWeight={600} textTransform="uppercase" letterSpacing="0.06em" color="fg.muted" mb={1.5}>
+      <Text fontSize="12px" lineHeight="16px" fontWeight={600} letterSpacing="0.02em" color="tx2" mb={1}>
         Next trip
       </Text>
-      <Text fontWeight={600} noOfLines={1}>
+      <Text fontWeight={600} fontSize="15px" lineHeight="20px" noOfLines={1}>
         {trip.title}
       </Text>
-      <Text fontSize="12px" color="fg.muted" mt={0.5} mb={2}>
+      <Text fontSize="12px" lineHeight="16px" color="tx3" mt={0.5} mb={2.5} className="num">
         {days <= 0 ? "Under way" : days === 1 ? "Starts tomorrow" : `Starts in ${days} days`} · {doneCount} of {stages.length} steps
       </Text>
       <Progress value={(doneCount / stages.length) * 100} h="6px" borderRadius="full" aria-label="Trip progress" />
@@ -50,11 +50,11 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const apk = useApkInfo();
   const { pathname } = useLocation();
   return (
-    <Flex as="nav" aria-label="Main" direction="column" w="236px" h="full" bg="bg.surface" borderRightWidth="1px" borderColor="border.line" px={4} py={5} gap={1.5}>
-      <Box as={Link} to="/dashboard" px={1.5} pb={4} onClick={onNavigate}>
-        <BrandLogo size={30} />
+    <Flex as="nav" aria-label="Main" direction="column" w="248px" h="full" bg="sf" borderRightWidth="1px" borderColor="ln" px={3} py={5} gap={1}>
+      <Box as={Link} to="/dashboard" px={2} pb={3} onClick={onNavigate} aria-label="Trippin' home">
+        <BrandLogo />
       </Box>
-      <Button as={Link} to="/trips/new" size="lg" leftIcon={<FiPlus />} justifyContent="flex-start" mb={2.5} onClick={onNavigate}>
+      <Button as={Link} to="/trips/new" leftIcon={<FiPlus size={18} />} mb={3} onClick={onNavigate}>
         New trip
       </Button>
       <VStack align="stretch" spacing={1}>
@@ -71,13 +71,14 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
               h="40px"
               px={3}
               borderRadius="md"
-              color={active ? "accent.text" : "fg.muted"}
-              bg={active ? "accent.soft" : "transparent"}
+              fontSize="14px"
+              color={active ? "ac" : "tx2"}
+              bg={active ? "acSoft" : "transparent"}
               fontWeight={active ? 600 : 500}
-              _hover={{ bg: active ? "accent.soft" : "bg.subtle", color: active ? "accent.text" : "fg.default" }}
+              _hover={{ bg: active ? "acSoft" : "sunk", color: active ? "ac" : "tx" }}
               aria-current={active ? "page" : undefined}
             >
-              <Icon as={item.icon} boxSize="18px" />
+              <Icon as={item.icon} boxSize="20px" />
               {item.label}
             </Flex>
           );
@@ -86,8 +87,8 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
       <Box flex={1} />
       <NextTripCard />
       {apk && (
-        <Flex as="a" href={apk.url} download="trippin.apk" title={`Android app, version ${apk.version}`} align="center" gap={3} h="40px" px={3} mt={1.5} borderRadius="md" color="fg.muted" fontWeight={500} _hover={{ bg: "bg.subtle" }}>
-          <Icon as={FiDownload} boxSize="18px" />
+        <Flex as="a" href={apk.url} download="trippin.apk" title={`Android app, version ${apk.version}`} align="center" gap={3} h="40px" px={3} mt={1.5} borderRadius="md" fontSize="14px" color="tx2" fontWeight={500} _hover={{ bg: "sunk", color: "tx" }}>
+          <Icon as={FiDownload} boxSize="20px" />
           Download app
         </Flex>
       )}
@@ -106,14 +107,15 @@ function RailLink({ to, icon, label, active, solid }: { to: string; icon: typeof
       py={2}
       w="56px"
       borderRadius="md"
-      fontSize="12px"
+      fontSize="11px"
+      lineHeight="14px"
       fontWeight={active || solid ? 600 : 500}
-      color={solid ? "accent.fg" : active ? "accent.text" : "fg.muted"}
-      bg={solid ? "accent" : active ? "accent.soft" : "transparent"}
-      _hover={{ bg: solid ? "accent" : active ? "accent.soft" : "bg.subtle" }}
+      color={solid ? "acTx" : active ? "ac" : "tx2"}
+      bg={solid ? "ac" : active ? "acSoft" : "transparent"}
+      _hover={{ bg: solid ? "ac" : active ? "acSoft" : "sunk", color: solid ? "acTx" : active ? "ac" : "tx" }}
       aria-current={active ? "page" : undefined}
     >
-      <Icon as={icon} boxSize="18px" />
+      <Icon as={icon} boxSize="20px" />
       <span>{label}</span>
     </Flex>
   );
@@ -124,9 +126,9 @@ export function Rail() {
   const apk = useApkInfo();
   const { pathname } = useLocation();
   return (
-    <Flex as="nav" aria-label="Main" direction="column" align="center" w="76px" h="full" bg="bg.surface" borderRightWidth="1px" borderColor="border.line" px="10px" py="14px" gap="6px">
-      <Box as={Link} to="/dashboard" mb="10px" aria-label="Trippin' home">
-        <BrandMark size={36} />
+    <Flex as="nav" aria-label="Main" direction="column" align="center" w="76px" h="full" bg="sf" borderRightWidth="1px" borderColor="ln" px="10px" py={5} gap={1}>
+      <Box as={Link} to="/dashboard" mb={3} aria-label="Trippin' home">
+        <BrandMark size={32} />
       </Box>
       <RailLink to="/trips/new" icon={FiPlus} label="New" solid />
       {MAIN_NAV_ITEMS.map((item) => (
@@ -134,8 +136,8 @@ export function Rail() {
       ))}
       <Box flex={1} />
       {apk && (
-        <Flex as="a" href={apk.url} download="trippin.apk" title={`Android app, version ${apk.version}`} direction="column" align="center" gap="2px" py={2} w="56px" borderRadius="md" fontSize="12px" fontWeight={500} color="fg.muted" _hover={{ bg: "bg.subtle" }}>
-          <Icon as={FiDownload} boxSize="18px" />
+        <Flex as="a" href={apk.url} download="trippin.apk" title={`Android app, version ${apk.version}`} direction="column" align="center" gap="2px" py={2} w="56px" borderRadius="md" fontSize="11px" lineHeight="14px" fontWeight={500} color="tx2" _hover={{ bg: "sunk", color: "tx" }}>
+          <Icon as={FiDownload} boxSize="20px" />
           <span>App</span>
         </Flex>
       )}

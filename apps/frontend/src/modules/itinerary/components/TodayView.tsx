@@ -90,7 +90,7 @@ export function TodayView() {
 
   if (tripQuery.isLoading || itineraryQuery.isLoading) {
     return (
-      <Box maxW="1080px" mx="auto">
+      <Box>
         <LoadingSkeleton variant="page" label="Loading today" />
       </Box>
     );
@@ -197,8 +197,8 @@ export function TodayView() {
       size="xl"
       h="52px"
       borderRadius="lg"
-      bg={late ? "warn" : "warn.soft"}
-      color={late ? "bg.surface" : "warn"}
+      bg={late ? "warn" : "warnSoft"}
+      color={late ? "sf" : "warn"}
       _hover={{ filter: "brightness(.97)" }}
       _active={{ filter: "brightness(.94)" }}
       leftIcon={<FiClock />}
@@ -212,7 +212,7 @@ export function TodayView() {
   );
 
   return (
-    <Box maxW="1080px" mx="auto">
+    <Box>
       <Stack spacing={{ base: "14px", md: 5 }}>
         {/* Header: back to the plan, date, day · city · weather, options */}
         <Flex align="center" justify="space-between" gap={2}>
@@ -224,29 +224,28 @@ export function TodayView() {
               title="Back to the plan"
               icon={<FiArrowLeft />}
               variant="ghost"
+              colorScheme="gray"
               size="lg"
               ml={-2}
             />
             <Box minW={0}>
               <Text
                 as="h1"
-                fontFamily={{ base: "body", md: "heading" }}
-                fontWeight={{ base: 700, md: 600 }}
-                fontSize={{ base: "16px", md: "28px" }}
-                lineHeight={1.2}
-                letterSpacing={{ md: "-0.01em" }}
+                fontWeight={600}
+                fontSize={{ base: "17px", md: "22px" }}
+                lineHeight={{ base: "24px", md: "28px" }}
                 noOfLines={1}
               >
                 {isToday ? "Today" : `Day ${day.dayNumber}`} · {formatDayDate(day.date, "EEE d MMM")}
               </Text>
-              <Text fontSize={{ base: "12px", md: "13px" }} color="fg.muted" noOfLines={1}>
+              <Text fontSize={{ base: "12px", md: "13px" }} color="tx3" noOfLines={1}>
                 {subtitle}
                 {actionable.length > 0 && ` · ${doneCount} of ${actionable.length} done`}
               </Text>
             </Box>
           </HStack>
           <Menu isLazy placement="bottom-end">
-            <MenuButton as={IconButton} icon={<FiMoreHorizontal />} variant="ghost" size="lg" aria-label="Options" title="Options" />
+            <MenuButton as={IconButton} icon={<FiMoreHorizontal />} variant="ghost" colorScheme="gray" size="lg" aria-label="Options" title="Options" />
             <MenuList fontSize="sm">
               <MenuItem as={Link} to={planHref(day.legId)} icon={<FiList />}>
                 Full plan
@@ -262,14 +261,14 @@ export function TodayView() {
 
         {/* Offline readiness (only claimed when the offline cache is really active) */}
         {!online ? (
-          <Flex align="center" gap={2} px={4} py={2} borderRadius="md" bg="warn.soft" color="warn" fontSize="12px" fontWeight={600}>
+          <Flex align="center" gap={2} px={4} py={2} borderRadius="md" bg="warnSoft" color="warn" fontSize="12px" fontWeight={600}>
             <Icon as={FiWifiOff} boxSize="14px" />
             <Text flex={1}>Offline · showing the copy saved {syncedAgo ?? "earlier"}</Text>
           </Flex>
         ) : (
           hasOfflineCache() &&
           syncedAgo && (
-            <Flex align="center" gap={2} px={4} py={2} borderRadius="md" bg="success.soft" color="success" fontSize="12px" fontWeight={600}>
+            <Flex align="center" gap={2} px={4} py={2} borderRadius="md" bg="goodSoft" color="good" fontSize="12px" fontWeight={600}>
               <Icon as={FiCheck} boxSize="14px" />
               <Text flex={1}>Saved for offline · synced {syncedAgo}</Text>
             </Flex>
@@ -282,7 +281,7 @@ export function TodayView() {
               <ChoiceChip key={d.dayNumber} selected={d.dayNumber === day.dayNumber} onClick={() => setDay(d.dayNumber)} aria-label={`Day ${d.dayNumber}, ${formatDayDate(d.date, "EEEE d MMMM")}${d.date === today ? ", today" : ""}`}>
                 Day {d.dayNumber} · {formatDayDate(d.date, "EEE d")}
                 {d.date === today && (
-                  <Box as="span" w="6px" h="6px" borderRadius="full" bg={d.dayNumber === day.dayNumber ? "accent.fg" : "accent"} aria-hidden />
+                  <Box as="span" w="6px" h="6px" borderRadius="full" bg={d.dayNumber === day.dayNumber ? "acTx" : "ac"} aria-hidden />
                 )}
               </ChoiceChip>
             ))}
@@ -330,8 +329,8 @@ export function TodayView() {
                 <Stack spacing={3}>
                   {bookings.map((b) => (
                     <HStack key={b.id} fontSize="sm" spacing={3} align="start">
-                      <Flex w="32px" h="32px" borderRadius="md" bg="bg.subtle" align="center" justify="center" flexShrink={0}>
-                        <Icon as={BOOKING_META[b.type].icon} boxSize="16px" color="fg.muted" />
+                      <Flex w="32px" h="32px" borderRadius="md" bg="sunk" align="center" justify="center" flexShrink={0}>
+                        <Icon as={BOOKING_META[b.type].icon} boxSize="16px" color="tx3" />
                       </Flex>
                       <Box minW={0}>
                         <Text fontWeight={600} noOfLines={1}>
@@ -339,7 +338,7 @@ export function TodayView() {
                           {b.title}
                         </Text>
                         {b.confirmationNumber && (
-                          <Text fontSize="12px" color="fg.muted">
+                          <Text fontSize="12px" color="tx3">
                             Conf. <b>{b.confirmationNumber}</b>
                             {b.provider ? ` · ${b.provider}` : ""}
                           </Text>
@@ -401,9 +400,9 @@ export function TodayView() {
           zIndex={20}
           px={4}
           py={3}
-          bg="bg.surface"
+          bg="sf"
           borderTopWidth="1px"
-          borderColor="border.line"
+          borderColor="ln"
         >
           {replanButton}
         </Box>

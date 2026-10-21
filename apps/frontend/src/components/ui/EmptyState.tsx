@@ -1,11 +1,4 @@
-import {
-  Box,
-  Button,
-  Heading,
-  Icon,
-  Text,
-  VStack,
-} from "@chakra-ui/react";
+import { Button, Flex, Icon, Text } from "@chakra-ui/react";
 import type { IconType } from "react-icons";
 import { FiInbox } from "react-icons/fi";
 
@@ -18,39 +11,37 @@ interface EmptyStateProps {
   actionHref?: string;
 }
 
-export function EmptyState({
-  icon = FiInbox,
-  title,
-  description,
-  actionLabel,
-  onAction,
-}: EmptyStateProps) {
+/** Full empty state (§7.11): dashed box, 48 neutral icon tile, title, one line, one primary action. */
+export function EmptyState({ icon = FiInbox, title, description, actionLabel, onAction }: EmptyStateProps) {
   return (
-    <Box
+    <Flex
+      direction="column"
+      align="center"
+      textAlign="center"
+      gap={3}
       py={12}
       px={6}
-      textAlign="center"
       borderWidth="1px"
-      borderRadius="xl"
       borderStyle="dashed"
-      borderColor="border.line"
-      _dark={{ borderColor: "gray.600", bg: "gray.800" }}
-      bg="bg.surface"
+      borderColor="ln2"
+      borderRadius="xl"
     >
-      <VStack spacing={4}>
-        <Icon as={icon} boxSize={10} color="brand.500" />
-        <Heading size="md">{title}</Heading>
-        {description && (
-          <Text color="fg.muted" maxW="md">
-            {description}
-          </Text>
-        )}
-        {actionLabel && onAction && (
-          <Button colorScheme="brand" onClick={onAction}>
-            {actionLabel}
-          </Button>
-        )}
-      </VStack>
-    </Box>
+      <Flex w="48px" h="48px" borderRadius="md" bg="sunk" color="tx3" align="center" justify="center">
+        <Icon as={icon} boxSize="24px" />
+      </Flex>
+      <Text as="h2" fontWeight={600} fontSize="17px" lineHeight="24px">
+        {title}
+      </Text>
+      {description && (
+        <Text color="tx2" fontSize="15px" lineHeight="22px" maxW="440px">
+          {description}
+        </Text>
+      )}
+      {actionLabel && onAction && (
+        <Button size="lg" onClick={onAction}>
+          {actionLabel}
+        </Button>
+      )}
+    </Flex>
   );
 }

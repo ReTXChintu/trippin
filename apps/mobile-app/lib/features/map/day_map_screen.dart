@@ -51,7 +51,8 @@ class _DayMapScreenState extends ConsumerState<DayMapScreen> {
           point: stay!.point!,
           width: 34,
           height: 34,
-          child: _Pin(color: context.isDark ? Colors.white : Colors.black87, child: const Icon(Icons.hotel, size: 16, color: Colors.white)),
+          // Where you sleep: an ink pin (ink is the neutral "data" colour).
+          child: _Pin(color: context.ds.tx, child: Icon(Icons.hotel, size: 16, color: context.ds.bg)),
         ),
       for (final s in day.stops)
         if (s.point != null && s.kind == StopKind.visit)
@@ -62,8 +63,8 @@ class _DayMapScreenState extends ConsumerState<DayMapScreen> {
             child: GestureDetector(
               onTap: () => showStopSheet(context, ref, trip: trip, day: day, stop: s),
               child: _Pin(
-                color: s.done || s.skipped ? Colors.grey : color,
-                child: Text('${++n}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 13)),
+                color: s.done || s.skipped ? context.ds.tx3 : color,
+                child: Text('${++n}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13, fontFeatures: Ds.tabular)),
               ),
             ),
           ),
@@ -72,9 +73,10 @@ class _DayMapScreenState extends ConsumerState<DayMapScreen> {
           point: fix.point,
           width: 26,
           height: 26,
+          // You, now: the accent (the "today / now" marker colour).
           child: Container(
             decoration: BoxDecoration(
-              color: const Color(0xFF2563EB),
+              color: context.ds.ac,
               shape: BoxShape.circle,
               border: Border.all(color: Colors.white, width: 3),
               boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 6)],
@@ -112,18 +114,19 @@ class _DayMapScreenState extends ConsumerState<DayMapScreen> {
           right: 16,
           bottom: 40,
           child: Column(children: [
-            FloatingActionButton.small(
-              heroTag: 'fit',
+            MapControl(
               tooltip: 'Show the whole day',
+              icon: Icons.zoom_out_map,
               onPressed: points.length >= 2
                   ? () => _map.fitCamera(CameraFit.bounds(bounds: LatLngBounds.fromPoints(points), padding: const EdgeInsets.all(48)))
                   : null,
-              child: const Icon(Icons.zoom_out_map),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 8),
+            // The primary map action stays an accent FAB (56, radius 16).
             FloatingActionButton(
               heroTag: 'me',
               tooltip: 'Where am I',
+              elevation: 2,
               onPressed: () {
                 if (fix != null) {
                   _map.move(fix.point, 16);

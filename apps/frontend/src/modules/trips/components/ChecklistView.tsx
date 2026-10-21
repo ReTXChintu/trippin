@@ -51,7 +51,7 @@ function ItemRow({ item, onRun, tripId }: { item: ChecklistItem; tripId: string;
   };
 
   return (
-    <Flex align="center" gap="10px" py="10px" px={1} borderTopWidth="1px" borderColor="border.line">
+    <Flex align="center" gap="10px" py="10px" px={1} borderTopWidth="1px" borderColor="ln">
       {editing ? (
         <Input
           size="sm"
@@ -77,20 +77,20 @@ function ItemRow({ item, onRun, tripId }: { item: ChecklistItem; tripId: string;
           size="lg"
           sx={{ ".chakra-checkbox__control": { w: "20px", h: "20px", borderRadius: "6px" } }}
         >
-          <Text fontSize="14px" textDecoration={item.done ? "line-through" : undefined} color={item.done ? "fg.muted" : undefined} noOfLines={2}>
+          <Text fontSize="14px" textDecoration={item.done ? "line-through" : undefined} color={item.done ? "tx3" : undefined} noOfLines={2}>
             {item.text}
           </Text>
         </Checkbox>
       )}
-      <IconButton aria-label={`Rename ${item.text}`} title="Rename" icon={<FiEdit2 size={16} />} variant="ghost" size="sm" onClick={() => setEditing(true)} isDisabled={editing} />
+      <IconButton aria-label={`Rename ${item.text}`} title="Rename" icon={<FiEdit2 size={16} />} variant="ghost" colorScheme="gray" size="sm" onClick={() => setEditing(true)} isDisabled={editing} />
       <IconButton
         aria-label={`Delete ${item.text}`}
         title="Delete"
         icon={<FiTrash2 size={16} />}
         variant="ghost"
         size="sm"
-        color="fg.muted"
-        _hover={{ color: "danger", bg: "danger.soft" }}
+        color="tx3"
+        _hover={{ color: "crit", bg: "critSoft" }}
         isLoading={remove.isPending}
         onClick={() => onRun(() => remove.mutateAsync(item.id))}
       />
@@ -125,7 +125,7 @@ function Section({ trip, section, suggestions }: { trip: Trip; section: (typeof 
 
   const suggestionChips = suggestions.length > 0 && (
     <Box pt={3}>
-      <Text fontSize="12px" color="fg.muted" mb={2}>
+      <Text fontSize="12px" color="tx3" mb={2}>
         Suggested for this trip
       </Text>
       <Flex gap="6px" flexWrap="wrap">
@@ -150,10 +150,10 @@ function Section({ trip, section, suggestions }: { trip: Trip; section: (typeof 
       spacing={2}
       pt="10px"
       borderTopWidth={items.length ? "1px" : 0}
-      borderColor="border.line"
+      borderColor="ln"
     >
       <InputGroup>
-        <InputLeftElement pointerEvents="none" color="fg.muted">
+        <InputLeftElement pointerEvents="none" color="tx3">
           <FiPlus />
         </InputLeftElement>
         <Input ref={inputRef} value={text} onChange={(e) => setText(e.target.value)} placeholder={section.placeholder} aria-label={`Add item to ${section.title}`} />
@@ -166,12 +166,12 @@ function Section({ trip, section, suggestions }: { trip: Trip; section: (typeof 
 
   if (items.length === 0 && !showInput) {
     return (
-      <Flex as="section" direction="column" align="center" justify="center" textAlign="center" gap="10px" p="18px" minH="260px" bg="bg.surface" borderWidth="1px" borderColor="border.line" borderRadius="xl" aria-label={section.title}>
-        <Icon as={section.icon} boxSize="24px" color="accent" />
-        <Text as="h2" fontFamily="heading" fontWeight={600} fontSize="20px">
+      <Flex as="section" direction="column" align="center" justify="center" textAlign="center" gap="10px" p="18px" minH="260px" bg="sf" borderWidth="1px" borderColor="ln" borderRadius="xl" aria-label={section.title}>
+        <Icon as={section.icon} boxSize="24px" color="ac" />
+        <Text as="h2" fontWeight={600} fontSize="17px" lineHeight="24px">
           {section.title}
         </Text>
-        <Text color="fg.muted" maxW="280px">
+        <Text color="tx3" maxW="280px">
           {section.empty}
         </Text>
         <Button
@@ -189,9 +189,9 @@ function Section({ trip, section, suggestions }: { trip: Trip; section: (typeof 
   }
 
   return (
-    <Box as="section" p="18px" bg="bg.surface" borderWidth="1px" borderColor="border.line" borderRadius="xl" aria-label={section.title}>
+    <Box as="section" p="18px" bg="sf" borderWidth="1px" borderColor="ln" borderRadius="xl" aria-label={section.title}>
       <Flex justify="space-between" align="center" mb={items.length ? 0 : 2} pb={items.length ? "10px" : 0}>
-        <Text as="h2" fontFamily="heading" fontWeight={600} fontSize="20px">
+        <Text as="h2" fontWeight={600} fontSize="17px" lineHeight="24px">
           {section.title}
         </Text>
         <Pill tone={items.length > 0 && done === items.length ? "success" : "neutral"}>
@@ -236,7 +236,7 @@ export function ChecklistView({ trip }: { trip: Trip }) {
               <Bar flex={1} value={(done / total) * 100} aria-label="Checklist progress" />
             </Flex>
           )}
-          <Text fontSize="12px" color="fg.muted" flex="1 1 200px">
+          <Text fontSize="12px" color="tx3" flex="1 1 200px">
             Shared with everyone on the trip. Suggestions use your weather, bookings and plans.
           </Text>
           {suggestions.length > 0 && (

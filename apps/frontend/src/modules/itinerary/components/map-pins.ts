@@ -5,13 +5,13 @@ import { DAY_COLORS_DARK, DAY_COLORS_LIGHT } from "@/lib/theme";
 /** Leaflet draws raw HTML/SVG, so pins read the theme through CSS variables (they switch with the
  * colour mode); polylines need a resolved colour, which `useDayColor` provides. */
 export const V = {
-  surface: "var(--chakra-colors-bg-surface)",
-  text: "var(--chakra-colors-fg-default)",
-  canvas: "var(--chakra-colors-bg-canvas)",
-  muted: "var(--chakra-colors-fg-muted)",
-  line: "var(--chakra-colors-border-line)",
+  surface: "var(--chakra-colors-sf)",
+  text: "var(--chakra-colors-tx)",
+  canvas: "var(--chakra-colors-bg)",
+  muted: "var(--chakra-colors-tx3)",
+  line: "var(--chakra-colors-ln)",
   pinFg: "var(--chakra-colors-pin-fg)",
-  accent: "var(--chakra-colors-accent)",
+  accent: "var(--chakra-colors-ac)",
 };
 
 export function dayVar(dayNumber: number): string {
@@ -34,13 +34,13 @@ export function numberPin(label: string, color: string, state: PinState = "norma
   const size = state === "selected" ? 38 : state === "hover" ? 34 : 28;
   const ring =
     state === "selected"
-      ? `0 0 0 4px ${V.accent}, 0 4px 10px rgba(0,0,0,.35)`
+      ? `0 0 0 3px ${V.accent}, 0 2px 8px rgba(24,25,29,.3)`
       : state === "hover"
-        ? `0 0 0 3px ${V.text}, 0 3px 8px rgba(0,0,0,.35)`
-        : "0 2px 6px rgba(0,0,0,.3)";
+        ? `0 0 0 3px ${V.text}, 0 2px 8px rgba(24,25,29,.3)`
+        : "0 1px 2px rgba(24,25,29,.2), 0 2px 8px rgba(24,25,29,.15)";
   return L.divIcon({
     className: "",
-    html: `<div style="background:${color};color:${V.pinFg};width:${size}px;height:${size}px;border-radius:50%;display:flex;align-items:center;justify-content:center;font:700 ${state === "selected" ? 14 : 12}px 'DM Sans',sans-serif;border:2.5px solid ${V.surface};box-shadow:${ring};opacity:${state === "dim" ? 0.45 : 1};transition:all .15s">${label}</div>`,
+    html: `<div style="background:${color};color:${V.pinFg};width:${size}px;height:${size}px;border-radius:50%;display:flex;align-items:center;justify-content:center;font:700 ${state === "selected" ? 14 : 12}px 'IBM Plex Sans',sans-serif;border:2px solid ${V.surface};box-shadow:${ring};font-variant-numeric:tabular-nums;opacity:${state === "dim" ? 0.45 : 1};transition:all .15s">${label}</div>`,
     iconSize: [size, size],
     iconAnchor: [size / 2, size / 2],
     popupAnchor: [0, -size / 2],
@@ -49,7 +49,7 @@ export function numberPin(label: string, color: string, state: PinState = "norma
 
 export const stayPin = L.divIcon({
   className: "",
-  html: `<div style="background:${V.text};color:${V.canvas};width:28px;height:28px;border-radius:9px;display:flex;align-items:center;justify-content:center;border:2.5px solid ${V.surface};box-shadow:0 2px 6px rgba(0,0,0,.3)">${BED_SVG}</div>`,
+  html: `<div style="background:${V.text};color:${V.canvas};width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;border:2px solid ${V.surface};box-shadow:0 1px 2px rgba(24,25,29,.2), 0 2px 8px rgba(24,25,29,.15)">${BED_SVG}</div>`,
   iconSize: [28, 28],
   iconAnchor: [14, 14],
 });
@@ -58,46 +58,20 @@ export function mealPin(highlighted: boolean): L.DivIcon {
   const size = highlighted ? 30 : 24;
   return L.divIcon({
     className: "",
-    html: `<div style="background:${V.surface};color:${V.muted};width:${size}px;height:${size}px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid ${highlighted ? V.text : V.line};box-shadow:0 2px 6px rgba(0,0,0,.2)">${FORK_SVG}</div>`,
+    html: `<div style="background:${V.surface};color:${V.muted};width:${size}px;height:${size}px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:1.5px solid ${highlighted ? V.text : "var(--chakra-colors-ln2)"};box-shadow:0 1px 2px rgba(24,25,29,.15)">${FORK_SVG}</div>`,
     iconSize: [size, size],
     iconAnchor: [size / 2, size / 2],
   });
 }
 
 
-/** Map chrome in the Trippin' style: warm tiles (dimmed in dark mode), square zoom buttons, quiet
- * attribution. Spread onto the Box that wraps a MapContainer. */
+/** Map tiles in the suite's paper tones (dimmed in dark mode). Spread onto the Box that wraps a
+ * MapContainer; the controls, popups, tooltips and attribution are styled globally in the theme. */
 export const mapChromeSx = {
   ".leaflet-container": { bg: "map.land", fontFamily: "body" },
   ".leaflet-tile-pane": { filter: "saturate(.7) sepia(.12) brightness(1.02)" },
   _dark: {
     ".leaflet-tile-pane": { filter: "invert(1) hue-rotate(180deg) brightness(.82) contrast(.9) saturate(.45)" },
   },
-  ".leaflet-bar": { border: "none", boxShadow: "none", display: "flex", flexDirection: "column", gap: "4px" },
-  ".leaflet-bar a, .leaflet-bar a:hover": {
-    width: "36px",
-    height: "36px",
-    lineHeight: "34px",
-    borderRadius: "10px !important",
-    bg: "bg.surface",
-    color: "fg.default",
-    border: "1px solid",
-    borderColor: "border.line",
-    fontSize: "18px",
-    fontWeight: 400,
-  },
-  ".leaflet-bar a:hover": { bg: "bg.subtle" },
   ".leaflet-top.leaflet-right": { top: "4px", right: "4px" },
-  ".leaflet-control-attribution": {
-    bg: "bg.surface",
-    color: "fg.muted",
-    fontSize: "11px",
-    borderRadius: "4px",
-    px: "6px",
-    mr: "8px",
-    mb: "6px",
-    opacity: 0.92,
-    a: { color: "fg.muted" },
-  },
-  ".leaflet-tooltip": { fontFamily: "body", fontSize: "12px", borderRadius: "8px" },
 } as const;

@@ -1,28 +1,25 @@
-import { Box, Flex, Heading, Link, Stack, Text } from "@chakra-ui/react";
+import { Box, Flex, Heading, Stack, Text } from "@chakra-ui/react";
 import type { ReactNode } from "react";
 import { FiMap } from "react-icons/fi";
-import { Link as RouterLink } from "react-router-dom";
 import { isInviteCallback, useCallbackUrl } from "./auth-callback";
-import { BrandLogo } from "@/components/brand/BrandLogo";
 import { Banner, PhotoFallback } from "@/components/ui";
 
-/** Logo, the "you were invited" note and the title. */
+/** The "you were invited" note and the auth card's title (22/28) and lede (15/22). The logo lives
+ * in the brand panel next to the card. */
 export function AuthIntro({ title, subtitle, notice }: { title: string; subtitle: string; notice?: ReactNode }) {
   const callbackUrl = useCallbackUrl();
   const invited = isInviteCallback(callbackUrl);
 
   return (
-    <Stack spacing="20px">
-      <Link as={RouterLink} to="/" alignSelf="flex-start" _hover={{ textDecoration: "none" }}>
-        <BrandLogo />
-      </Link>
-
+    <Stack spacing={5}>
       {invited && (
-        <Flex align="center" gap={3} p={3} borderRadius="xl" bg="accent.soft">
-          <PhotoFallback seed="invite" icon={FiMap} iconSize={22} w="52px" h="52px" borderRadius="10px" flexShrink={0} />
+        <Flex align="center" gap={3} px="14px" py={3} borderRadius="lg" bg="acSoft">
+          <PhotoFallback seed="invite" icon={FiMap} iconSize={20} w="40px" h="40px" borderRadius="md" flexShrink={0} />
           <Box minW={0}>
-            <Text fontWeight={600}>You&rsquo;ve been invited to a trip</Text>
-            <Text fontSize="12px" color="accent.text">
+            <Text fontWeight={500} fontSize="14px" lineHeight="20px">
+              You&rsquo;ve been invited to a trip
+            </Text>
+            <Text fontSize="12px" lineHeight="16px" color="tx2">
               Sign in to join — you’ll come straight back.
             </Text>
           </Box>
@@ -32,10 +29,10 @@ export function AuthIntro({ title, subtitle, notice }: { title: string; subtitle
       {notice}
 
       <Box>
-        <Heading as="h1" fontSize={{ base: "30px", md: "36px" }} lineHeight={1.15}>
+        <Heading as="h1" fontSize="22px" lineHeight="28px">
           {title}
         </Heading>
-        <Text color="fg.muted" mt={1}>
+        <Text color="tx2" fontSize="15px" lineHeight="22px" mt={2}>
           {subtitle}
         </Text>
       </Box>

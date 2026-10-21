@@ -41,12 +41,12 @@ export function KeyMissingNotice({
 
   if (variant === "card") {
     return (
-      <Box bg="bg.surface" borderWidth="1px" borderColor="border.line" borderRadius="xl" p={3} {...rest}>
-        <HStack spacing="6px" fontSize="13px" fontWeight={600}>
-          <Icon as={copy.icon} boxSize="14px" />
+      <Box bg="sf" borderWidth="1px" borderColor="ln" borderRadius="xl" p={4} {...rest}>
+        <HStack spacing={2} fontSize="15px" lineHeight="20px" fontWeight={600}>
+          <Icon as={copy.icon} boxSize="16px" color="ac" />
           <Text>{feature ?? (kind === "ai" ? "AI features" : "Place search")}</Text>
         </HStack>
-        <Text fontSize="12px" color="fg.muted" mt={1} mb={canFix ? 2 : 0}>
+        <Text fontSize="13px" lineHeight="18px" color="tx3" mt={1} mb={canFix ? 3 : 0}>
           {canFix ? (text ?? (kind === "ai" ? "Needs an AI key. Everything else works." : "Needs a Google Maps key.")) : copy.ownerOnly}
         </Text>
         {canFix && (
@@ -59,13 +59,13 @@ export function KeyMissingNotice({
   }
 
   return (
-    <Flex role="note" align="center" gap="10px" px="14px" py="10px" bg="warn.soft" color="warn" borderRadius="md" {...rest}>
-      <Icon as={copy.icon} boxSize="16px" flexShrink={0} />
-      <Text flex={1} fontSize="12px" fontWeight={600} minW={0}>
+    <Flex role="note" align="center" gap={3} px={4} py={3} bg="warnSoft" color="warn" borderRadius="lg" {...rest}>
+      <Icon as={copy.icon} boxSize="20px" flexShrink={0} />
+      <Text flex={1} fontSize="14px" lineHeight="20px" fontWeight={500} minW={0}>
         {canFix ? copy.banner : copy.ownerOnly}
       </Text>
       {canFix && (
-        <Text as={RouterLink} to="/profile" fontSize="12px" fontWeight={600} textDecoration="underline" flexShrink={0}>
+        <Text as={RouterLink} to="/profile" fontSize="14px" fontWeight={600} flexShrink={0} _hover={{ color: "tx" }}>
           Add in Profile
         </Text>
       )}

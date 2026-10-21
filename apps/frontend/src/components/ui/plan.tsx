@@ -23,7 +23,7 @@ export function DayDot({ dayNumber, size = 10, ...rest }: { dayNumber: number; s
       borderRadius="full"
       bg={dayToken(dayNumber)}
       flexShrink={0}
-      boxShadow="0 0 0 2px var(--chakra-colors-bg-surface)"
+      boxShadow="0 0 0 2px var(--chakra-colors-sf)"
       {...rest}
     />
   );
@@ -41,8 +41,8 @@ export function TabCount({ children, warn }: { children: ReactNode; warn?: boole
       borderRadius="full"
       fontSize="12px"
       fontWeight={500}
-      bg={warn ? "warn.soft" : "bg.subtle"}
-      color={warn ? "warn" : "fg.muted"}
+      bg={warn ? "warnSoft" : "sunk"}
+      color={warn ? "warn" : "tx3"}
     >
       {children}
     </Flex>
@@ -55,9 +55,9 @@ export function StayMarker({ size = 28, icon = LuBedDouble, ...rest }: { size?: 
     <Flex
       w={`${size}px`}
       h={`${size}px`}
-      borderRadius="9px"
-      bg="fg.default"
-      color="bg.canvas"
+      borderRadius="md"
+      bg="tx"
+      color="bg"
       align="center"
       justify="center"
       flexShrink={0}
@@ -76,9 +76,9 @@ export function RingMarker({ icon, size = 28, ...rest }: { icon: IconType; size?
       h={`${size}px`}
       borderRadius="full"
       borderWidth="2px"
-      borderColor="border.line"
-      bg="bg.surface"
-      color="fg.muted"
+      borderColor="ln"
+      bg="sf"
+      color="tx3"
       align="center"
       justify="center"
       flexShrink={0}
@@ -89,7 +89,7 @@ export function RingMarker({ icon, size = 28, ...rest }: { icon: IconType; size?
   );
 }
 
-/** Drawer / modal heading: Fraunces title, muted context line, square close button. */
+/** Drawer / modal heading: 19/24 title, a muted context line, a round close button. */
 export function PanelHeader({
   title,
   subtitle,
@@ -97,32 +97,32 @@ export function PanelHeader({
   ...rest
 }: { title: ReactNode; subtitle?: ReactNode; onClose?: () => void } & FlexProps) {
   return (
-    <Flex justify="space-between" align="center" gap={3} px={6} py={5} borderBottomWidth="1px" borderColor="border.line" {...rest}>
+    <Flex justify="space-between" align="center" gap={3} px={6} py={5} borderBottomWidth="1px" borderColor="ln" {...rest}>
       <Box minW={0}>
-        <Text as="h2" fontFamily="heading" fontWeight={600} fontSize="22px" lineHeight={1.2} letterSpacing="-0.01em" noOfLines={2}>
+        <Text as="h2" fontWeight={600} fontSize="19px" lineHeight="24px" noOfLines={2}>
           {title}
         </Text>
         {subtitle && (
-          <Text fontSize="13px" color="fg.muted" mt={0.5}>
+          <Text fontSize="13px" color="tx3" mt={0.5}>
             {subtitle}
           </Text>
         )}
       </Box>
-      {onClose && <IconButton aria-label="Close" icon={<LuX size={18} />} variant="outline" onClick={onClose} flexShrink={0} />}
+      {onClose && <IconButton aria-label="Close" icon={<LuX size={20} />} variant="ghost" colorScheme="gray" borderRadius="full" onClick={onClose} flexShrink={0} />}
     </Flex>
   );
 }
 
-/** Section label inside drawers ("TRIP DETAILS", "OPENING HOURS"). */
+/** Section label inside drawers ("Trip details", "Opening hours"): 12/16 600 +.02em, sentence case. */
 export function SectionLabel({ children, ...rest }: { children: ReactNode } & BoxProps) {
   return (
-    <Text as="span" display="block" fontSize="12px" fontWeight={600} textTransform="uppercase" letterSpacing="0.06em" color="fg.muted" {...rest}>
+    <Text as="span" display="block" fontSize="12px" lineHeight="16px" fontWeight={600} letterSpacing="0.02em" color="tx2" {...rest}>
       {children}
     </Text>
   );
 }
 
-/** Dark "snackbar" used for AI results and undoable changes. */
+/** Inverse toast (§7.12) used for AI results and undoable changes. */
 export function Snackbar({ icon, children, action }: { icon?: IconType; children: ReactNode; action?: ReactNode }) {
   return (
     <Flex
@@ -130,16 +130,17 @@ export function Snackbar({ icon, children, action }: { icon?: IconType; children
       align="center"
       gap={3}
       pl={4}
-      pr={3}
+      pr={2}
       py="10px"
-      borderRadius="xl"
-      bg="fg.default"
-      color="bg.canvas"
-      boxShadow="raised"
+      minH="52px"
+      borderRadius="lg"
+      bg="tx"
+      color="bg"
+      boxShadow="ds2"
       maxW="min(560px, calc(100vw - 32px))"
     >
-      {icon && <Icon as={icon} boxSize="16px" flexShrink={0} />}
-      <Text fontWeight={600} fontSize="13px" flex={1} minW={0}>
+      {icon && <Icon as={icon} boxSize="20px" flexShrink={0} />}
+      <Text fontSize="14px" lineHeight="20px" flex={1} minW={0}>
         {children}
       </Text>
       {action}

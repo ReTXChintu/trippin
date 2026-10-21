@@ -18,7 +18,6 @@ import { type ComponentProps, type ReactNode, useState } from "react";
 import { FiArrowRight, FiEdit2, FiMoreHorizontal, FiPlus, FiTrash2 } from "react-icons/fi";
 import { LuExternalLink, LuTriangleAlert, LuWallet } from "react-icons/lu";
 import { EmptyState, Overline, Pill, SurfaceCard } from "@/components/ui";
-import { dayToken } from "@/components/ui/day";
 import { Bar, IconTile, Initials, SectionTitle, TabSplit } from "@/components/ui/tabs";
 import { getApiErrorMessage } from "@/lib/api";
 import { LoadingState } from "@/components/ui/LoadingState";
@@ -43,8 +42,8 @@ interface BudgetViewProps {
 
 function Card({ children, ...rest }: { children: ReactNode } & ComponentProps<typeof SurfaceCard>) {
   return (
-    <SurfaceCard p="18px" {...rest}>
-      <Stack spacing="10px">{children}</Stack>
+    <SurfaceCard p={5} {...rest}>
+      <Stack spacing={3}>{children}</Stack>
     </SurfaceCard>
   );
 }
@@ -69,20 +68,20 @@ function ActualSpendCard({ trip, budget, currency, onOpenApps }: { trip: Trip; b
         <Box>
           <Overline>Actual spend (SpendLog)</Overline>
           {isLoading ? (
-            <Text color="fg.muted" fontSize="13px">
+            <Text color="tx3" fontSize="13px">
               Loading…
             </Text>
           ) : summary ? (
-            <Text fontFamily="heading" fontWeight={600} fontSize="28px" lineHeight={1.15}>
+            <Text fontWeight={600} fontSize="28px" lineHeight="34px" letterSpacing="-0.02em" mt={1} className="num">
               {formatMinor(summary.totalSpentMinor, summary.currency)}{" "}
               {comparable && (
-                <Text as="span" fontFamily="body" fontSize="12px" fontWeight={400} color="fg.muted">
+                <Text as="span" fontSize="13px" fontWeight={500} letterSpacing={0} color="tx3">
                   of {formatMoney(budget!, currency)} planned
                 </Text>
               )}
             </Text>
           ) : (
-            <Flex align="center" gap={2} fontSize="13px" color="fg.muted" mt={1}>
+            <Flex align="center" gap={2} fontSize="13px" color="tx3" mt={1}>
               {app?.summaryError || app?.status === "error" ? <LuTriangleAlert /> : null}
               <Text>
                 {app?.status === "error"
@@ -97,7 +96,7 @@ function ActualSpendCard({ trip, budget, currency, onOpenApps }: { trip: Trip; b
           )}
         </Box>
         {url ? (
-          <Button as="a" href={url} target="_blank" rel="noopener noreferrer" size="sm" variant="outline" rightIcon={<LuExternalLink size={14} />}>
+          <Button as="a" href={url} target="_blank" rel="noopener noreferrer" size="sm" variant="outline" rightIcon={<LuExternalLink size={16} />}>
             Open in SpendLog
           </Button>
         ) : (
@@ -110,14 +109,14 @@ function ActualSpendCard({ trip, budget, currency, onOpenApps }: { trip: Trip; b
       </Flex>
       {comparable && (
         <>
-          <Bar value={Math.min((actual! / budget!) * 100, 100)} color={actual! > budget! ? "danger" : actual! / budget! > 0.9 ? "warn" : "success"} aria-label="Planned budget used (SpendLog)" />
-          <Text fontSize="12px" color="fg.muted">
+          <Bar h="10px" value={Math.min((actual! / budget!) * 100, 100)} color={actual! > budget! ? "critFill" : actual! / budget! > 0.9 ? "warnFill" : "good"} aria-label="Planned budget used (SpendLog)" />
+          <Text fontSize="12px" lineHeight="16px" color={actual! > budget! ? "crit" : "tx3"} fontWeight={actual! > budget! ? 600 : 400} className="num">
             {actual! > budget! ? `${formatMoney(actual! - budget!, currency)} over the plan` : `${formatMoney(budget! - actual!, currency)} left of the plan`}
           </Text>
         </>
       )}
       {summary && (
-        <Flex gap={4} fontSize="12px" color="fg.muted" flexWrap="wrap">
+        <Flex gap={4} fontSize="12px" lineHeight="16px" color="tx3" flexWrap="wrap" className="num" sx={{ "& b": { color: "tx", fontWeight: 600 } }}>
           <Text>
             Your share <b>{formatMinor(summary.myShareMinor, summary.currency)}</b>
           </Text>
@@ -174,6 +173,8 @@ export function BudgetView({ trip, currentUserId, onOpenSettings, onOpenApps }: 
   const byDay = new Map<string, number>();
   for (const e of data.expenses) byDay.set(e.date, (byDay.get(e.date) ?? 0) + e.amountInTripCurrency);
   const maxDay = Math.max(...days.map((d) => byDay.get(d) ?? 0), 1);
+  const now = new Date();
+  const todayLocal = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
   const outside = data.expenses.filter((e) => e.date < tripStart || e.date > tripEnd).reduce((s, e) => s + e.amountInTripCurrency, 0);
 
   const handleRemove = async (expense: Expense) => {
@@ -185,55 +186,57 @@ export function BudgetView({ trip, currentUserId, onOpenSettings, onOpenApps }: 
   };
 
   const main = (
-    <Stack spacing="14px">
+    <Stack spacing={5}>
       <Card>
         <Flex justify="space-between" align="flex-start" gap={3} flexWrap="wrap">
           <Box>
             <Overline>Spent</Overline>
-            <Text fontFamily="heading" fontWeight={600} fontSize="34px" lineHeight={1.15}>
+            <Text fontWeight={600} fontSize="34px" lineHeight="40px" letterSpacing="-0.02em" mt={1} className="num">
               {money(data.spent.total)}{" "}
               {budget !== undefined && (
-                <Text as="span" fontFamily="body" fontSize="12px" fontWeight={400} color="fg.muted">
+                <Text as="span" fontSize="13px" fontWeight={500} letterSpacing={0} color="tx3">
                   of {money(budget)}
                 </Text>
               )}
             </Text>
           </Box>
           <Box textAlign="right">
-            <Text fontSize="12px" color="fg.muted">
+            <Text fontSize="12px" lineHeight="16px" fontWeight={600} letterSpacing="0.02em" color="tx2">
               Currency
             </Text>
-            <Text fontWeight={600}>{data.currency}</Text>
+            <Text fontWeight={600} fontSize="17px" lineHeight="24px" mt="2px">
+              {data.currency}
+            </Text>
           </Box>
         </Flex>
         {budget !== undefined ? (
           <>
-            <Bar value={usedPct} color={data.spent.total > budget ? "danger" : usedPct > 90 ? "warn" : "accent"} aria-label="Budget used" />
-            <Text fontSize="12px" color="fg.muted">
+            <Bar h="10px" value={usedPct} color={data.spent.total > budget ? "critFill" : usedPct > 90 ? "warnFill" : "good"} aria-label="Budget used" />
+            <Text fontSize="12px" lineHeight="16px" color={data.spent.total > budget ? "crit" : "tx3"} fontWeight={data.spent.total > budget ? 600 : 400} className="num">
               {data.spent.total > budget ? `${money(data.spent.total - budget)} over budget` : `${money(budget - data.spent.total)} left`}
               {hasForeign ? " · foreign amounts auto-converted" : ""}
             </Text>
           </>
         ) : (
-          <Flex align="center" gap={2} fontSize="12px" color="fg.muted" flexWrap="wrap">
+          <Flex align="center" gap={2} fontSize="13px" color="tx3" flexWrap="wrap">
             <Text>No budget set.</Text>
-            <Button size="xs" variant="link" onClick={onOpenSettings}>
+            <Button size="sm" variant="link" onClick={onOpenSettings}>
               Set a budget
             </Button>
           </Flex>
         )}
         <Divider />
-        <Flex justify="space-between" gap={3} fontSize="12px" flexWrap="wrap">
+        <Flex justify="space-between" gap={3} fontSize="13px" lineHeight="18px" flexWrap="wrap" className="num" sx={{ "& b": { fontWeight: 600 } }}>
           <Tooltip label={`Stays ${money(data.planned.stays)} · Bookings ${money(data.planned.bookings)} · Tickets ${money(data.planned.activities)}`} hasArrow>
             <Text tabIndex={0}>
-              <Text as="span" color="fg.muted">
+              <Text as="span" color="tx3">
                 Booked &amp; planned
               </Text>{" "}
               <b>{money(data.planned.total)}</b>
             </Text>
           </Tooltip>
-          <Text color={budget !== undefined && forecast > budget ? "danger" : undefined}>
-            <Text as="span" color={budget !== undefined && forecast > budget ? "danger" : "fg.muted"}>
+          <Text color={budget !== undefined && forecast > budget ? "crit" : undefined}>
+            <Text as="span" color={budget !== undefined && forecast > budget ? "crit" : "tx3"}>
               Projected
             </Text>{" "}
             <b>{money(forecast)}</b>
@@ -241,7 +244,7 @@ export function BudgetView({ trip, currentUserId, onOpenSettings, onOpenApps }: 
           </Text>
         </Flex>
         {(data.planned.nightsWithoutPrice > 0 || data.planned.unconverted > 0) && (
-          <Text fontSize="12px" color="fg.muted">
+          <Text fontSize="12px" lineHeight="16px" color="tx3">
             {data.planned.nightsWithoutPrice > 0 &&
               `${data.planned.nightsWithoutPrice} night${data.planned.nightsWithoutPrice === 1 ? " has" : "s have"} no stay price yet. `}
             {data.planned.unconverted > 0 && `${data.planned.unconverted} item(s) couldn't be converted and are left out.`}
@@ -253,18 +256,31 @@ export function BudgetView({ trip, currentUserId, onOpenSettings, onOpenApps }: 
 
       <Card>
         <Overline>By category</Overline>
-        {EXPENSE_CATEGORIES.map((c) => (
-          <Flex key={c} align="center" gap="10px">
-            <Icon as={CATEGORY_LABELS[c].icon} boxSize="16px" color="fg.muted" w="20px" flexShrink={0} />
-            <Text w="90px" flexShrink={0} title={CATEGORY_LABELS[c].label}>
-              {CATEGORY_LABELS[c].short}
-            </Text>
-            <Bar flex={1} value={(spent[c] / maxCategory) * 100} aria-label={`${CATEGORY_LABELS[c].label} share`} />
-            <Text fontWeight={600} w="90px" textAlign="right" flexShrink={0}>
-              {money(spent[c])}
-            </Text>
+        {data.spent.total > 0 && (
+          <Flex h="12px" gap="2px" borderRadius="6px" overflow="hidden" bg="sunk" aria-hidden>
+            {EXPENSE_CATEGORIES.filter((c) => spent[c] > 0).map((c) => (
+              <Box key={c} flex={`${spent[c]} 1 0`} bg={CATEGORY_LABELS[c].color} />
+            ))}
           </Flex>
-        ))}
+        )}
+        <Box>
+          {EXPENSE_CATEGORIES.map((c, i) => (
+            <Flex key={c} align="center" gap="10px" minH="40px" borderTopWidth={i === 0 ? 0 : "1px"} borderColor="ln">
+              <Box w="10px" h="10px" borderRadius="3px" bg={CATEGORY_LABELS[c].color} flexShrink={0} aria-hidden />
+              <Icon as={CATEGORY_LABELS[c].icon} boxSize="16px" color="tx2" flexShrink={0} />
+              <Text w="96px" flexShrink={0} title={CATEGORY_LABELS[c].label}>
+                {CATEGORY_LABELS[c].short}
+              </Text>
+              <Bar flex={1} value={(spent[c] / maxCategory) * 100} color={CATEGORY_LABELS[c].color} aria-label={`${CATEGORY_LABELS[c].label} share`} />
+              <Text fontSize="12px" color="tx3" w="40px" textAlign="right" flexShrink={0} className="num">
+                {data.spent.total > 0 ? `${Math.round((spent[c] / data.spent.total) * 100)}%` : ""}
+              </Text>
+              <Text fontWeight={600} w="96px" textAlign="right" flexShrink={0} className="num">
+                {money(spent[c])}
+              </Text>
+            </Flex>
+          ))}
+        </Box>
       </Card>
 
       {days.length > 0 && (
@@ -273,12 +289,17 @@ export function BudgetView({ trip, currentUserId, onOpenSettings, onOpenApps }: 
           <Flex align="flex-end" gap={days.length > 14 ? "3px" : 2} h="110px" role="list" aria-label="Spending per day">
             {days.map((d, i) => {
               const amount = byDay.get(d) ?? 0;
+              const isToday = d === todayLocal;
               return (
                 <Tooltip key={d} label={`Day ${i + 1} · ${formatShortDate(d)} · ${money(amount)}`} hasArrow>
                   <Flex role="listitem" aria-label={`Day ${i + 1}: ${money(amount)}`} tabIndex={0} direction="column" align="center" justify="flex-end" gap="6px" flex="1 1 0" minW={0} h="100%">
-                    <Box w="100%" h={`${Math.round((amount / maxDay) * 84)}px`} minH={amount > 0 ? "3px" : 0} bg={dayToken(i + 1)} borderRadius="6px 6px 2px 2px" />
-                    <Text fontSize="12px" color="fg.muted" letterSpacing="0.02em" noOfLines={1}>
-                      {days.length > 14 && (i + 1) % 2 === 0 ? "" : `D${i + 1}`}
+                    {amount > 0 ? (
+                      <Box w="100%" maxW="28px" h={`${Math.max(3, Math.round((amount / maxDay) * 84))}px`} bg={isToday ? "ac" : "tx"} borderRadius="2px" />
+                    ) : (
+                      <Box w="100%" maxW="28px" h="14px" bg="sunk" borderWidth="1px" borderColor="ln2" borderRadius="2px" />
+                    )}
+                    <Text fontSize="11px" lineHeight="14px" color={isToday ? "ac" : "tx3"} fontWeight={isToday ? 600 : 400} noOfLines={1} className="num">
+                      {isToday ? "Today" : days.length > 14 && (i + 1) % 2 === 0 ? "" : `D${i + 1}`}
                     </Text>
                   </Flex>
                 </Tooltip>
@@ -286,7 +307,7 @@ export function BudgetView({ trip, currentUserId, onOpenSettings, onOpenApps }: 
             })}
           </Flex>
           {outside > 0 && (
-            <Text fontSize="12px" color="fg.muted">
+            <Text fontSize="12px" lineHeight="16px" color="tx3" className="num">
               {money(outside)} logged outside the trip dates.
             </Text>
           )}
@@ -314,33 +335,35 @@ export function BudgetView({ trip, currentUserId, onOpenSettings, onOpenApps }: 
       ) : (
         <Box>
           {data.expenses.map((e, i) => (
-            <Flex key={e.id} align="center" gap={3} py="10px" borderTopWidth={i > 0 ? "1px" : 0} borderColor="border.line">
+            <Flex key={e.id} align="center" gap={3} py={3} minH="64px" borderTopWidth={i > 0 ? "1px" : 0} borderColor="ln">
               <IconTile icon={CATEGORY_LABELS[e.category].icon} />
               <Flex direction="column" flex={1} minW={0}>
-                <Text fontWeight={600} noOfLines={1}>
+                <Text fontWeight={500} fontSize="15px" lineHeight="20px" noOfLines={1}>
                   {e.description}
                 </Text>
-                <Text fontSize="12px" color="fg.muted" noOfLines={1}>
+                <Text fontSize="13px" lineHeight="18px" color="tx3" noOfLines={1}>
                   {formatShortDate(e.date)}
                   {data.members.length > 1 &&
                     ` · paid by ${nameOf(e.paidBy)} · ${e.splitWith.length === 1 ? `Just ${nameOf(e.splitWith[0])}` : `Split ${e.splitWith.length}`}`}
                 </Text>
               </Flex>
               <Flex direction="column" textAlign="right" flexShrink={0}>
-                <Text fontWeight={600}>{money(e.amountInTripCurrency)}</Text>
+                <Text fontWeight={600} fontSize="15px" className="num">
+                  {money(e.amountInTripCurrency)}
+                </Text>
                 {e.currency !== data.currency && (
-                  <Text fontSize="12px" color="fg.muted" letterSpacing="0.02em">
+                  <Text fontSize="12px" color="tx3" className="num">
                     ≈ {formatMoney(e.amount, e.currency)}
                   </Text>
                 )}
               </Flex>
               <Menu isLazy placement="bottom-end">
-                <MenuButton as={IconButton} aria-label={`Actions for ${e.description}`} icon={<FiMoreHorizontal size={18} />} variant="ghost" size="sm" flexShrink={0} />
+                <MenuButton as={IconButton} aria-label={`Actions for ${e.description}`} icon={<FiMoreHorizontal size={18} />} variant="ghost" colorScheme="gray" borderRadius="full" size="sm" flexShrink={0} />
                 <MenuList zIndex={20}>
                   <MenuItem icon={<FiEdit2 />} onClick={() => setEditing(e)}>
                     Edit
                   </MenuItem>
-                  <MenuItem icon={<FiTrash2 />} color="danger" onClick={() => void handleRemove(e)}>
+                  <MenuItem icon={<FiTrash2 />} color="crit" onClick={() => void handleRemove(e)}>
                     Delete
                   </MenuItem>
                 </MenuList>
@@ -351,13 +374,13 @@ export function BudgetView({ trip, currentUserId, onOpenSettings, onOpenApps }: 
       )}
 
       {data.members.length > 1 && (
-        <SurfaceCard p={4}>
-          <Stack spacing="10px">
+        <SurfaceCard p={5}>
+          <Stack spacing={3}>
             <Overline>Balances</Overline>
             {data.members.map((m, i) => (
               <Flex key={m.id} align="center" gap="10px">
                 <Initials name={m.name} index={i} />
-                <Text fontWeight={600} flex={1} minW={0} noOfLines={1}>
+                <Text fontWeight={500} flex={1} minW={0} noOfLines={1}>
                   {m.id === currentUserId ? `${m.name} (you)` : m.name}
                 </Text>
                 {m.balance > 0 ? (
@@ -375,14 +398,14 @@ export function BudgetView({ trip, currentUserId, onOpenSettings, onOpenApps }: 
               data.settlements.map((s, i) => (
                 <Flex key={i} align="center" gap="10px">
                   <Initials name={nameOf(s.from)} index={memberIndex(s.from)} size={24} />
-                  <Icon as={FiArrowRight} color="fg.muted" />
-                  <Text flex={1}>
-                    <b>{nameOf(s.from)}</b> pays <b>{nameOf(s.to)}</b> {money(s.amount)}
+                  <Icon as={FiArrowRight} color="tx3" />
+                  <Text flex={1} className="num">
+                    <b>{nameOf(s.from)}</b> pays <b>{nameOf(s.to)}</b> <Text as="span" fontWeight={600}>{money(s.amount)}</Text>
                   </Text>
                 </Flex>
               ))
             ) : (
-              <Text fontSize="13px" color="fg.muted">
+              <Text fontSize="13px" color="tx3">
                 Everyone&rsquo;s square.
               </Text>
             )}

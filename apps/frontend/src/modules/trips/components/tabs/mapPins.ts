@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import L from "leaflet";
 
-/** `accent` → `var(--chakra-colors-accent)`, `day.2` → `var(--chakra-colors-day-2)`. Switches with the colour mode. */
+/** `accent` → `var(--chakra-colors-ac)`, `day.2` → `var(--chakra-colors-day-2)`. Switches with the colour mode. */
 export function tokenVar(token: string): string {
   if (token.startsWith("#") || token.startsWith("var(") || token.startsWith("rgb")) return token;
   return `var(--chakra-colors-${token.replace(/\./g, "-")})`;
@@ -36,30 +36,30 @@ export function pinIcon(pin: Pick<MapPin, "kind" | "color" | "label" | "busy">):
   const cacheKey = `${pin.kind}|${pin.color ?? ""}|${pin.label ?? ""}|${pin.busy ? 1 : 0}`;
   const cached = iconCache.get(cacheKey);
   if (cached) return cached;
-  const surface = tokenVar("bg.surface");
+  const surface = tokenVar("sf");
   const pinFg = tokenVar("pin.fg");
-  const base = `display:flex;align-items:center;justify-content:center;border-radius:50%;border:2.5px solid ${surface};color:${pinFg};font:700 12px 'DM Sans',sans-serif;box-shadow:0 2px 6px rgba(0,0,0,.3);`;
+  const base = `display:flex;align-items:center;justify-content:center;border-radius:50%;border:2px solid ${surface};color:${pinFg};font:700 12px 'IBM Plex Sans',sans-serif;font-variant-numeric:tabular-nums;box-shadow:0 1px 2px rgba(24,25,29,.2),0 2px 8px rgba(24,25,29,.15);`;
   let size = 28;
   let style = "";
   let inner = pin.label ? escapeHtml(pin.label) : "";
   switch (pin.kind) {
     case "selected":
       size = 30;
-      style = `${base}background:${tokenVar(pin.color ?? "accent")};box-shadow:0 0 0 3px ${tokenVar("fg.default")},0 3px 8px rgba(0,0,0,.35);`;
+      style = `${base}background:${tokenVar(pin.color ?? "ac")};box-shadow:0 0 0 3px ${tokenVar("ac")},0 2px 8px rgba(24,25,29,.3);`;
       break;
     case "dim":
       size = 24;
       style = `${base}background:${tokenVar(pin.color ?? "day.1")};opacity:.55;`;
       break;
     case "stay":
-      style = `${base}border-radius:9px;background:${tokenVar("fg.default")};color:${tokenVar("bg.canvas")};`;
+      style = `${base}border-radius:8px;background:${tokenVar("tx")};color:${tokenVar("bg")};`;
       inner = BED_SVG;
       break;
     case "hotel":
-      style = `${base}background:${tokenVar("accent")};`;
+      style = `${base}background:${tokenVar("ac")};`;
       break;
     default:
-      style = `${base}background:${tokenVar(pin.color ?? "accent")};`;
+      style = `${base}background:${tokenVar(pin.color ?? "ac")};`;
   }
   if (pin.busy) style += "opacity:.6;";
   const icon = L.divIcon({

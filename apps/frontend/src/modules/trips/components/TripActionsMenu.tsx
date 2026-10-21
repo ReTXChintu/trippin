@@ -126,7 +126,7 @@ export function TripActionsMenu({ trip, isOwner, exportActions, variant = "outli
           icon={<LuEllipsis size={18} />}
           variant={variant}
           size={size}
-          color="fg.default"
+          color="tx"
           aria-label="More: share, export, archive, delete"
           title="More: share, export, archive, delete"
         />
@@ -168,7 +168,7 @@ export function TripActionsMenu({ trip, isOwner, exportActions, variant = "outli
             </MenuItem>
           )}
           {isOwner && (
-            <MenuItem icon={<LuTrash2 />} color="danger" onClick={onDeleteOpen}>
+            <MenuItem icon={<LuTrash2 />} color="crit" onClick={onDeleteOpen}>
               Delete
             </MenuItem>
           )}

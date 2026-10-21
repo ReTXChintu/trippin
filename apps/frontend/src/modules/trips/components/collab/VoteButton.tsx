@@ -19,7 +19,7 @@ export function VoteButton({ trip, placeId, size = "xs" }: { trip: Trip; placeId
         size="sm"
         h={size === "xs" ? "32px" : "36px"}
         variant="ghost"
-        color={voters.length > 0 || mine ? "danger" : "fg.muted"}
+        color={voters.length > 0 || mine ? "crit" : "tx3"}
         leftIcon={<LuHeart size={16} fill={mine ? "currentColor" : "none"} />}
         iconSpacing={voters.length > 0 ? "4px" : 0}
         minW="auto"

@@ -45,13 +45,19 @@ export function AskAiBar({ tripId, hasAiKey, isOwner = true, examples = DEFAULT_
               action={
                 <Button
                   size="sm"
-                  h="30px"
-                  variant="outline"
-                  bg="transparent"
-                  color="bg.canvas"
-                  borderColor="rgba(128,128,128,.6)"
-                  _hover={{ bg: "rgba(128,128,128,.2)" }}
-                  leftIcon={<LuUndo2 size={14} />}
+                  variant="unstyled"
+                  display="inline-flex"
+                  alignItems="center"
+                  gap={1.5}
+                  h="36px"
+                  px={3}
+                  color="bg"
+                  fontSize="14px"
+                  fontWeight={700}
+                  textDecoration="underline"
+                  textUnderlineOffset="3px"
+                  _hover={{ opacity: 0.85 }}
+                  leftIcon={<LuUndo2 size={16} />}
                   onClick={() => {
                     onClose();
                     undo.mutate(undefined, {
@@ -81,8 +87,8 @@ export function AskAiBar({ tripId, hasAiKey, isOwner = true, examples = DEFAULT_
   if (!hasAiKey) {
     return (
       <Flex align="center" gap={2} minH="44px">
-        <Icon as={LuSparkles} boxSize="16px" color="accent.text" flexShrink={0} />
-        <Text fontSize="13px" color="fg.muted" flex={1}>
+        <Icon as={LuSparkles} boxSize="16px" color="ac" flexShrink={0} />
+        <Text fontSize="13px" color="tx3" flex={1}>
           {isOwner ? "Ask AI needs an AI key." : "Ask AI is off — the owner needs an AI key."}
         </Text>
         {isOwner && (
@@ -100,7 +106,7 @@ export function AskAiBar({ tripId, hasAiKey, isOwner = true, examples = DEFAULT_
       <AiWorkingPanel
         title={`${working.replace(/[.…]+$/, "")}…`}
         note="Your plan doesn't change until AI finishes. One Undo will revert it."
-        boxShadow="raised"
+        boxShadow="ds1"
         py={compact ? 3 : 4}
       />
     );
@@ -118,8 +124,8 @@ export function AskAiBar({ tripId, hasAiKey, isOwner = true, examples = DEFAULT_
     >
       {compact ? (
         <>
-          <Flex flex={1} align="center" gap={2} h="44px" px={3} borderWidth="1px" borderColor="border.line" borderRadius="md" bg="bg.surface">
-            <Icon as={LuSparkles} boxSize="16px" color="accent.text" />
+          <Flex flex={1} align="center" gap={2} h="44px" px={3} borderWidth="1px" borderColor="ln" borderRadius="md" bg="sf">
+            <Icon as={LuSparkles} boxSize="16px" color="ac" />
             <Input
               variant="unstyled"
               value={text}
@@ -133,7 +139,7 @@ export function AskAiBar({ tripId, hasAiKey, isOwner = true, examples = DEFAULT_
         </>
       ) : (
         <>
-          <Icon as={LuSparkles} boxSize="18px" color="accent.text" flexShrink={0} />
+          <Icon as={LuSparkles} boxSize="18px" color="ac" flexShrink={0} />
           <Input
             variant="unstyled"
             h="36px"
@@ -154,10 +160,10 @@ export function AskAiBar({ tripId, hasAiKey, isOwner = true, examples = DEFAULT_
   if (compact) return form;
 
   return (
-    <Flex direction="column" gap={2} bg="bg.surface" borderWidth="1px" borderColor="border.line" borderRadius="xl" boxShadow="raised" px="14px" py={3}>
+    <Flex direction="column" gap={2} bg="sf" borderWidth="1px" borderColor="ln" borderRadius="xl" boxShadow="ds1" px="14px" py={3}>
       {form}
       <Flex gap="6px" flexWrap="wrap" align="center">
-        <Text fontSize="12px" color="fg.muted" mr="2px">
+        <Text fontSize="12px" color="tx3" mr="2px">
           Try
         </Text>
         {examples.map((ex) => (
@@ -171,18 +177,18 @@ export function AskAiBar({ tripId, hasAiKey, isOwner = true, examples = DEFAULT_
             px={3}
             borderRadius="full"
             borderWidth="1px"
-            borderColor="border.line"
-            bg="bg.surface"
+            borderColor="ln"
+            bg="sf"
             fontSize="13px"
             fontWeight={500}
             whiteSpace="nowrap"
-            _hover={{ bg: "bg.subtle" }}
+            _hover={{ bg: "sunk" }}
           >
             {ex}
           </Flex>
         ))}
       </Flex>
-      <Text fontSize="12px" color="fg.muted">
+      <Text fontSize="12px" color="tx3">
         AI edits are applied, re-timed and can be undone in one step.
       </Text>
     </Flex>

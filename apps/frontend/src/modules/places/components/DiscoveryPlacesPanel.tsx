@@ -182,7 +182,7 @@ export function DiscoveryPlacesPanel({
   return (
     <Stack spacing="14px">
       {scopedPoolPlaces.length === 0 ? (
-        <Box bg="bg.surface" borderWidth="1px" borderColor="border.line" borderRadius="xl">
+        <Box bg="sf" borderWidth="1px" borderColor="ln" borderRadius="xl">
           <EmptyState
             icon={FiSearch}
             title={`Find the best of ${cityName}`}
@@ -205,7 +205,7 @@ export function DiscoveryPlacesPanel({
       )}
 
       {aiSuggestedNames.length > 0 && (
-        <Box bg="accent.soft" color="accent.text" borderRadius="xl" px="14px" py="10px">
+        <Box bg="acSoft" color="ac" borderRadius="xl" px="14px" py="10px">
           <Flex align="center" gap="10px">
             <Icon as={LuSparkles} boxSize="16px" flexShrink={0} />
             <Text fontSize="12px" flex={1} minW={0}>
@@ -248,7 +248,7 @@ export function DiscoveryPlacesPanel({
 
       {scopedPoolPlaces.length > 0 &&
         (filteredPlaces.length === 0 ? (
-          <Text color="fg.muted" fontSize="13px" py={4}>
+          <Text color="tx3" fontSize="13px" py={4}>
             No places match these filters.
           </Text>
         ) : (
@@ -275,7 +275,7 @@ export function DiscoveryPlacesPanel({
           </SimpleGrid>
         ))}
 
-      <Box borderWidth="1px" borderStyle="dashed" borderColor="border.line" borderRadius="xl" p="14px">
+      <Box borderWidth="1px" borderStyle="dashed" borderColor="ln" borderRadius="xl" p="14px">
         <Text fontSize="13px" fontWeight={600} mb={2}>
           Not seeing a place?
         </Text>
@@ -290,7 +290,7 @@ export function DiscoveryPlacesPanel({
           hideLabel
         />
         {leg.dayTripAreas.length > 0 && (
-          <Text fontSize="12px" color="fg.muted" mt={2}>
+          <Text fontSize="12px" color="tx3" mt={2}>
             Suggestions cover {leg.baseCity} + {leg.dayTripAreas.join(", ")}.
           </Text>
         )}

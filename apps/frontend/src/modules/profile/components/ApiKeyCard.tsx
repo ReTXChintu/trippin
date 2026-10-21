@@ -4,7 +4,7 @@ import { Link as RouterLink } from "react-router-dom";
 import { FiCheck, FiLock, FiShield } from "react-icons/fi";
 import { LuKeyRound } from "react-icons/lu";
 import { Pill, SurfaceCard } from "@/components/ui";
-import { IconInput } from "@/components/ui/app";
+import { IconInput, SecretInput } from "@/components/ui/app";
 import { getApiErrorMessage } from "@/lib/api";
 import { useUpdateApiKeys } from "@/modules/profile/hooks/useProfile";
 
@@ -73,17 +73,17 @@ export function ApiKeyCard({
   };
 
   return (
-    <SurfaceCard as="section" aria-labelledby={`${inputId}-title`} p="18px" display="flex" flexDirection="column" gap="10px">
-      <Flex justify="space-between" align={{ base: "flex-start", sm: "center" }} gap="10px" direction={{ base: "column", sm: "row" }}>
-        <HStack spacing="10px" align="center">
-          <Flex w="36px" h="36px" borderRadius="10px" bg="accent.soft" color="accent.text" align="center" justify="center" flexShrink={0}>
-            <Icon as={LuKeyRound} boxSize="18px" />
+    <SurfaceCard as="section" aria-labelledby={`${inputId}-title`} p={5} display="flex" flexDirection="column" gap={4}>
+      <Flex justify="space-between" align="flex-start" gap={3} flexWrap="wrap">
+        <HStack spacing={3} align="center" minW={0}>
+          <Flex w="40px" h="40px" borderRadius="md" bg="acSoft" color="ac" align="center" justify="center" flexShrink={0}>
+            <Icon as={LuKeyRound} boxSize="20px" />
           </Flex>
-          <Box>
-            <Text as="h3" id={`${inputId}-title`} fontWeight={600}>
+          <Box minW={0}>
+            <Text as="h3" id={`${inputId}-title`} fontWeight={600} fontSize="15px" lineHeight="20px">
               {name}
             </Text>
-            <Text fontSize="12px" color="fg.muted">
+            <Text fontSize="13px" lineHeight="18px" color="tx3">
               {description}
             </Text>
           </Box>
@@ -104,7 +104,7 @@ export function ApiKeyCard({
       {showInput ? (
         <Flex
           as="form"
-          gap="8px"
+          gap={2}
           direction={{ base: "column", sm: "row" }}
           onSubmit={(e: React.FormEvent) => {
             e.preventDefault();
@@ -112,10 +112,10 @@ export function ApiKeyCard({
           }}
         >
           <Box flex={1}>
-            <IconInput
+            <SecretInput
               id={inputId}
               icon={LuKeyRound}
-              type="password"
+              noun="key"
               autoComplete="off"
               spellCheck={false}
               placeholder={hasKey ? "Paste the new key" : placeholder}
@@ -125,13 +125,14 @@ export function ApiKeyCard({
               autoFocus={editing}
             />
           </Box>
-          <HStack spacing="8px">
-            <Button type="submit" isLoading={update.isPending} flex={{ base: 1, sm: "none" }}>
+          <HStack spacing={2}>
+            <Button type="submit" h="44px" isLoading={update.isPending} flex={{ base: 1, sm: "none" }}>
               Save key
             </Button>
             {editing && (
               <Button
                 variant="ghost"
+                h="44px"
                 onClick={() => {
                   setEditing(false);
                   setValue("");
@@ -143,29 +144,30 @@ export function ApiKeyCard({
           </HStack>
         </Flex>
       ) : (
-        <Flex gap="8px" direction={{ base: "column", sm: "row" }}>
+        <Flex gap={2} direction={{ base: "column", sm: "row" }}>
           <Box flex={1}>
+            {/* Only the last four characters ever come back from the server, so there is nothing to reveal here. */}
             <IconInput icon={FiLock} isReadOnly value={`••••••••••••${last4 ?? ""}`} aria-label={`${name} key, ends ${last4 ?? ""}`} />
           </Box>
-          <HStack spacing="8px">
-            <Button variant="outline" onClick={() => setEditing(true)} flex={{ base: 1, sm: "none" }}>
+          <HStack spacing={2}>
+            <Button variant="outline" h="44px" onClick={() => setEditing(true)} flex={{ base: 1, sm: "none" }}>
               Replace
             </Button>
-            <Button variant="danger" onClick={remove} isLoading={update.isPending} flex={{ base: 1, sm: "none" }}>
+            <Button variant="danger" h="44px" onClick={remove} isLoading={update.isPending} flex={{ base: 1, sm: "none" }}>
               Remove
             </Button>
           </HStack>
         </Flex>
       )}
 
-      <Text fontSize="12px" color="fg.muted">
+      <Text fontSize="12px" lineHeight="16px" color="tx3">
         Stored encrypted.{extraNote ? ` ${extraNote}` : ""}{" "}
         {guideTo ? (
-          <Link as={RouterLink} to={guideTo} color="accent.text" fontWeight={600} textDecoration="underline">
+          <Link as={RouterLink} to={guideTo}>
             {link.label}
           </Link>
         ) : (
-          <Link href={link.href} isExternal color="accent.text" fontWeight={600} textDecoration="underline">
+          <Link href={link.href} isExternal>
             {link.label}
           </Link>
         )}

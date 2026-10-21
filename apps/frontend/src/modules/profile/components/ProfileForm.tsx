@@ -58,7 +58,7 @@ export function ProfileForm() {
 
   if (isFetching || !profile) {
     return (
-      <Stack spacing="20px">
+      <Stack spacing={5}>
         <Skeleton h="104px" borderRadius="xl" />
         <Skeleton h="180px" borderRadius="xl" />
         <Skeleton h="150px" borderRadius="xl" />
@@ -67,31 +67,34 @@ export function ProfileForm() {
   }
 
   return (
-    <Stack spacing="20px">
-      <SurfaceCard as="form" id="profile" onSubmit={handleSubmit(onSubmit)} p="20px" scrollMarginTop="80px" aria-label="Your profile">
-        <Flex gap="16px" align={{ base: "flex-start", md: "center" }} direction={{ base: "column", md: "row" }}>
+    <Stack spacing={5}>
+      <SurfaceCard as="form" id="profile" onSubmit={handleSubmit(onSubmit)} p={5} scrollMarginTop="96px" aria-label="Your profile">
+        <Flex gap={4} align={{ base: "flex-start", md: "center" }} direction={{ base: "column", md: "row" }}>
           <Avatar
             w="64px"
             h="64px"
             fontSize="22px"
             name={nameValue || profile.name}
             src={avatarUrl || profile.avatar || undefined}
-            bg="day.1"
-            color="pin.fg"
+            bg="acSoft"
+            color="ac"
             flexShrink={0}
           />
           <FormControl isInvalid={!!errors.name} flex={1}>
-            <FormLabel htmlFor="profile-name" m={0} mb="4px">
+            <FormLabel htmlFor="profile-name">
               Name
             </FormLabel>
             <IconInput id="profile-name" icon={FiUser} autoComplete="name" {...register("name")} />
             <FormErrorMessage>{errors.name?.message}</FormErrorMessage>
-            <Text fontSize="12px" color="fg.muted" mt="4px">
-              Signed in as {profile.email}
+            <Text fontSize="12px" lineHeight="16px" color="tx3" mt="6px">
+              Signed in as{" "}
+              <Text as="span" fontFamily="mono">
+                {profile.email}
+              </Text>
             </Text>
           </FormControl>
-          <HStack spacing="8px" alignSelf={{ base: "stretch", md: "center" }}>
-            <Button variant="outline" leftIcon={<FiImage />} onClick={() => setPhotoOpen((o) => !o)} aria-expanded={photoOpen} flex={{ base: 1, md: "none" }}>
+          <HStack spacing={2} alignSelf={{ base: "stretch", md: "center" }}>
+            <Button variant="outline" leftIcon={<FiImage size={18} />} onClick={() => setPhotoOpen((o) => !o)} aria-expanded={photoOpen} flex={{ base: 1, md: "none" }}>
               Change photo
             </Button>
             {isDirty && (
@@ -102,41 +105,46 @@ export function ProfileForm() {
           </HStack>
         </Flex>
         <Collapse in={photoOpen || !!errors.avatar} animateOpacity>
-          <FormControl isInvalid={!!errors.avatar} mt="16px">
-            <FormLabel htmlFor="profile-avatar" m={0} mb="4px">
+          <FormControl isInvalid={!!errors.avatar} mt={4}>
+            <FormLabel htmlFor="profile-avatar">
               Photo URL
             </FormLabel>
             <IconInput id="profile-avatar" icon={FiLink} placeholder="https://…" {...register("avatar")} />
             <FormErrorMessage>{errors.avatar?.message}</FormErrorMessage>
-            <Text fontSize="12px" color="fg.muted" mt="4px">
+            <Text fontSize="12px" lineHeight="16px" color="tx3" mt="6px">
               Paste a link to an image, then Save. Leave empty to use your initials.
             </Text>
           </FormControl>
         </Collapse>
       </SurfaceCard>
 
-      <Box pt="4px" id="api-keys" scrollMarginTop="80px">
-        <Heading as="h2" fontSize="22px">
+      <Box pt={1} id="api-keys" scrollMarginTop="96px">
+        <Heading as="h2" fontSize="17px" lineHeight="24px">
           What each key unlocks
         </Heading>
-        <Text color="fg.muted" mt="4px">
+        <Text color="tx2" fontSize="14px" lineHeight="20px" mt={1}>
           You can use the whole planner with no keys. Keys add shortcuts. They&rsquo;re used for trips you own — members use the owner&rsquo;s keys.
         </Text>
       </Box>
-      <SimpleGrid columns={{ base: 1, md: 3 }} spacing="12px">
+      <SimpleGrid columns={{ base: 1, md: 3 }} spacing={3}>
         {UNLOCKS.map((u) => (
-          <SurfaceCard key={u.title} p="14px">
-            <HStack spacing="6px" fontWeight={600}>
-              <Icon as={u.icon} boxSize="15px" />
-              <Text>{u.title}</Text>
-            </HStack>
-            <Text fontSize="12px" color="fg.muted" mt="4px">
+          <Flex key={u.title} gap={3} p="14px" bg="sf2" borderWidth="1px" borderColor="ln" borderRadius="xl">
+            <Flex w="36px" h="36px" borderRadius="md" bg="sunk" color="tx2" align="center" justify="center" flexShrink={0}>
+              <Icon as={u.icon} boxSize="18px" />
+            </Flex>
+            <Box minW={0}>
+            <Text fontWeight={600} fontSize="14px" lineHeight="20px">
+              {u.title}
+            </Text>
+            <Text fontSize="12px" lineHeight="16px" color="tx3" mt="2px">
               {u.text}
             </Text>
-          </SurfaceCard>
+            </Box>
+          </Flex>
         ))}
       </SimpleGrid>
 
+      <SimpleGrid templateColumns="repeat(auto-fit, minmax(min(100%, 340px), 1fr))" spacing={5} alignItems="start">
       <ApiKeyCard
         name="OpenAI"
         description="Powers AI drafting and editing"
@@ -171,9 +179,12 @@ export function ProfileForm() {
         link={{ href: "/help/google-maps-key", label: "Step-by-step guide to get a key" }}
         guideTo="/help/google-maps-key"
       />
-      <GoogleUsageCard id="google-usage" />
+      </SimpleGrid>
 
-      <AiSettingsCard profile={profile} id="ai-settings" />
+      <SimpleGrid templateColumns="repeat(auto-fit, minmax(min(100%, 420px), 1fr))" spacing={5} alignItems="start">
+        <GoogleUsageCard id="google-usage" />
+        <AiSettingsCard profile={profile} id="ai-settings" />
+      </SimpleGrid>
     </Stack>
   );
 }

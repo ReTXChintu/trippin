@@ -54,7 +54,7 @@ export function CityRow({ trip, legs, cityId, onCity, onEditCity, onAddCity, onT
       sx={compact ? { scrollbarWidth: "none", "&::-webkit-scrollbar": { display: "none" } } : undefined}
     >
       {!compact && (
-        <Text as="span" fontSize="12px" fontWeight={600} textTransform="uppercase" letterSpacing="0.06em" color="fg.muted" mr={1}>
+        <Text as="span" fontSize="12px" lineHeight="16px" fontWeight={600} letterSpacing="0.02em" color="tx2" mr={1}>
           City
         </Text>
       )}
@@ -73,7 +73,7 @@ export function CityRow({ trip, legs, cityId, onCity, onEditCity, onAddCity, onT
               <ChoiceChip size="lg" selected={selected} onClick={() => onCity(selected ? null : leg.id)} icon={compact ? undefined : LuMapPin}>
                 {leg.name || leg.baseCity}
                 {!compact && (
-                  <Text as="span" fontWeight={400} color={selected ? "accent.fg" : "fg.muted"} opacity={selected ? 0.85 : 1}>
+                  <Text as="span" fontWeight={400} color={selected ? "acTx" : "tx3"} opacity={selected ? 0.85 : 1}>
                     {legRange(leg)} · {nights} night{nights === 1 ? "" : "s"}
                   </Text>
                 )}
@@ -81,7 +81,7 @@ export function CityRow({ trip, legs, cityId, onCity, onEditCity, onAddCity, onT
               </ChoiceChip>
               {selected && onEditCity && (
                 <Tooltip label="Edit dates, arrival/departure and day trips" hasArrow>
-                  <IconButton aria-label={`Edit ${leg.name || leg.baseCity}`} icon={<LuPencil size={15} />} variant="ghost" size="sm" onClick={() => onEditCity(leg.id)} />
+                  <IconButton aria-label={`Edit ${leg.name || leg.baseCity}`} icon={<LuPencil size={15} />} variant="ghost" colorScheme="gray" size="sm" onClick={() => onEditCity(leg.id)} />
                 </Tooltip>
               )}
             </Flex>
@@ -98,11 +98,11 @@ export function CityRow({ trip, legs, cityId, onCity, onEditCity, onAddCity, onT
                 borderRadius="full"
                 borderWidth="1px"
                 borderStyle="dashed"
-                borderColor="border.line"
+                borderColor="ln"
                 fontSize="12px"
                 fontWeight={500}
-                color={unbooked ? "warn" : "fg.muted"}
-                bg="bg.surface"
+                color={unbooked ? "warn" : "tx3"}
+                bg="sf"
                 whiteSpace="nowrap"
                 flexShrink={0}
                 _hover={{ textDecoration: "underline" }}
@@ -116,7 +116,7 @@ export function CityRow({ trip, legs, cityId, onCity, onEditCity, onAddCity, onT
         );
       })}
       {onAddCity && !compact && (
-        <ChoiceChip size="lg" onClick={onAddCity} icon={LuPlus} borderStyle="dashed" color="fg.muted" flexShrink={0}>
+        <ChoiceChip size="lg" onClick={onAddCity} icon={LuPlus} borderStyle="dashed" color="tx3" flexShrink={0}>
           Add city
         </ChoiceChip>
       )}

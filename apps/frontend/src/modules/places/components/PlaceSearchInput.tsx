@@ -69,9 +69,9 @@ export function PlaceSearchInput({
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const listBg = "bg.surface";
-  const borderColor = "border.line";
-  const hoverBg = "bg.subtle";
+  const listBg = "sf";
+  const borderColor = "ln";
+  const hoverBg = "sunk";
 
   useEffect(() => {
     if (value !== undefined) setQuery(value);
@@ -176,7 +176,7 @@ export function PlaceSearchInput({
       <FormControl>
         <FormLabel sx={hideLabel ? visuallyHiddenStyle : undefined}>{label}</FormLabel>
         <InputGroup>
-          <InputLeftElement pointerEvents="none" color="fg.muted">
+          <InputLeftElement pointerEvents="none" color="tx3">
             <FiSearch />
           </InputLeftElement>
           <Input
@@ -230,7 +230,7 @@ export function PlaceSearchInput({
                     {r.name}
                   </Text>
                   {r.address && (
-                    <Text fontSize="xs" color="fg.muted" noOfLines={1}>
+                    <Text fontSize="xs" color="tx3" noOfLines={1}>
                       {r.address}
                     </Text>
                   )}

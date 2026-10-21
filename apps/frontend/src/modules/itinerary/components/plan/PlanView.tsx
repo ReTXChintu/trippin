@@ -103,19 +103,19 @@ interface PlanViewProps {
 
 type StopTarget = { stop: ItineraryStop; day: ItineraryDay } | null;
 
-/** Navbar (60) + plan toolbar (64). */
-const TOOLBAR_TOP = "60px";
-const PANE_TOP = "124px";
+/** Navbar (72 from md up) + plan toolbar (64). */
+const TOOLBAR_TOP = "72px";
+const PANE_TOP = "136px";
 
 function PlanSkeleton() {
   return (
-    <Stack spacing="10px" p={{ base: 4, md: 7 }} maxW="660px" aria-label="Loading your plan" role="status">
+    <Stack spacing="10px" p={{ base: 4, md: 6, lg: 8 }} maxW="660px" aria-label="Loading your plan" role="status">
       {[70, 55, 80, 60].map((w, i) => (
         <HStack key={i} spacing="10px">
-          <Skeleton w="44px" h="44px" borderRadius="8px" startColor="bg.subtle" endColor="border.line" />
+          <Skeleton w="44px" h="44px" borderRadius="8px" startColor="sunk" endColor="ln" />
           <Stack flex={1} spacing="6px">
-            <Skeleton h="14px" w={`${w}%`} borderRadius="8px" startColor="bg.subtle" endColor="border.line" />
-            <Skeleton h="12px" w={`${w - 20}%`} borderRadius="8px" startColor="bg.subtle" endColor="border.line" />
+            <Skeleton h="14px" w={`${w}%`} borderRadius="8px" startColor="sunk" endColor="ln" />
+            <Skeleton h="12px" w={`${w - 20}%`} borderRadius="8px" startColor="sunk" endColor="ln" />
           </Stack>
         </HStack>
       ))}
@@ -127,19 +127,19 @@ function SetupStep({ done, index, title, description }: { done: boolean; index: 
   return (
     <Flex gap="10px" align="flex-start">
       {done ? (
-        <Flex w="24px" h="24px" borderRadius="full" bg="accent" color="accent.fg" align="center" justify="center" flexShrink={0}>
+        <Flex w="24px" h="24px" borderRadius="full" bg="ac" color="acTx" align="center" justify="center" flexShrink={0}>
           <Icon as={LuCheck} boxSize="13px" />
         </Flex>
       ) : (
-        <Flex w="24px" h="24px" borderRadius="full" borderWidth="1.5px" borderColor="border.line" color="fg.muted" fontSize="12px" fontWeight={700} align="center" justify="center" flexShrink={0}>
+        <Flex w="24px" h="24px" borderRadius="full" borderWidth="1.5px" borderColor="ln" color="tx3" fontSize="12px" fontWeight={700} align="center" justify="center" flexShrink={0}>
           {index}
         </Flex>
       )}
       <Box>
-        <Text fontWeight={done ? 400 : 600} color={done ? "fg.muted" : "fg.default"}>
+        <Text fontWeight={done ? 400 : 600} color={done ? "tx3" : "tx"}>
           {title}
         </Text>
-        <Text fontSize="12px" color="fg.muted">
+        <Text fontSize="12px" color="tx3">
           {description}
         </Text>
       </Box>
@@ -386,13 +386,13 @@ export function PlanView({ trip, canEdit, hasMapsKey, hasAiKey, isOwner = true, 
   if (!hasPlan) {
     const next = selectedCount === 0 ? "places" : uncoveredNights > 0 ? "stays" : "generate";
     return (
-      <Box px={{ base: 4, md: 7 }} pt={6} pb={8}>
-        <Box bg="bg.surface" borderWidth="1px" borderColor="border.line" borderRadius="xl" p="22px" maxW="560px">
-          <Icon as={LuMap} boxSize="26px" color="accent" />
-          <Text as="h2" fontFamily="heading" fontWeight={600} fontSize="20px" mt="10px">
+      <Box px={{ base: 4, md: 6, lg: 8 }} pt={6} pb={8}>
+        <Box bg="sf" borderWidth="1px" borderColor="ln" borderRadius="xl" p="22px" maxW="560px">
+          <Icon as={LuMap} boxSize="26px" color="ac" />
+          <Text as="h2" fontWeight={600} fontSize="17px" lineHeight="24px" mt="10px">
             Let's build your plan
           </Text>
-          <Text fontSize="13px" color="fg.muted" mt={1} mb={4}>
+          <Text fontSize="13px" color="tx3" mt={1} mb={4}>
             A day-by-day plan with real travel times, opening hours and meal breaks. You can drag, lock, add and remove stops afterwards — nothing is final.
           </Text>
           <Stack spacing="10px" mb={5}>
@@ -415,7 +415,7 @@ export function PlanView({ trip, canEdit, hasMapsKey, hasAiKey, isOwner = true, 
             <SetupStep index={3} done={false} title="Generate plan" description="Takes a few seconds." />
           </Stack>
           {!canEdit ? (
-            <Text fontSize="13px" color="fg.muted">
+            <Text fontSize="13px" color="tx3">
               The plan hasn't been generated yet — an editor can do it from here.
             </Text>
           ) : next === "places" ? (
@@ -489,7 +489,7 @@ export function PlanView({ trip, canEdit, hasMapsKey, hasAiKey, isOwner = true, 
           aria-label="Replan options"
           icon={<LuChevronDown size={14} />}
           borderLeftWidth="1px"
-          borderLeftColor="rgba(255,255,255,.35)"
+          borderLeftColor="color-mix(in srgb, var(--chakra-colors-acTx) 35%, transparent)"
           minW="34px"
           px="10px"
         />
@@ -513,7 +513,7 @@ export function PlanView({ trip, canEdit, hasMapsKey, hasAiKey, isOwner = true, 
             {itinerary?.summary ? "Rewrite trip summary" : "Write a trip summary (AI)"}
           </MenuItem>
           <MenuDivider />
-          <Text px={3} py={1} fontSize="12px" color="fg.muted">
+          <Text px={3} py={1} fontSize="12px" color="tx3">
             Locked stops, things you added and restaurants you chose are kept when you replan.
           </Text>
         </MenuList>
@@ -537,7 +537,7 @@ export function PlanView({ trip, canEdit, hasMapsKey, hasAiKey, isOwner = true, 
       >
         <DayDot dayNumber={day.dayNumber} />
         <b>{day.dayNumber}</b>
-        <Text as="span" fontWeight={400} color={on ? "accent.fg" : "fg.muted"}>
+        <Text as="span" fontWeight={400} color={on ? "acTx" : "tx3"}>
           {formatDayDate(day.date, "EEE d")}
         </Text>
         {travel && <Icon as={LuTrainFront} boxSize="13px" />}
@@ -571,9 +571,9 @@ export function PlanView({ trip, canEdit, hasMapsKey, hasAiKey, isOwner = true, 
     });
 
   const didntFitCard = optionalPlaces.length > 0 && (
-    <Box bg="bg.surface" borderWidth="1px" borderColor="border.line" borderRadius="xl">
+    <Box bg="sf" borderWidth="1px" borderColor="ln" borderRadius="xl">
       <Flex as="button" type="button" w="full" align="center" gap="10px" px="14px" py={3} onClick={didntFit.onToggle} aria-expanded={didntFit.isOpen}>
-        <Icon as={LuListChecks} boxSize="16px" color="fg.muted" />
+        <Icon as={LuListChecks} boxSize="16px" color="tx3" />
         <Text fontWeight={600} flex={1} textAlign="left">
           Didn't fit · {optionalPlaces.length}
         </Text>
@@ -581,19 +581,19 @@ export function PlanView({ trip, canEdit, hasMapsKey, hasAiKey, isOwner = true, 
       </Flex>
       <Collapse in={didntFit.isOpen} animateOpacity>
         <Box px="14px" pb="14px">
-          <Text fontSize="12px" color="fg.muted" mb={3}>
+          <Text fontSize="12px" color="tx3" mb={3}>
             Picked, but no day had room. Add one to a day yourself — it'll be flagged if the day runs long.
           </Text>
           <Stack spacing={2}>
             {optionalPlaces.map((place) => (
-              <Flex key={place.placeId} justify="space-between" align="center" p={3} borderWidth="1px" borderColor="border.line" borderRadius="md" gap={3} flexWrap="wrap">
+              <Flex key={place.placeId} justify="space-between" align="center" p={3} borderWidth="1px" borderColor="ln" borderRadius="md" gap={3} flexWrap="wrap">
                 <HStack spacing="10px" minW={0} flex={1}>
                   <PhotoFallback seed={place.placeName} icon={categoryIcon(place.category)} w="36px" h="36px" borderRadius="8px" flexShrink={0} aria-hidden />
                   <Box minW={0}>
                     <Text fontWeight={600} fontSize="13px" noOfLines={1}>
                       {place.placeName}
                     </Text>
-                    <Text fontSize="12px" color="fg.muted">
+                    <Text fontSize="12px" color="tx3">
                       {place.reason}
                     </Text>
                   </Box>
@@ -628,13 +628,13 @@ export function PlanView({ trip, canEdit, hasMapsKey, hasAiKey, isOwner = true, 
   );
 
   const summaryCard = itinerary?.summary && !activeLeg && (
-    <Flex bg="bg.surface" borderWidth="1px" borderColor="border.line" borderRadius="xl" px="14px" py="10px" gap={3} align="flex-start">
-      <Icon as={LuSparkles} boxSize="16px" color="accent.text" mt="3px" flexShrink={0} />
+    <Flex bg="sf" borderWidth="1px" borderColor="ln" borderRadius="xl" px="14px" py="10px" gap={3} align="flex-start">
+      <Icon as={LuSparkles} boxSize="16px" color="ac" mt="3px" flexShrink={0} />
       <Box flex={1} minW={0} fontSize="12px">
         <Text as="span" fontWeight={600}>
           Trip summary
         </Text>
-        <Text as="span" color="fg.muted">
+        <Text as="span" color="tx3">
           {" "}
           · AI-written ·{" "}
         </Text>
@@ -643,7 +643,7 @@ export function PlanView({ trip, canEdit, hasMapsKey, hasAiKey, isOwner = true, 
             {itinerary.summary}
           </Text>
         ) : (
-          <Text as="span" color="fg.muted" noOfLines={2} display="inline">
+          <Text as="span" color="tx3" noOfLines={2} display="inline">
             {itinerary.summary.split("\n")[0]}
           </Text>
         )}
@@ -674,11 +674,11 @@ export function PlanView({ trip, canEdit, hasMapsKey, hasAiKey, isOwner = true, 
       w="290px"
       maxW="calc(100% - 28px)"
       p={3}
-      bg="bg.surface"
+      bg="sf"
       borderWidth="1px"
-      borderColor="border.line"
+      borderColor="ln"
       borderRadius="xl"
-      boxShadow="raised"
+      boxShadow="ds1"
     >
       <HStack spacing="10px" align="flex-start">
         <PhotoFallback seed={selectedStop.placeName} icon={categoryIcon(selectedStop.category, selectedStop.stopType)} w="56px" h="56px" borderRadius="10px" flexShrink={0} aria-hidden />
@@ -686,13 +686,13 @@ export function PlanView({ trip, canEdit, hasMapsKey, hasAiKey, isOwner = true, 
           <Text fontWeight={600} noOfLines={2}>
             {selectedStop.placeName}
           </Text>
-          <Text fontSize="12px" color="fg.muted">
+          <Text fontSize="12px" color="tx3">
             {[selectedStop.category, selectedStop.openingHoursToday ? (selectedStop.openingHoursToday === "Closed" ? "Closed today" : `Open ${selectedStop.openingHoursToday}`) : `${selectedStop.arrivalTime}–${selectedStop.departureTime}`]
               .filter(Boolean)
               .join(" · ")}
           </Text>
         </Box>
-        <IconButton aria-label="Close" icon={<LuX size={14} />} size="xs" variant="ghost" onClick={() => setSelectedStopId(null)} />
+        <IconButton aria-label="Close" icon={<LuX size={14} />} size="xs" variant="ghost" colorScheme="gray" onClick={() => setSelectedStopId(null)} />
       </HStack>
       <HStack spacing="6px">
         {selectedStop.placeId && (
@@ -743,10 +743,10 @@ export function PlanView({ trip, canEdit, hasMapsKey, hasAiKey, isOwner = true, 
         setMapMode(v);
         if (v === "trip") setSelectedStopId(null);
       }}
-      bg="bg.surface"
-      boxShadow="raised"
+      bg="sf"
+      boxShadow="ds1"
       borderWidth="1px"
-      borderColor="border.line"
+      borderColor="ln"
       options={[
         { value: "day", label: selectedDay ? `Day ${selectedDay.dayNumber}` : "Day" },
         { value: "trip", label: activeLeg ? activeLeg.name || activeLeg.baseCity : "Whole trip" },
@@ -763,10 +763,10 @@ export function PlanView({ trip, canEdit, hasMapsKey, hasAiKey, isOwner = true, 
         top={TOOLBAR_TOP}
         zIndex={20}
         h="64px"
-        px={7}
-        bg="bg.canvas"
+        px={8}
+        bg="bg"
         borderBottomWidth="1px"
-        borderColor="border.line"
+        borderColor="ln"
         align="center"
         justify="space-between"
         gap={4}
@@ -815,7 +815,7 @@ export function PlanView({ trip, canEdit, hasMapsKey, hasAiKey, isOwner = true, 
       </Flex>
 
       {/* ---------------- Phone toolbar ---------------- */}
-      <Box display={{ base: "block", lg: "none" }} bg="bg.canvas">
+      <Box display={{ base: "block", lg: "none" }} bg="bg">
         <Flex gap="6px" px={4} py="10px" overflowX="auto" sx={{ scrollbarWidth: "none", "&::-webkit-scrollbar": { display: "none" } }}>
           {days.map((day) => {
             const on = day.dayNumber === selectedDay?.dayNumber;
@@ -835,15 +835,15 @@ export function PlanView({ trip, canEdit, hasMapsKey, hasAiKey, isOwner = true, 
                 flexShrink={0}
                 borderRadius="xl"
                 borderWidth="1px"
-                borderColor={on ? "accent" : "border.line"}
-                bg={on ? "accent" : "bg.surface"}
-                color={on ? "accent.fg" : "fg.default"}
+                borderColor={on ? "tx" : "ln2"}
+                bg={on ? "tx" : "sf"}
+                color={on ? "bg" : "tx"}
                 position="relative"
               >
-                <Text fontWeight={700} fontSize="13px" lineHeight={1.2}>
+                <Text fontWeight={600} fontSize="13px" lineHeight={1.2} className="num">
                   {day.dayNumber}
                 </Text>
-                <Text fontSize="12px" lineHeight={1.2} whiteSpace="nowrap">
+                <Text fontSize="12px" lineHeight={1.2} whiteSpace="nowrap" className="num">
                   {formatDayDate(day.date, "EEE d")}
                 </Text>
               </Flex>
@@ -871,7 +871,7 @@ export function PlanView({ trip, canEdit, hasMapsKey, hasAiKey, isOwner = true, 
 
       {/* The trip's dates or cities changed since this plan was made. */}
       {itinerary && itinerary.days.length > 0 && planIsStale && (
-        <Flex mx={{ base: 4, lg: 7 }} mt={{ base: 0, lg: 4 }} mb={{ base: 3, lg: 0 }} align="center" gap={3} px={4} py={3} borderRadius="lg" bg="warn.soft" color="warn" fontSize="13px" flexWrap="wrap">
+        <Flex mx={{ base: 4, lg: 7 }} mt={{ base: 0, lg: 4 }} mb={{ base: 3, lg: 0 }} align="center" gap={3} px={4} py={3} borderRadius="lg" bg="warnSoft" color="warn" fontSize="13px" flexWrap="wrap">
           <Icon as={LuCalendarClock} boxSize="18px" flexShrink={0} />
           <Text flex={1} minW="220px">
             <b>Your trip&apos;s dates or cities changed</b> — this plan still has the old days. Replan to rebuild it; locked stops, things you
@@ -904,9 +904,9 @@ export function PlanView({ trip, canEdit, hasMapsKey, hasAiKey, isOwner = true, 
           px={{ base: 4, lg: 6 }}
           pt={{ base: 0, lg: "18px" }}
           pb={{ base: canEdit ? "76px" : 4, lg: 4 }}
-          bg="bg.canvas"
+          bg="bg"
           borderRightWidth={{ base: 0, lg: "1px" }}
-          borderColor="border.line"
+          borderColor="ln"
           display={{ base: compact && mobileView === "map" ? "none" : "flex", lg: "flex" }}
         >
           {!compact && summaryCard}
@@ -944,11 +944,11 @@ export function PlanView({ trip, canEdit, hasMapsKey, hasAiKey, isOwner = true, 
               spacing="6px"
               px="10px"
               py="6px"
-              bg="bg.surface"
+              bg="sf"
               borderRadius="md"
-              boxShadow="raised"
+              boxShadow="ds1"
               borderWidth="1px"
-              borderColor="border.line"
+              borderColor="ln"
             >
               <DayDot dayNumber={selectedDay.dayNumber} size={12} />
               <Text fontSize="12px" fontWeight={600}>
@@ -968,8 +968,8 @@ export function PlanView({ trip, canEdit, hasMapsKey, hasAiKey, isOwner = true, 
                 <Segmented
                   value={mapMode}
                   onChange={setMapMode}
-                  bg="bg.surface"
-                  boxShadow="raised"
+                  bg="sf"
+                  boxShadow="ds1"
                   options={[
                     { value: "day", label: "Day" },
                     { value: "trip", label: "Trip" },
@@ -978,8 +978,8 @@ export function PlanView({ trip, canEdit, hasMapsKey, hasAiKey, isOwner = true, 
               </Box>
             </Box>
             {mapMode === "day" && selectedDay && (
-              <Box bg="bg.surface" borderTopRadius="20px" boxShadow="raised" px={4} pt={2} pb={3} mt="-24px" position="relative" zIndex={1001}>
-                <Box w="40px" h="4px" borderRadius="2px" bg="border.line" mx="auto" mb={2} />
+              <Box bg="sf" borderTopRadius="20px" boxShadow="raised" px={4} pt={2} pb={3} mt="-24px" position="relative" zIndex={1001}>
+                <Box w="36px" h="4px" borderRadius="2px" bg="ln2" mx="auto" mb={2} />
                 <Text fontWeight={700} mb="10px">
                   {selectedDay.stops.filter((s) => s.stopType !== "meal" && s.stopType !== "return" && s.stopType !== "transfer").length} stops
                   {(() => {
@@ -1004,9 +1004,10 @@ export function PlanView({ trip, canEdit, hasMapsKey, hasAiKey, isOwner = true, 
                           minH="88px"
                           flexShrink={0}
                           textAlign="left"
-                          bg="bg.surface"
-                          borderWidth={on ? "1.5px" : "1px"}
-                          borderColor={on ? "accent" : "border.line"}
+                          bg={on ? "acSoft" : "sf"}
+                          borderWidth="1px"
+                          borderColor={on ? "acLine" : "ln"}
+                          boxShadow={on ? "inset 0 0 0 1px var(--chakra-colors-acLine)" : undefined}
                           borderRadius="xl"
                           onClick={() => (on && stop.placeId ? setDetailsTarget({ stop, day: selectedDay }) : selectStop(stop, selectedDay))}
                         >
@@ -1018,7 +1019,7 @@ export function PlanView({ trip, canEdit, hasMapsKey, hasAiKey, isOwner = true, 
                               {stop.placeName}
                             </Text>
                           </HStack>
-                          <Text fontSize="12px" color="fg.muted">
+                          <Text fontSize="12px" color="tx3">
                             {stop.arrivalTime} · {on && stop.placeId ? "tap for details" : "tap to show"}
                           </Text>
                         </Flex>
@@ -1033,7 +1034,7 @@ export function PlanView({ trip, canEdit, hasMapsKey, hasAiKey, isOwner = true, 
 
       {/* Phone Ask AI, above the trip nav */}
       {compact && canEdit && mobileView === "list" && itinerary && itinerary.days.length > 0 && (
-        <Box position="fixed" left={0} right={0} bottom="68px" zIndex="sticky" bg="bg.surface" borderTopWidth="1px" borderColor="border.line" px={4} py={2}>
+        <Box position="fixed" left={0} right={0} bottom="68px" zIndex="sticky" bg="sf" borderTopWidth="1px" borderColor="ln" px={4} py={2}>
           <AskAiBar tripId={trip.id} hasAiKey={hasAiKey} isOwner={isOwner} compact />
         </Box>
       )}

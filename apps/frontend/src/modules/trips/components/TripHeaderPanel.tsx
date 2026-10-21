@@ -85,7 +85,7 @@ function PublicShare({ trip, canEdit }: { trip: Trip; canEdit: boolean }) {
             opacity={share.isPending || unshare.isPending ? 0.6 : 1}
           />
         ) : (
-          <Text fontSize="13px" color="fg.muted">
+          <Text fontSize="13px" color="tx3">
             {trip.isPublic ? "On" : "Off"}
           </Text>
         )}
@@ -93,7 +93,7 @@ function PublicShare({ trip, canEdit }: { trip: Trip; canEdit: boolean }) {
       {trip.isPublic && url && (
         <Flex gap={2}>
           <InputGroup>
-            <InputLeftElement pointerEvents="none" color="fg.muted">
+            <InputLeftElement pointerEvents="none" color="tx3">
               <LuGlobe size={15} />
             </InputLeftElement>
             <Input value={url} isReadOnly aria-label="Public link" onFocus={(e) => e.target.select()} />
@@ -106,7 +106,7 @@ function PublicShare({ trip, canEdit }: { trip: Trip; canEdit: boolean }) {
           </Tooltip>
         </Flex>
       )}
-      <Text fontSize="12px" color="fg.muted">
+      <Text fontSize="12px" color="tx3">
         Anyone with the link can view the plan — no login. They cannot edit, vote or comment.
       </Text>
     </Stack>
@@ -157,9 +157,9 @@ export function TripHeaderPanel({ trip, currentUserId, isOwner, embedded = false
       as="form"
       onSubmit={handleSubmit(onSubmit)}
       p={embedded ? 0 : 5}
-      bg={embedded ? undefined : "bg.surface"}
+      bg={embedded ? undefined : "sf"}
       borderWidth={embedded ? 0 : "1px"}
-      borderColor="border.line"
+      borderColor="ln"
       borderRadius="xl"
     >
       <Stack spacing={4}>
@@ -176,8 +176,8 @@ export function TripHeaderPanel({ trip, currentUserId, isOwner, embedded = false
             <SimpleGrid columns={2} spacing="10px">
               <FormControl>
                 <FormLabel>Dates</FormLabel>
-                <Input value={dates} isReadOnly tabIndex={-1} color="fg.muted" />
-                <FormHelperText fontSize="12px" color="fg.muted">
+                <Input value={dates} isReadOnly tabIndex={-1} color="tx3" />
+                <FormHelperText fontSize="12px" color="tx3">
                   Change in Cities &amp; dates above
                 </FormHelperText>
               </FormControl>
@@ -194,7 +194,7 @@ export function TripHeaderPanel({ trip, currentUserId, isOwner, embedded = false
           </fieldset>
         </Stack>
 
-        <Divider borderColor="border.line" />
+        <Divider borderColor="ln" />
 
         <Stack as="section" spacing="10px" aria-label="Planning preferences">
           <SectionLabel>Planning preferences</SectionLabel>
@@ -273,7 +273,7 @@ export function TripHeaderPanel({ trip, currentUserId, isOwner, embedded = false
                   </WrapItem>
                 ))}
                 {(watch("mustVisitPlaces") ?? []).length === 0 && (
-                  <Text fontSize="12px" color="fg.muted">
+                  <Text fontSize="12px" color="tx3">
                     None yet — add them from the Places tab.
                   </Text>
                 )}
@@ -298,10 +298,10 @@ export function TripHeaderPanel({ trip, currentUserId, isOwner, embedded = false
           </fieldset>
         </Stack>
 
-        <Divider borderColor="border.line" />
+        <Divider borderColor="ln" />
         <TripMembersPanel trip={trip} currentUserId={currentUserId} />
 
-        <Divider borderColor="border.line" />
+        <Divider borderColor="ln" />
         <PublicShare trip={trip} canEdit={canEdit} />
       </Stack>
 
@@ -313,9 +313,9 @@ export function TripHeaderPanel({ trip, currentUserId, isOwner, embedded = false
           mx={embedded ? -6 : 0}
           px={embedded ? 6 : 0}
           py={3}
-          bg="bg.surface"
+          bg="sf"
           borderTopWidth="1px"
-          borderColor="border.line"
+          borderColor="ln"
           justify="flex-end"
           gap={2}
           zIndex={2}

@@ -7,18 +7,13 @@ import { DescribeTripPanel } from "@/modules/trips/components/create/DescribeTri
 /** Dashboard "Describe your trip" card: one sentence, AI drafts the trip. */
 export function TripGeneratorCard() {
   return (
-    <SurfaceCard as="section" raised borderRadius="18px" p={{ base: "14px", md: "20px" }} aria-labelledby="describe-trip-title">
-      <Flex justify="space-between" align="center" mb={{ base: "10px", md: "12px" }} gap="8px">
-        <HStack spacing="8px">
-          <Icon as={LuSparkles} color="accent.text" boxSize={{ base: "16px", md: "18px" }} />
-          <Text
-            as="h2"
-            id="describe-trip-title"
-            fontFamily={{ base: "body", md: "heading" }}
-            fontWeight={600}
-            fontSize={{ base: "14px", md: "20px" }}
-            letterSpacing={{ md: "-0.01em" }}
-          >
+    <SurfaceCard as="section" p={{ base: 4, md: 5 }} aria-labelledby="describe-trip-title">
+      <Flex justify="space-between" align="center" mb={3} gap={2}>
+        <HStack spacing={3}>
+          <Flex w="36px" h="36px" borderRadius="md" bg="acSoft" color="ac" align="center" justify="center" flexShrink={0}>
+            <Icon as={LuSparkles} boxSize="18px" />
+          </Flex>
+          <Text as="h2" id="describe-trip-title" fontWeight={600} fontSize="17px" lineHeight="24px">
             Describe your trip
           </Text>
         </HStack>

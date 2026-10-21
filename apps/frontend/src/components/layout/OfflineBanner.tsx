@@ -15,7 +15,7 @@ export function OfflineBanner() {
       minH="34px"
       px={4}
       py={1.5}
-      bg="warn.soft"
+      bg="warnSoft"
       color="warn"
       fontSize="13px"
       fontWeight={600}
@@ -24,7 +24,7 @@ export function OfflineBanner() {
       top={0}
       zIndex={1500}
     >
-      <Icon as={FiWifiOff} boxSize="15px" flexShrink={0} />
+      <Icon as={FiWifiOff} boxSize="16px" flexShrink={0} />
       <Text>You're offline — showing saved data. Changes need a connection, so editing is paused.</Text>
     </Flex>
   );

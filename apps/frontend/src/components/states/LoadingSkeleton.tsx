@@ -50,7 +50,7 @@ function ListRows({ rows }: { rows: number }) {
 
 function DayCardSkeleton() {
   return (
-    <Box bg="bg.surface" borderWidth="1px" borderColor="border.line" borderRadius="xl" p={4}>
+    <Box bg="sf" borderWidth="1px" borderColor="ln" borderRadius="xl" p={4}>
       <Flex gap={3} align="center" mb={4}>
         <SkeletonBlock w="44px" h="44px" borderRadius="10px" flexShrink={0} />
         <Stack flex={1} spacing="6px">

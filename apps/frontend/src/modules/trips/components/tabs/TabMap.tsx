@@ -67,27 +67,12 @@ export function TabMap({
       overflow="hidden"
       borderRadius="xl"
       borderWidth="1px"
-      borderColor="border.line"
+      borderColor="ln"
       bg="map.land"
       role="region"
       aria-label={label}
       sx={{
         ".leaflet-container": { bg: "map.land", fontFamily: "body" },
-        ".leaflet-control-attribution": {
-          bg: "bg.surface",
-          color: "fg.muted",
-          fontSize: "12px",
-          borderRadius: "4px",
-          px: "6px",
-          opacity: 0.92,
-          mr: "8px",
-          mb: "6px",
-          a: { color: "fg.muted" },
-        },
-        ".leaflet-popup-content-wrapper, .leaflet-popup-tip": { bg: "bg.surface", color: "fg.default", boxShadow: "raised" },
-        ".leaflet-popup-content-wrapper": { borderRadius: "12px", borderWidth: "1px", borderColor: "border.line" },
-        ".leaflet-popup-content": { m: "12px 14px", fontSize: "13px" },
-        ".leaflet-container a.leaflet-popup-close-button": { color: "fg.muted" },
         _dark: { ".leaflet-tile-pane": { filter: "invert(1) hue-rotate(180deg) brightness(.92) contrast(.88) saturate(.55)" } },
       }}
       {...rest}
@@ -109,9 +94,23 @@ export function TabMap({
         ))}
       </MapContainer>
 
-      <Flex direction="column" gap={1} position="absolute" right="14px" top="14px" zIndex={1000}>
-        <IconButton aria-label="Zoom in" title="Zoom in" icon={<FiPlus size={18} />} variant="outline" onClick={() => map?.zoomIn()} />
-        <IconButton aria-label="Zoom out" title="Zoom out" icon={<FiMinus size={18} />} variant="outline" onClick={() => map?.zoomOut()} />
+      {/* Grouped zoom control, matching Leaflet's own bar elsewhere (surface, hairline, radius 12). */}
+      <Flex
+        direction="column"
+        position="absolute"
+        right="14px"
+        top="14px"
+        zIndex={1000}
+        bg="sf"
+        borderWidth="1px"
+        borderColor="ln"
+        borderRadius="lg"
+        boxShadow="ds1"
+        overflow="hidden"
+      >
+        <IconButton aria-label="Zoom in" title="Zoom in" icon={<FiPlus size={20} />} variant="ghost" colorScheme="gray" borderRadius={0} w="40px" h="40px" onClick={() => map?.zoomIn()} />
+        <Box h="1px" bg="ln" />
+        <IconButton aria-label="Zoom out" title="Zoom out" icon={<FiMinus size={20} />} variant="ghost" colorScheme="gray" borderRadius={0} w="40px" h="40px" onClick={() => map?.zoomOut()} />
       </Flex>
       {floating && (
         <Flex position="absolute" left={0} right={0} top="16px" justify="center" zIndex={1000} pointerEvents="none" px="64px">
@@ -130,11 +129,11 @@ export function TabMap({
           px={3}
           py={2}
           maxW="calc(100% - 32px)"
-          bg="bg.surface"
+          bg="sf"
           borderWidth="1px"
-          borderColor="border.line"
+          borderColor="ln"
           borderRadius="xl"
-          boxShadow="raised"
+          boxShadow="ds1"
           fontSize="12px"
         >
           {legend}
@@ -145,7 +144,7 @@ export function TabMap({
 }
 
 /** Small pin swatch for a legend. */
-export function LegendPin({ color = "accent", dim, stay }: { color?: string; dim?: boolean; stay?: boolean }) {
+export function LegendPin({ color = "ac", dim, stay }: { color?: string; dim?: boolean; stay?: boolean }) {
   return (
     <Box
       as="span"
@@ -153,10 +152,10 @@ export function LegendPin({ color = "accent", dim, stay }: { color?: string; dim
       w="14px"
       h="14px"
       borderRadius={stay ? "4px" : "full"}
-      bg={stay ? "fg.default" : color}
+      bg={stay ? "tx" : color}
       borderWidth="2px"
-      borderColor="bg.surface"
-      boxShadow="0 0 0 1px var(--chakra-colors-border-line)"
+      borderColor="sf"
+      boxShadow="0 0 0 1px var(--chakra-colors-ln)"
       opacity={dim ? 0.55 : 1}
       flexShrink={0}
     />

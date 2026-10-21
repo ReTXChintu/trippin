@@ -155,7 +155,7 @@ export function TripPlacesPanel({ trip, leg, onPlanDays, onCityChange }: TripPla
             </Tooltip>
           )}
           {mode === "mine" && selectedPlaces.length > 0 && onPlanDays && (
-            <Button size="sm" variant="ghost" rightIcon={<FiArrowRight />} onClick={onPlanDays} color="accent.text">
+            <Button size="sm" variant="ghost" rightIcon={<FiArrowRight />} onClick={onPlanDays} color="ac">
               Plan my days
             </Button>
           )}
@@ -165,7 +165,7 @@ export function TripPlacesPanel({ trip, leg, onPlanDays, onCityChange }: TripPla
 
       {hasDayTrips && (
         <Flex align="center" gap={2} flexWrap="wrap">
-          <Text fontSize="12px" color="fg.muted" fontWeight={600} textTransform="uppercase" letterSpacing="0.06em" mr={1}>
+          <Text fontSize="12px" lineHeight="16px" fontWeight={600} letterSpacing="0.02em" color="tx2" mr={1}>
             Picking for
           </Text>
           {areas.map((a) => {

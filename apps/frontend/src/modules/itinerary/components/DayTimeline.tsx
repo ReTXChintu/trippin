@@ -57,8 +57,8 @@ export function DayTimeline({
   destinationCity,
   destinationCountry,
 }: DayTimelineProps) {
-  const borderColor = "border.line";
-  const bg = "bg.surface";
+  const borderColor = "ln";
+  const bg = "sf";
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -103,7 +103,7 @@ export function DayTimeline({
         {day.legName ? ` · ${day.legName}` : ""}
         {day.dayType === "transfer" ? " (Travel)" : ""}
       </Heading>
-      <Text fontSize="sm" color="fg.muted" mb={4}>
+      <Text fontSize="sm" color="tx3" mb={4}>
         {formatDayDate(day.date)}
         {day.transferLabel ? ` · ${day.transferLabel}` : ""}
         {" · "}
@@ -111,7 +111,7 @@ export function DayTimeline({
       </Text>
 
       {day.stops.length === 0 ? (
-        <Text fontSize="sm" color="fg.muted">
+        <Text fontSize="sm" color="tx3">
           No stops scheduled for this day.
         </Text>
       ) : readOnly ? (
@@ -157,10 +157,10 @@ function ReadOnlyStop({
   stop: ItineraryDay["stops"][number];
   isLast: boolean;
 }) {
-  const borderColor = "border.line";
-  const dotColor = "accent";
-  const lineColor = "border.line";
-  const cardBg = "bg.surface";
+  const borderColor = "ln";
+  const dotColor = "ac";
+  const lineColor = "ln";
+  const cardBg = "sf";
 
   return (
     <Flex gap={3} position="relative" pb={isLast ? 0 : 4}>
@@ -183,11 +183,11 @@ function ReadOnlyStop({
           {stop.placeName}
         </Text>
         {stop.category && (
-          <Text fontSize="xs" color="fg.muted" mt={0.5}>
+          <Text fontSize="xs" color="tx3" mt={0.5}>
             {stop.category}
           </Text>
         )}
-        <Flex mt={2} gap={4} flexWrap="wrap" fontSize="xs" color="fg.muted">
+        <Flex mt={2} gap={4} flexWrap="wrap" fontSize="xs" color="tx3">
           <Flex align="center" gap={1}>
             <Icon as={FiClock} />
             <Text>

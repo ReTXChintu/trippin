@@ -8,7 +8,7 @@ export interface ChecklistStep {
   done?: boolean;
 }
 
-/** First-use empty state: icon, Fraunces title, numbered steps (done ones ticked) and one action. */
+/** First-use empty state: icon tile, 17/24 title, numbered steps (done ones ticked) and one action. */
 export function ChecklistEmptyState({
   icon,
   title,
@@ -18,14 +18,18 @@ export function ChecklistEmptyState({
   ...rest
 }: { icon?: IconType; title: string; text?: ReactNode; steps: ChecklistStep[]; action?: ReactNode } & BoxProps) {
   return (
-    <Box bg="bg.surface" borderWidth="1px" borderColor="border.line" borderRadius="xl" p="22px" {...rest}>
+    <Box bg="sf" borderWidth="1px" borderColor="ln" borderRadius="xl" p={5} {...rest}>
       <Stack spacing="10px">
-        {icon && <Icon as={icon} boxSize="22px" color="accent" />}
-        <Text as="h3" fontFamily="heading" fontWeight={600} fontSize="20px" letterSpacing="-0.01em">
+        {icon && (
+          <Flex w="40px" h="40px" borderRadius="md" bg="acSoft" color="ac" align="center" justify="center">
+            <Icon as={icon} boxSize="20px" />
+          </Flex>
+        )}
+        <Text as="h3" fontWeight={600} fontSize="17px" lineHeight="24px">
           {title}
         </Text>
         {text && (
-          <Text fontSize="13px" color="fg.muted">
+          <Text fontSize="14px" lineHeight="20px" color="tx2">
             {text}
           </Text>
         )}
@@ -33,7 +37,7 @@ export function ChecklistEmptyState({
           {steps.map((s, i) => (
             <Flex as="li" key={s.label} align="center" gap="10px">
               {s.done ? (
-                <Flex w="24px" h="24px" borderRadius="full" bg="accent" color="accent.fg" align="center" justify="center" flexShrink={0}>
+                <Flex w="24px" h="24px" borderRadius="full" bg="ac" color="acTx" align="center" justify="center" flexShrink={0}>
                   <Icon as={FiCheck} boxSize="13px" aria-label="Done" />
                 </Flex>
               ) : (
@@ -42,8 +46,8 @@ export function ChecklistEmptyState({
                   h="24px"
                   borderRadius="full"
                   borderWidth="1.5px"
-                  borderColor="border.line"
-                  color="fg.muted"
+                  borderColor="ln2"
+                  color="tx3"
                   fontSize="12px"
                   fontWeight={700}
                   align="center"
@@ -53,7 +57,7 @@ export function ChecklistEmptyState({
                   {i + 1}
                 </Flex>
               )}
-              <Text color={s.done ? "fg.muted" : "fg.default"} fontWeight={s.done ? 400 : 600}>
+              <Text color={s.done ? "tx3" : "tx"} fontWeight={s.done ? 400 : 600}>
                 {s.label}
               </Text>
             </Flex>

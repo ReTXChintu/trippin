@@ -19,15 +19,15 @@ function greeting(now: Date): string {
 
 function Stat({ icon, label, value }: { icon: IconType; label: string; value: number | undefined }) {
   return (
-    <SurfaceCard px={{ base: "14px", md: "18px" }} py={{ base: "12px", md: "16px" }} display="flex" flexDirection="column" gap="4px">
-      <HStack spacing="6px" fontSize="12px" color="fg.muted">
-        <Icon as={icon} boxSize="14px" display={{ base: "none", md: "block" }} />
+    <SurfaceCard p={4} display="flex" flexDirection="column" gap="6px">
+      <HStack spacing={2} fontSize="12px" lineHeight="16px" fontWeight={600} letterSpacing="0.02em" color="tx2">
+        <Icon as={icon} boxSize="16px" display={{ base: "none", md: "block" }} />
         <Text>{label}</Text>
       </HStack>
       {value === undefined ? (
-        <Skeleton h={{ base: "29px", md: "37px" }} w="40px" />
+        <Skeleton h="28px" w="40px" />
       ) : (
-        <Text fontFamily="heading" fontWeight={600} fontSize={{ base: "26px", md: "34px" }} lineHeight={1.1}>
+        <Text fontWeight={600} fontSize="22px" lineHeight="28px" className="num">
           {value}
         </Text>
       )}
@@ -37,9 +37,11 @@ function Stat({ icon, label, value }: { icon: IconType; label: string; value: nu
 
 function DashedNote({ children, action }: { children: React.ReactNode; action?: React.ReactNode }) {
   return (
-    <Flex align="center" gap="12px" px="16px" py="14px" borderWidth="1px" borderStyle="dashed" borderColor="border.line" borderRadius="xl" wrap="wrap">
-      <Icon as={FiInfo} color="fg.muted" boxSize="16px" />
-      <Text fontSize="12px" color="fg.muted" flex={1} minW="180px">
+    <Flex align="center" gap={3} px={4} py="14px" borderWidth="1px" borderStyle="dashed" borderColor="ln2" borderRadius="lg" wrap="wrap">
+      <Flex w="40px" h="40px" borderRadius="md" bg="sunk" color="tx3" align="center" justify="center" flexShrink={0}>
+        <Icon as={FiInfo} boxSize="20px" />
+      </Flex>
+      <Text fontSize="13px" lineHeight="18px" color="tx2" flex={1} minW="180px">
         {children}
       </Text>
       {action}
@@ -62,35 +64,35 @@ export function DashboardContent() {
   const recent = data?.recentTrips ?? [];
 
   return (
-    <Stack spacing={{ base: "16px", md: "24px" }}>
+    <Stack spacing={{ base: 4, md: 5 }}>
       <Flex justify="space-between" align="center" gap="16px">
         <Box minW={0}>
           <Overline>{format(now, "EEEE d MMMM")}</Overline>
-          <Heading as="h1" fontSize={{ base: "28px", md: "34px" }} lineHeight={1.15} mt="4px">
+          <Heading as="h1" fontSize="22px" lineHeight="28px" mt={1}>
             {greeting(now)}, {firstName}
           </Heading>
         </Box>
-        <Button as={RouterLink} to="/trips/new" size="lg" leftIcon={<FiPlus />} display={{ base: "none", md: "inline-flex" }} flexShrink={0}>
+        <Button as={RouterLink} to="/trips/new" leftIcon={<FiPlus size={18} />} display={{ base: "none", md: "inline-flex" }} flexShrink={0}>
           New trip
         </Button>
       </Flex>
 
       <TripGeneratorCard />
 
-      <SimpleGrid columns={{ base: 2, md: 4 }} spacing={{ base: "10px", md: "16px" }} aria-label="Trip counts">
+      <SimpleGrid columns={{ base: 2, md: 4 }} spacing={{ base: 3, md: 4 }} aria-label="Trip counts">
         <Stat icon={FiBriefcase} label="Total trips" value={stats?.totalTrips} />
         <Stat icon={FiCalendar} label="Upcoming" value={stats?.upcomingTrips} />
         <Stat icon={FiCompass} label="Active" value={activeCount} />
         <Stat icon={FiCheck} label="Completed" value={stats?.completedTrips} />
       </SimpleGrid>
 
-      <Grid templateColumns={{ base: "minmax(0, 1fr)", xl: "minmax(0, 1fr) 400px" }} gap="24px" alignItems="start">
+      <Grid templateColumns={{ base: "minmax(0, 1fr)", xl: "minmax(0, 2fr) minmax(360px, 1fr)" }} gap={5} alignItems="start">
         <Stack as="section" spacing={{ base: "10px", md: "12px" }} aria-labelledby="upcoming-title" minW={0}>
           <Flex justify="space-between" align="center">
-            <Heading as="h2" id="upcoming-title" fontSize={{ base: "16px", md: "22px" }} fontFamily={{ base: "body", md: "heading" }}>
+            <Heading as="h2" id="upcoming-title" fontSize="17px" lineHeight="24px">
               Upcoming
             </Heading>
-            <Link as={RouterLink} to="/trips" fontSize="12px" fontWeight={600} color="accent.text" textDecoration="underline">
+            <Link as={RouterLink} to="/trips" fontSize="14px" fontWeight={600}>
               See all trips
             </Link>
           </Flex>
@@ -102,7 +104,7 @@ export function DashboardContent() {
           ) : upcoming.length === 0 ? (
             <DashedNote
               action={
-                <Button as={RouterLink} to="/trips/new" size="sm" variant="outline" leftIcon={<FiPlus />}>
+                <Button as={RouterLink} to="/trips/new" size="sm" variant="outline" leftIcon={<FiPlus size={16} />}>
                   New trip
                 </Button>
               }
@@ -111,7 +113,7 @@ export function DashboardContent() {
             </DashedNote>
           ) : (
             <>
-              <Grid templateColumns="repeat(auto-fill, minmax(260px, 1fr))" gap="16px" display={{ base: "none", md: "grid" }}>
+              <Grid templateColumns="repeat(auto-fill, minmax(280px, 1fr))" gap={4} display={{ base: "none", md: "grid" }}>
                 {upcoming.map((trip) => (
                   <TripCard key={trip.id} trip={trip} isOwner={isOwner(trip.userId)} footer="next" />
                 ))}
@@ -126,7 +128,7 @@ export function DashboardContent() {
         </Stack>
 
         <Stack as="section" spacing="12px" aria-labelledby="recent-title" minW={0}>
-          <Heading as="h2" id="recent-title" fontSize={{ base: "16px", md: "22px" }} fontFamily={{ base: "body", md: "heading" }} lineHeight="30px">
+          <Heading as="h2" id="recent-title" fontSize="17px" lineHeight="24px">
             Recent
           </Heading>
           {isLoading ? (
@@ -136,7 +138,7 @@ export function DashboardContent() {
           ) : (
             <SurfaceCard overflow="hidden">
               {recent.map((trip, i) => (
-                <Box key={trip.id} borderTopWidth={i === 0 ? 0 : "1px"} borderColor="border.line">
+                <Box key={trip.id} borderTopWidth={i === 0 ? 0 : "1px"} borderColor="ln">
                   <TripCard trip={trip} isOwner={isOwner(trip.userId)} variant="row" hideActions />
                 </Box>
               ))}

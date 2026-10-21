@@ -19,10 +19,10 @@ function Header({ mode, onMode }: { mode: Mode; onMode: (m: Mode) => void }) {
   return (
     <Flex justify="space-between" align={{ base: "center", md: "flex-start" }} gap="16px" wrap="wrap">
       <Box>
-        <Heading as="h1" fontSize={{ base: "24px", md: "32px" }} lineHeight={1.2}>
+        <Heading as="h1" fontSize="22px" lineHeight="28px">
           New trip
         </Heading>
-        <Text color="fg.muted" mt="4px" display={{ base: "none", md: "block" }}>
+        <Text color="tx2" fontSize="14px" lineHeight="20px" mt={1} display={{ base: "none", md: "block" }}>
           Everything here can be changed later.
         </Text>
       </Box>
@@ -78,30 +78,32 @@ export function NewTripPageContent() {
     <Grid
       templateColumns={{ base: "minmax(0, 1fr)", xl: "minmax(0, 1fr) clamp(360px, 32vw, 460px)" }}
       columnGap={{ xl: "2.5rem" }}
-      mr={{ xl: "-2.5rem" }}
-      mt={{ xl: "-2rem" }}
-      mb={{ lg: "-2.5rem" }}
+      mr={{ xl: "-2rem" }}
+      mt={{ xl: "-1.5rem" }}
+      mb={{ lg: "-3rem" }}
       alignItems="start"
     >
-      <Stack spacing={{ base: "14px", md: "20px" }} minW={0} pt={{ xl: "28px" }} pb={{ lg: "40px" }}>
+      <Stack spacing={{ base: "14px", md: "20px" }} minW={0} pt={{ xl: "24px" }} pb={{ lg: "48px" }}>
         {header}
-        <SurfaceCard as="section" raised borderRadius="18px" p={{ base: "14px", md: "20px" }} aria-labelledby="describe-title">
-          <Flex justify="space-between" align="center" gap="8px" mb="12px">
-            <HStack spacing="8px">
-              <Icon as={LuSparkles} color="accent.text" boxSize="18px" />
-              <Heading as="h2" id="describe-title" fontSize={{ base: "16px", md: "20px" }}>
+        <SurfaceCard as="section" p={{ base: 4, md: 5 }} aria-labelledby="describe-title">
+          <Flex justify="space-between" align="center" gap={2} mb={3}>
+            <HStack spacing={3}>
+              <Flex w="36px" h="36px" borderRadius="md" bg="acSoft" color="ac" align="center" justify="center" flexShrink={0}>
+                <Icon as={LuSparkles} boxSize="18px" />
+              </Flex>
+              <Heading as="h2" id="describe-title" fontSize="17px" lineHeight="24px">
                 Tell us about your trip
               </Heading>
             </HStack>
             <AiStatusChip />
           </Flex>
-          <Text fontSize="12px" color="fg.muted" mb="12px">
+          <Text fontSize="13px" lineHeight="18px" color="tx3" mb={3}>
             Where, how long, when and what you enjoy — any country. You can change everything afterwards.
           </Text>
           <DescribeTripPanel variant="page" rows={6} />
         </SurfaceCard>
 
-        <SurfaceCard p="20px" display={{ base: "block", xl: "none" }}>
+        <SurfaceCard p={5} display={{ base: "block", xl: "none" }}>
           <AiGets />
         </SurfaceCard>
       </Stack>
@@ -112,14 +114,14 @@ export function NewTripPageContent() {
         display={{ base: "none", xl: "flex" }}
         direction="column"
         position="sticky"
-        top="60px"
-        h="calc(100vh - 60px)"
+        top="72px"
+        h="calc(100vh - 72px)"
         overflowY="auto"
-        bg="bg.surface"
+        bg="sf"
         borderLeftWidth="1px"
-        borderColor="border.line"
-        px="24px"
-        py="20px"
+        borderColor="ln"
+        px={6}
+        py={5}
       >
         <AiGets />
       </Flex>
@@ -133,18 +135,20 @@ function AiGets() {
       <Overline>What AI sets up for you</Overline>
       {AI_GETS.map((g) => (
         <HStack key={g.title} align="flex-start" spacing="12px">
-          <Flex w="36px" h="36px" borderRadius="10px" bg="accent.soft" color="accent.text" align="center" justify="center" flexShrink={0}>
+          <Flex w="36px" h="36px" borderRadius="md" bg="acSoft" color="ac" align="center" justify="center" flexShrink={0}>
             <Icon as={g.icon} boxSize="18px" />
           </Flex>
           <Box>
-            <Text fontWeight={600}>{g.title}</Text>
-            <Text fontSize="12px" color="fg.muted">
+            <Text fontWeight={600} fontSize="15px" lineHeight="20px">
+              {g.title}
+            </Text>
+            <Text fontSize="13px" lineHeight="18px" color="tx2" mt="2px">
               {g.text}
             </Text>
           </Box>
         </HStack>
       ))}
-      <Text fontSize="12px" color="fg.muted">
+      <Text fontSize="12px" color="tx3">
         Uses the OpenAI or Gemini key from your Profile (or a shared one). Without one, only simple requests like &ldquo;3 days in Jaipur&rdquo;
         are understood.
       </Text>

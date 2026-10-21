@@ -65,7 +65,7 @@ function SuggestionCard({
   const s = suggestion;
   const dist = distance(s);
   return (
-    <Flex gap={3} px="14px" py={3} bg="bg.surface" borderWidth="1px" borderColor="border.line" borderRadius="xl" align="center">
+    <Flex gap={3} px="14px" py={3} bg="sf" borderWidth="1px" borderColor="ln" borderRadius="xl" align="center">
       {s.photoUrl ? (
         <Image
           src={s.photoUrl}
@@ -83,7 +83,7 @@ function SuggestionCard({
         <Text fontWeight={600} noOfLines={1}>
           {s.name}
         </Text>
-        <Text fontSize="12px" color="fg.muted">
+        <Text fontSize="12px" color="tx3">
           {s.cuisine ? `${s.cuisine} · ` : ""}
           {s.rating !== undefined && (
             <>
@@ -95,7 +95,7 @@ function SuggestionCard({
           {dist ? ` · ${dist}` : ""}
         </Text>
         {s.source === "saved" && (
-          <Text fontSize="12px" color="accent.text" fontWeight={600}>
+          <Text fontSize="12px" color="ac" fontWeight={600}>
             On your list
           </Text>
         )}
@@ -162,7 +162,7 @@ export function MealPickerDrawer({ tripId, target, city, country, initialTab = "
   return (
     <Drawer isOpen={Boolean(target)} onClose={onClose} placement="right" size="md">
       <DrawerOverlay />
-      <DrawerContent maxW={{ base: "100vw", md: "520px" }} bg="bg.surface">
+      <DrawerContent maxW={{ base: "100vw", md: "520px" }} bg="sf">
         <PanelHeader
           title={`Pick ${mealTitle.toLowerCase()} · Day ${day?.dayNumber ?? ""}`}
           subtitle={day ? `${formatDayDate(day.date, "EEE d MMM")}${day.legName ? ` · ${day.legName}` : ""}` : undefined}
@@ -172,7 +172,7 @@ export function MealPickerDrawer({ tripId, target, city, country, initialTab = "
         <DrawerBody px={6} py={5}>
           <Stack spacing={4}>
             {stop?.placeId && (
-              <Flex px="14px" py={3} borderRadius="xl" bg="accent.soft" color="accent.text" justify="space-between" align="center" gap={3}>
+              <Flex px="14px" py={3} borderRadius="xl" bg="acSoft" color="ac" justify="space-between" align="center" gap={3}>
                 <Box minW={0}>
                   <Text fontSize="12px">Currently planned</Text>
                   <Text fontWeight={600} noOfLines={1}>
@@ -196,7 +196,7 @@ export function MealPickerDrawer({ tripId, target, city, country, initialTab = "
             />
 
             {stop && (
-              <HStack spacing={2} fontSize="12px" color="fg.muted">
+              <HStack spacing={2} fontSize="12px" color="tx3">
                 <Icon as={LuClock} boxSize="14px" />
                 <Text>
                   Around <b>{stop.arrivalTime}</b>
@@ -208,13 +208,13 @@ export function MealPickerDrawer({ tripId, target, city, country, initialTab = "
             {suggestions.isLoading ? (
               <Stack spacing={3}>
                 {[0, 1, 2, 3].map((i) => (
-                  <Skeleton key={i} h="78px" borderRadius="xl" startColor="bg.subtle" endColor="border.line" />
+                  <Skeleton key={i} h="78px" borderRadius="xl" startColor="sunk" endColor="ln" />
                 ))}
               </Stack>
             ) : suggestions.isError ? (
               <Banner tone="warn">{getApiErrorMessage(suggestions.error)}</Banner>
             ) : shown.length === 0 ? (
-              <Text fontSize="13px" color="fg.muted">
+              <Text fontSize="13px" color="tx3">
                 {tab === "saved"
                   ? "No saved restaurants for this city yet — save some from the Food tab."
                   : `Nothing open nearby at ${stop?.arrivalTime}. Search below, or change the time from the stop's menu.`}
@@ -246,15 +246,15 @@ export function MealPickerDrawer({ tripId, target, city, country, initialTab = "
           </Stack>
         </DrawerBody>
 
-        <DrawerFooter borderTopWidth="1px" borderColor="border.line" px={6} py={4} justifyContent="space-between" gap={3} flexWrap="wrap">
+        <DrawerFooter borderTopWidth="1px" borderColor="ln" px={6} py={4} justifyContent="space-between" gap={3} flexWrap="wrap">
           {onSkip ? (
-            <Button variant="link" size="sm" color="accent.text" textDecoration="underline" onClick={onSkip}>
+            <Button variant="link" size="sm" color="ac" textDecoration="underline" onClick={onSkip}>
               Skip {mealTitle.toLowerCase()} on this day
             </Button>
           ) : (
             <span />
           )}
-          <Text fontSize="12px" color="fg.muted">
+          <Text fontSize="12px" color="tx3">
             Saved restaurants can be assigned from the Food tab
           </Text>
         </DrawerFooter>

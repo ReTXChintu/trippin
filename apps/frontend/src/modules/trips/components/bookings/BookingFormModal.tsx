@@ -114,7 +114,7 @@ function BookingFields({ trip, draft, patch }: BookingFieldsProps) {
               </option>
             ))}
           </Select>
-          <FormHelperText fontSize="12px" color="fg.muted">
+          <FormHelperText fontSize="12px" color="tx3">
             Linked bookings set that travel day&rsquo;s times — sightseeing starts after you arrive.
           </FormHelperText>
         </FormControl>
@@ -158,7 +158,7 @@ function BookingFields({ trip, draft, patch }: BookingFieldsProps) {
       </FormControl>
 
       {linkedDay && (
-        <HStack spacing="6px" fontSize="12px" color="fg.muted">
+        <HStack spacing="6px" fontSize="12px" color="tx3">
           <Icon as={FiInfo} />
           <Text>Saving links this booking to Day {linkedDay} and sets its times in the plan.</Text>
         </HStack>
@@ -220,7 +220,7 @@ export function BookingFormCard({ trip, initial, onDone, onCancel }: { trip: Tri
     <SurfaceCard raised p={5} as="form" onSubmit={(e: FormEvent) => { e.preventDefault(); void submit(); }} aria-label={draft.id ? "Edit booking" : "New booking"}>
       <Stack spacing={3}>
         <Flex justify="space-between" align="center" gap={2} flexWrap="wrap">
-          <Text as="h3" fontFamily="heading" fontWeight={600} fontSize="20px">
+          <Text as="h3" fontWeight={600} fontSize="17px" lineHeight="24px">
             {draft.id ? "Edit booking" : "New booking"}
           </Text>
           {prefilled && <Pill tone="accent">Prefilled from travel day</Pill>}

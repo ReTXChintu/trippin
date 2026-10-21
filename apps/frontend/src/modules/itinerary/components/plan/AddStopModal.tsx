@@ -84,7 +84,7 @@ export function AddStopModal({ tripId, day, city, country, onClose }: AddStopMod
       <ModalContent>
         <ModalHeader>
           Add to Day {day?.dayNumber}
-          <Text fontSize="sm" fontWeight="normal" color="fg.muted">
+          <Text fontSize="sm" fontWeight="normal" color="tx3">
             {day && formatDayDate(day.date, "EEEE, d MMM")}
             {day?.legName ? ` · ${day.legName}` : ""}
           </Text>
@@ -151,7 +151,7 @@ export function AddStopModal({ tripId, day, city, country, onClose }: AddStopMod
               <Textarea size="sm" rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} />
             </FormControl>
 
-            <Text fontSize="xs" color="fg.muted">
+            <Text fontSize="xs" color="tx3">
               {isFixed
                 ? "The day will be planned around this time."
                 : "It goes where it adds the least travel — drag it anywhere afterwards."}

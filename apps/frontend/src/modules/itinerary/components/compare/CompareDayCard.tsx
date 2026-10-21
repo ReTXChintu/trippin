@@ -21,7 +21,7 @@ export function CompareDayCard({
 }) {
   if (!day) {
     return (
-      <Flex h="100%" minH="72px" align="center" justify="center" px="14px" py="12px" borderWidth="1px" borderStyle="dashed" borderColor="border.line" borderRadius="xl" color="fg.muted" fontSize="12px">
+      <Flex h="100%" minH="72px" align="center" justify="center" px="14px" py="12px" borderWidth="1px" borderStyle="dashed" borderColor="ln" borderRadius="xl" color="tx3" fontSize="12px">
         {side === "ai" ? "The AI plan has no day here" : "No day in your plan"}
       </Flex>
     );
@@ -39,9 +39,9 @@ export function CompareDayCard({
       py="12px"
       borderRadius="xl"
       borderWidth="1px"
-      borderColor={chosen ? "accent" : "border.line"}
-      boxShadow={chosen ? "0 0 0 1px var(--chakra-colors-accent)" : undefined}
-      bg={chosen ? "accent.soft" : "bg.surface"}
+      borderColor={chosen ? "ac" : "ln"}
+      boxShadow={chosen ? "0 0 0 1px var(--chakra-colors-ac)" : undefined}
+      bg={chosen ? "acSoft" : "sf"}
       transition="background .12s, border-color .12s"
     >
       <Stack spacing="6px">
@@ -53,17 +53,17 @@ export function CompareDayCard({
                 {title}
               </Text>
               {showCity && day.legName && (
-                <Text fontSize="12px" color="fg.muted" noOfLines={1}>
+                <Text fontSize="12px" color="tx3" noOfLines={1}>
                   {day.legName}
                 </Text>
               )}
             </Box>
           </Flex>
-          <Text fontSize="12px" color="fg.muted" flexShrink={0}>
+          <Text fontSize="12px" color="tx3" flexShrink={0}>
             {stopsLabel(day)}
           </Text>
         </Flex>
-        <Text fontSize="12px" color="fg.muted" noOfLines={2} title={route}>
+        <Text fontSize="12px" color="tx3" noOfLines={2} title={route}>
           {route || "Nothing planned"}
         </Text>
         {differences && differences.length > 0 && (
@@ -102,7 +102,7 @@ export function PlanChooser({
     { v: "ai", label: "AI", enabled: aiAvailable },
   ];
   return (
-    <Flex direction={direction} bg="bg.subtle" borderRadius="md" p="3px" gap="2px" role="radiogroup" aria-label={`Choose plan for day ${dayNumber}`} display="inline-flex">
+    <Flex direction={direction} bg="sunk" borderRadius="md" p="3px" gap="2px" role="radiogroup" aria-label={`Choose plan for day ${dayNumber}`} display="inline-flex">
       {options.map((o) => {
         const on = value === o.v;
         return (
@@ -122,11 +122,11 @@ export function PlanChooser({
             borderRadius="8px"
             fontSize="13px"
             fontWeight={on ? 600 : 500}
-            color={on ? "fg.default" : "fg.muted"}
-            bg={on ? "bg.surface" : "transparent"}
-            boxShadow={on ? "0 1px 2px rgba(0,0,0,.12)" : undefined}
+            color={on ? "tx" : "tx3"}
+            bg={on ? "sf" : "transparent"}
+            boxShadow={on ? "ds1" : undefined}
             _disabled={{ opacity: 0.45, cursor: "not-allowed" }}
-            _focusVisible={{ outline: "2px solid", outlineColor: "accent", outlineOffset: "1px" }}
+            _focusVisible={{ outline: "2px solid", outlineColor: "ac", outlineOffset: "1px" }}
           >
             {o.label}
           </Flex>

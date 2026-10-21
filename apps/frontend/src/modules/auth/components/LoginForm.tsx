@@ -1,7 +1,7 @@
-import { Button, Stack, Text } from "@chakra-ui/react";
+import { Button, Flex, Icon, Stack, Text } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { FiLogIn } from "react-icons/fi";
+import { FiInfo, FiLogIn } from "react-icons/fi";
 import { signInUrl } from "@/modules/auth/api/auth.api";
 import { AuthIntro, AuthNotice } from "./AuthIntro";
 import { isInviteCallback, useCallbackUrl } from "./auth-callback";
@@ -35,7 +35,7 @@ export function LoginForm() {
   }, []);
 
   return (
-    <Stack spacing="20px">
+    <Stack spacing={5}>
       <AuthIntro
         title="Welcome to Trippin"
         subtitle="One account for Trippin, SpendLog and InFrame."
@@ -47,7 +47,7 @@ export function LoginForm() {
         href={signInUrl(callback)}
         size="xl"
         w="full"
-        leftIcon={<FiLogIn />}
+        leftIcon={<FiLogIn size={18} />}
         isLoading={leaving}
         loadingText="Signing in…"
         onClick={() => setLeaving(true)}
@@ -55,9 +55,10 @@ export function LoginForm() {
         {invited ? "Sign in and join the trip" : "Sign in with your account"}
       </Button>
 
-      <Text fontSize="12px" color="fg.muted">
-        New here? The same button creates your account — you’ll come straight back to Trippin.
-      </Text>
+      <Flex gap="10px" px="14px" py={3} borderRadius="lg" bg="sunk" color="tx2" fontSize="13px" lineHeight="18px">
+        <Icon as={FiInfo} boxSize="18px" flexShrink={0} mt="1px" />
+        <Text>New here? The same button creates your account — you’ll come straight back to Trippin.</Text>
+      </Flex>
     </Stack>
   );
 }

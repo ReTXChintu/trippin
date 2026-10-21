@@ -36,7 +36,7 @@ export function DayTripsEditor({
   return (
     <Stack spacing={2}>
       {value.length === 0 && (
-        <Text fontSize="13px" color="fg.muted">
+        <Text fontSize="13px" color="tx3">
           Going somewhere for the day and coming back here? Add the town — its places get a day of their own.
         </Text>
       )}
@@ -75,6 +75,7 @@ export function DayTripsEditor({
               icon={<LuX size={16} />}
               size="sm"
               variant="ghost"
+              colorScheme="gray"
               onClick={() => onChange(value.filter((d) => d.id !== trip.id))}
             />
           </Flex>

@@ -170,7 +170,7 @@ export function PlanTabBoard({
       onMove={onMove}
       readOnly={!canEdit}
       header={
-        <Text fontSize="12px" color="fg.muted">
+        <Text fontSize="12px" color="tx3">
           {canEdit
             ? "Drag places onto days, reorder a day, move stops between days, or drag a stop back to the tray. Times are recalculated after each move — Undo reverts it."
             : "View only — the owner or an editor can rearrange the days."}

@@ -132,7 +132,7 @@ export function StayFormModal({ leg, initial, isSaving, onClose, onSave }: StayF
               </FormControl>
             </SimpleGrid>
             {nights > 0 && (
-              <Text fontSize="xs" color="fg.muted" mt={-2}>
+              <Text fontSize="xs" color="tx3" mt={-2}>
                 {nights} night{nights === 1 ? "" : "s"}
               </Text>
             )}

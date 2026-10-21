@@ -38,51 +38,60 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Widget build(BuildContext context) {
     final session = ref.watch(sessionProvider);
     final again = session.needsSignIn;
+    final c = context.ds;
+    final tt = Theme.of(context).textTheme;
     return Scaffold(
       appBar: again ? AppBar(title: const Text('Sign in again')) : null,
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.symmetric(horizontal: Ds.pagePadPhone, vertical: 24),
+            // The auth card is one of the few capped widths in the system (440).
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 420),
+              constraints: const BoxConstraints(maxWidth: 440),
               child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                 Row(children: [
-                  ClipRRect(borderRadius: BorderRadius.circular(12), child: Image.asset('assets/brand/logo.png', width: 48, height: 48)),
-                  const SizedBox(width: 12),
-                  Text('Trippin', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800)),
+                  const BrandMark(),
+                  const SizedBox(width: 10),
+                  Text('Trippin', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, letterSpacing: -0.18, color: c.tx)),
                 ]),
-                const SizedBox(height: 28),
-                Text(again ? 'Your sign-in expired' : 'Your trips, even offline',
-                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w700)),
-                const SizedBox(height: 8),
-                Text(
-                  again
-                      ? 'Your saved trips still work. Sign in to sync changes and save new trips.'
-                      : 'Plan on the Trippin website. This app carries your saved plans, maps and directions — no signal needed.',
-                  style: TextStyle(color: context.muted, fontSize: 15, height: 1.4),
-                ),
-                if (again && session.email.isNotEmpty) ...[
-                  const SizedBox(height: 8),
-                  Text('Signed in as ${session.email}', style: TextStyle(color: context.muted, fontSize: 13)),
-                ],
-                if (_error != null) ...[
-                  const SizedBox(height: 20),
-                  Notice(text: _error!, icon: Icons.error_outline, tone: 'danger'),
-                ],
-                const SizedBox(height: 28),
-                FilledButton.icon(
-                  onPressed: _busy ? null : _signIn,
-                  icon: _busy
-                      ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2.4, color: Colors.white))
-                      : const Icon(Icons.login),
-                  label: const Text('Sign in'),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  'One account for Trippin, SpendLog and InFrame. New here? Signing in creates your account.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: context.muted, fontSize: 13, height: 1.4),
+                const SizedBox(height: 24),
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(Ds.s20),
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                      Text(again ? 'Your sign-in expired' : 'Your trips, even offline', style: tt.headlineSmall),
+                      const SizedBox(height: 8),
+                      Text(
+                        again
+                            ? 'Your saved trips still work. Sign in to sync changes and save new trips.'
+                            : 'Plan on the Trippin website. This app carries your saved plans, maps and directions — no signal needed.',
+                        style: tt.bodyLarge?.copyWith(color: c.tx2),
+                      ),
+                      if (again && session.email.isNotEmpty) ...[
+                        const SizedBox(height: 8),
+                        Text('Signed in as ${session.email}', style: tt.bodySmall?.copyWith(color: c.tx3)),
+                      ],
+                      if (_error != null) ...[
+                        const SizedBox(height: 20),
+                        Notice(text: _error!, icon: Icons.error_outline, tone: 'danger'),
+                      ],
+                      const SizedBox(height: 20),
+                      FilledButton.icon(
+                        style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(52)),
+                        onPressed: _busy ? null : _signIn,
+                        icon: _busy
+                            ? SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2.4, color: c.tx3))
+                            : const Icon(Icons.login, size: 18),
+                        label: const Text('Sign in'),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'One account for Trippin, SpendLog and InFrame. New here? Signing in creates your account.',
+                        style: TextStyle(color: c.tx3, fontSize: 12, height: 17 / 12),
+                      ),
+                    ]),
+                  ),
                 ),
               ]),
             ),

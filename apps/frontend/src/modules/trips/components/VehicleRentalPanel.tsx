@@ -26,12 +26,12 @@ function RentalRow({ rental }: { rental: VehicleRentalSuggestion }) {
       )}
       {rental.phone && (
         <Tooltip label={rental.phone} hasArrow>
-          <IconButton as="a" href={`tel:${rental.phone}`} aria-label={`Call ${rental.name}`} icon={<FiPhone size={16} />} variant="ghost" />
+          <IconButton as="a" href={`tel:${rental.phone}`} aria-label={`Call ${rental.name}`} icon={<FiPhone size={16} />} variant="ghost" colorScheme="gray" />
         </Tooltip>
       )}
       {rental.googleMapsUrl && (
         <Tooltip label="View on Maps" hasArrow>
-          <IconButton as="a" href={rental.googleMapsUrl} target="_blank" rel="noopener noreferrer" aria-label={`${rental.name} on Maps`} icon={<FiExternalLink size={16} />} variant="ghost" />
+          <IconButton as="a" href={rental.googleMapsUrl} target="_blank" rel="noopener noreferrer" aria-label={`${rental.name} on Maps`} icon={<FiExternalLink size={16} />} variant="ghost" colorScheme="gray" />
         </Tooltip>
       )}
     </RowCard>

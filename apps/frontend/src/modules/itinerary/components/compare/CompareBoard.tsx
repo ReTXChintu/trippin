@@ -161,7 +161,7 @@ export function CompareBoard({ currentDays, aiByDate, optionalPlaces, stateFor, 
       onMove={onMove}
       readOnly={readOnly}
       header={
-        <Text fontSize="12px" color="fg.muted">
+        <Text fontSize="12px" color="tx3">
           The merged result, day by day. Drag places in, reorder, move between days, or drag back to the tray. Nothing is saved until you merge.
         </Text>
       }

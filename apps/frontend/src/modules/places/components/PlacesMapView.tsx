@@ -50,7 +50,7 @@ export function PlacesMapView({ tripId, leg, places, selectedIds, onToggle, onOp
           lat: place.coordinates!.lat,
           lng: place.coordinates!.lng,
           kind: selected ? ("selected" as const) : ("dim" as const),
-          color: selected ? "accent" : "day.1",
+          color: selected ? "ac" : "day.1",
           title: place.name,
           busy,
           popup: (
@@ -58,7 +58,7 @@ export function PlacesMapView({ tripId, leg, places, selectedIds, onToggle, onOp
               <Text fontWeight={600} fontSize="14px">
                 {place.name}
               </Text>
-              <Text fontSize="12px" color="fg.muted" mb={2}>
+              <Text fontSize="12px" color="tx3" mb={2}>
                 {place.category}
                 {place.rating !== undefined ? ` · ★ ${place.rating.toFixed(1)}` : ""}
                 {place.userRatingCount ? ` (${place.userRatingCount.toLocaleString()})` : ""}
@@ -104,7 +104,7 @@ export function PlacesMapView({ tripId, leg, places, selectedIds, onToggle, onOp
       onViewport={setViewport}
       h={height ?? { base: "440px", lg: "max(560px, calc(100vh - 140px))" }}
       floating={
-        <Flex bg="bg.surface" borderWidth="1px" borderColor="border.line" borderRadius="full" boxShadow="raised" align="center" p="3px">
+        <Flex bg="sf" borderWidth="1px" borderColor="ln" borderRadius="full" boxShadow="ds1" align="center" p="3px">
           <Button
             size="lg"
             h="38px"
@@ -118,7 +118,7 @@ export function PlacesMapView({ tripId, leg, places, selectedIds, onToggle, onOp
             Search this area
           </Button>
           <Menu isLazy placement="bottom-end">
-            <MenuButton as={Button} size="sm" variant="ghost" borderRadius="full" rightIcon={<FiChevronDown />} aria-label={`What to search for: ${categoryLabel}`} color="fg.muted" fontWeight={500}>
+            <MenuButton as={Button} size="sm" variant="ghost" borderRadius="full" rightIcon={<FiChevronDown />} aria-label={`What to search for: ${categoryLabel}`} color="tx3" fontWeight={500}>
               {categoryLabel}
             </MenuButton>
             <MenuList zIndex={1100} minW="160px">
@@ -149,7 +149,7 @@ export function PlacesMapView({ tripId, leg, places, selectedIds, onToggle, onOp
               <Text>Stay</Text>
             </HStack>
           )}
-          <Box as="button" type="button" color="accent.text" fontWeight={600} onClick={() => setShowOnlyPicked((v) => !v)} aria-pressed={showOnlyPicked}>
+          <Box as="button" type="button" color="ac" fontWeight={600} onClick={() => setShowOnlyPicked((v) => !v)} aria-pressed={showOnlyPicked}>
             {showOnlyPicked ? "Show all" : "Only picked"}
           </Box>
         </>

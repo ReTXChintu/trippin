@@ -1,6 +1,7 @@
 /**
- * Trippin' UI primitives — the small pieces every screen of the redesign is built from. They only
- * use semantic tokens (bg.surface, border.line, accent.soft…), so they're correct in both modes.
+ * Trippin' UI primitives, built on the shared design system (docs/design-system.md §7). They only
+ * use the spec's semantic tokens (sf, ln, tx, ac…), so they're correct in both modes and match
+ * SpendLog and InFrame piece for piece.
  */
 import {
   Box,
@@ -15,15 +16,16 @@ import {
 } from "@chakra-ui/react";
 import type { ReactNode } from "react";
 import type { IconType } from "react-icons";
+import { FiCheck, FiChevronRight } from "react-icons/fi";
 import { dayToken } from "./day";
 
 // ---------------------------------------------------------------------------------------------
 // Text
 
-/** Small caps label above a section ("NEXT TRIP", "SUGGESTED NEXT"). */
+/** Eyebrow label above a section ("Next trip", "Suggested next"): 12/16 600 +.02em, sentence case. */
 export function Overline({ children, ...rest }: { children: ReactNode } & BoxProps) {
   return (
-    <Text as="span" display="block" fontSize="12px" fontWeight={600} textTransform="uppercase" letterSpacing="0.06em" color="fg.muted" {...rest}>
+    <Text as="span" display="block" fontSize="12px" lineHeight="16px" fontWeight={600} letterSpacing="0.02em" color="tx2" {...rest}>
       {children}
     </Text>
   );
@@ -32,45 +34,63 @@ export function Overline({ children, ...rest }: { children: ReactNode } & BoxPro
 // ---------------------------------------------------------------------------------------------
 // Surfaces
 
-/** The standard card: surface, 1px line, 14px radius. `raised` adds the soft elevation. */
+/** The section card: surface, 1px hairline, radius 14, no shadow. `raised` is only for cards that
+ * float over a map or picture, and gets the small lift. */
 export function SurfaceCard({ raised, children, ...rest }: { raised?: boolean; children?: ReactNode } & BoxProps) {
   return (
-    <Box bg="bg.surface" borderWidth="1px" borderColor="border.line" borderRadius="xl" boxShadow={raised ? "raised" : undefined} {...rest}>
+    <Box bg="sf" borderWidth="1px" borderColor="ln" borderRadius="xl" boxShadow={raised ? "ds1" : "none"} {...rest}>
       {children}
     </Box>
   );
 }
 
 // ---------------------------------------------------------------------------------------------
-// Pills and chips
+// Badges and chips
 
 export type Tone = "neutral" | "accent" | "warn" | "danger" | "success";
 
+/** Soft fill + strong text, per tone (§7.4). */
 const TONES: Record<Tone, { bg: string; color: string }> = {
-  neutral: { bg: "bg.subtle", color: "fg.muted" },
-  accent: { bg: "accent.soft", color: "accent.text" },
-  warn: { bg: "warn.soft", color: "warn" },
-  danger: { bg: "danger.soft", color: "danger" },
-  success: { bg: "success.soft", color: "success" },
+  neutral: { bg: "sunk", color: "tx2" },
+  accent: { bg: "acSoft", color: "ac" },
+  warn: { bg: "warnSoft", color: "warn" },
+  danger: { bg: "critSoft", color: "crit" },
+  success: { bg: "goodSoft", color: "good" },
 };
 
-/** Status pill: 24px, rounded, 12px semibold ("Draft", "Not booked", "Done"). */
+/** Status badge: 24 high, radius 6, 12/600 ("Draft", "Not booked", "Done"). */
 export function Pill({ tone = "neutral", icon, children, ...rest }: { tone?: Tone; icon?: IconType; children: ReactNode } & FlexProps) {
   const t = TONES[tone];
   return (
-    <Flex as="span" display="inline-flex" align="center" gap="6px" h="24px" px="10px" borderRadius="full" fontSize="12px" fontWeight={600} whiteSpace="nowrap" bg={t.bg} color={t.color} {...rest}>
-      {icon && <Icon as={icon} boxSize="12px" />}
+    <Flex
+      as="span"
+      display="inline-flex"
+      align="center"
+      gap={1}
+      h="24px"
+      px={2}
+      borderRadius="sm"
+      fontSize="12px"
+      lineHeight="16px"
+      fontWeight={600}
+      whiteSpace="nowrap"
+      sx={{ fontVariantNumeric: "tabular-nums" }}
+      bg={t.bg}
+      color={t.color}
+      {...rest}
+    >
+      {icon && <Icon as={icon} boxSize="14px" flexShrink={0} />}
       {children}
     </Flex>
   );
 }
 
-/** A small warning dot (a city without a stay, an unbooked transfer). */
+/** An 8px attention dot (a city without a stay, an unbooked transfer). */
 export function WarnDot({ ...rest }: BoxProps) {
-  return <Box as="span" display="inline-block" w="8px" h="8px" borderRadius="full" bg="warn" flexShrink={0} {...rest} />;
+  return <Box as="span" display="inline-block" w="8px" h="8px" borderRadius="full" bg="warnFill" flexShrink={0} {...rest} />;
 }
 
-/** Filter / choice chip: off (outline), on (accent fill), soft (AI suggestion). */
+/** Filter / choice chip (§7.4): off is outlined, on is ink-filled, soft is an AI suggestion. */
 export function ChoiceChip({
   selected,
   soft,
@@ -96,28 +116,29 @@ export function ChoiceChip({
       display="inline-flex"
       align="center"
       gap="6px"
-      h={size === "lg" ? "40px" : "32px"}
-      px={size === "lg" ? 4 : 3}
+      h={size === "lg" ? "40px" : "36px"}
+      px="14px"
       borderRadius="full"
       borderWidth="1px"
-      borderColor={selected ? "accent" : soft ? "transparent" : "border.line"}
-      bg={selected ? "accent" : soft ? "accent.soft" : "bg.surface"}
-      color={selected ? "accent.fg" : soft ? "accent.text" : "fg.default"}
+      borderColor={selected ? "tx" : soft ? "transparent" : "ln2"}
+      bg={selected ? "tx" : soft ? "acSoft" : "sf"}
+      color={selected ? "bg" : soft ? "ac" : "tx"}
       fontSize="13px"
-      fontWeight={selected ? 600 : 500}
+      fontWeight={500}
       whiteSpace="nowrap"
-      transition="background .12s, border-color .12s"
-      _hover={selected || soft ? { filter: "brightness(1.04)" } : { bg: "bg.subtle" }}
-      _focusVisible={{ outline: "2px solid", outlineColor: "accent", outlineOffset: "2px" }}
+      transition="background .12s, border-color .12s, color .12s"
+      _hover={selected ? undefined : soft ? { boxShadow: "inset 0 0 0 1px var(--chakra-colors-acLine)" } : { bg: "sf2", borderColor: "tx3" }}
+      _focusVisible={{ outline: "3px solid", outlineColor: "ac", outlineOffset: "3px" }}
       {...rest}
     >
-      {icon && <Icon as={icon} boxSize="14px" />}
+      {selected && !icon ? <Icon as={FiCheck} boxSize="14px" /> : icon ? <Icon as={icon} boxSize="14px" /> : null}
       {children}
     </Flex>
   );
 }
 
-/** Segmented control (List / Map, Log in / Create account, Day / Whole trip). */
+/** Segmented control (§7.3): sunk track, radius 12, padding 4; the selected segment is a raised
+ * surface thumb. The only tab style in the system (List / Map, Day / Whole trip). */
 export function Segmented<T extends string>({
   value,
   options,
@@ -126,12 +147,12 @@ export function Segmented<T extends string>({
   ...rest
 }: {
   value: T;
-  options: { value: T; label: ReactNode; icon?: IconType }[];
-  onChange: (v: T) => void;
+  options: { value: NoInfer<T>; label: ReactNode; icon?: IconType }[];
+  onChange: (v: NoInfer<T>) => void;
   size?: "sm" | "md";
 } & Omit<FlexProps, "onChange">) {
   return (
-    <Flex display="inline-flex" bg="bg.subtle" borderRadius="md" p="3px" gap="2px" role="tablist" {...rest}>
+    <Flex display="inline-flex" bg="sunk" borderRadius="lg" p={1} gap={1} role="tablist" maxW="full" {...rest}>
       {options.map((o) => {
         const on = o.value === value;
         return (
@@ -143,17 +164,23 @@ export function Segmented<T extends string>({
             aria-selected={on}
             onClick={() => onChange(o.value)}
             align="center"
+            justify="center"
             gap="6px"
-            h={size === "sm" ? "26px" : "30px"}
+            h={size === "sm" ? "32px" : "36px"}
             px={3}
-            borderRadius="8px"
-            fontSize="13px"
+            flex="1 1 0"
+            borderRadius="9px"
+            fontSize={size === "sm" ? "13px" : "14px"}
             fontWeight={on ? 600 : 500}
-            color={on ? "fg.default" : "fg.muted"}
-            bg={on ? "bg.surface" : "transparent"}
-            boxShadow={on ? "0 1px 2px rgba(0,0,0,.12)" : undefined}
+            whiteSpace="nowrap"
+            color={on ? "tx" : "tx2"}
+            bg={on ? "sf" : "transparent"}
+            boxShadow={on ? "ds1" : undefined}
+            transition="background .2s, color .2s"
+            _hover={on ? undefined : { color: "tx" }}
+            _focusVisible={{ outline: "3px solid", outlineColor: "ac", outlineOffset: "1px" }}
           >
-            {o.icon && <Icon as={o.icon} boxSize="14px" />}
+            {o.icon && <Icon as={o.icon} boxSize="16px" />}
             {o.label}
           </Flex>
         );
@@ -163,22 +190,37 @@ export function Segmented<T extends string>({
 }
 
 // ---------------------------------------------------------------------------------------------
+// Icon tiles
+
+/** The universal leading element (§7.5): a radius-10 square in a soft tint with the icon in the
+ * strong tint. 40 for rows and cards, 36 inline. */
+export function DsIconTile({ icon, tone = "accent", size = 40, ...rest }: { icon: IconType; tone?: Tone; size?: number } & FlexProps) {
+  const t = TONES[tone];
+  return (
+    <Flex w={`${size}px`} h={`${size}px`} borderRadius="md" bg={t.bg} color={t.color} align="center" justify="center" flexShrink={0} {...rest}>
+      <Icon as={icon} boxSize={size >= 40 ? "20px" : "18px"} />
+    </Flex>
+  );
+}
+
+// ---------------------------------------------------------------------------------------------
 // Days
 
-/** The numbered square at the start of a day card (Fraunces numeral on the day's colour). */
+/** The numbered square at the start of a day card (tabular numeral on the day's colour). */
 export function DayBadge({ dayNumber, size = 44, ...rest }: { dayNumber: number; size?: number } & BoxProps) {
   return (
     <Flex
       w={`${size}px`}
       h={`${size}px`}
-      borderRadius={size >= 40 ? "10px" : "8px"}
+      borderRadius="md"
       bg={dayToken(dayNumber)}
       color="pin.fg"
       align="center"
       justify="center"
-      fontFamily="heading"
       fontWeight={600}
-      fontSize={size >= 40 ? "22px" : "16px"}
+      fontSize={size >= 40 ? "19px" : "15px"}
+      letterSpacing="-0.01em"
+      sx={{ fontVariantNumeric: "tabular-nums lining-nums" }}
       flexShrink={0}
       {...rest}
     >
@@ -200,9 +242,9 @@ export function StopNumber({ n, dayNumber, dim, ...rest }: { n: number | string;
       justify="center"
       fontSize="12px"
       fontWeight={700}
-      borderWidth="2.5px"
-      borderColor="bg.surface"
-      boxShadow="0 2px 6px rgba(0,0,0,.2)"
+      sx={{ fontVariantNumeric: "tabular-nums" }}
+      borderWidth="2px"
+      borderColor="sf"
       opacity={dim ? 0.45 : 1}
       flexShrink={0}
       {...rest}
@@ -264,7 +306,7 @@ export function PhotoFallback({
 export function PlacePhoto({ src, alt, seed, icon, ...rest }: { src?: string | null; alt: string; seed: string; icon?: IconType } & FlexProps) {
   if (src) {
     return (
-      <Flex position="relative" overflow="hidden" bg="bg.subtle" {...rest}>
+      <Flex position="relative" overflow="hidden" bg="sunk" {...rest}>
         <img src={src} alt={alt} loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
       </Flex>
     );
@@ -275,22 +317,27 @@ export function PlacePhoto({ src, alt, seed, icon, ...rest }: { src?: string | n
 // ---------------------------------------------------------------------------------------------
 // Blocks
 
-/** Dashboard-style number tile. */
-export function StatTile({ label, value, icon, ...rest }: { label: string; value: ReactNode; icon?: IconType } & BoxProps) {
+/** Stat tile (§7.5): label 12/600 tx2 with a 16px icon, value 22/28 600 tabular, optional footnote. */
+export function StatTile({ label, value, icon, foot, ...rest }: { label: string; value: ReactNode; icon?: IconType; foot?: ReactNode } & BoxProps) {
   return (
-    <SurfaceCard p={4} {...rest}>
-      <HStack spacing={1.5} color="fg.muted" fontSize="13px">
-        {icon && <Icon as={icon} boxSize="14px" />}
+    <SurfaceCard p={4} display="flex" flexDirection="column" gap="6px" {...rest}>
+      <HStack spacing={2} color="tx2" fontSize="12px" lineHeight="16px" fontWeight={600} letterSpacing="0.02em">
+        {icon && <Icon as={icon} boxSize="16px" />}
         <Text>{label}</Text>
       </HStack>
-      <Text fontFamily="heading" fontWeight={600} fontSize="34px" lineHeight={1.1} mt={1.5}>
+      <Text fontWeight={600} fontSize="22px" lineHeight="28px" className="num">
         {value}
       </Text>
+      {foot && (
+        <Text fontSize="12px" lineHeight="16px" color="tx3">
+          {foot}
+        </Text>
+      )}
     </SurfaceCard>
   );
 }
 
-/** Empty state: icon, title, one line, one clear action. */
+/** Empty state (§7.11): an icon tile, a title, one line, one clear action. */
 export function EmptyState({
   icon,
   title,
@@ -300,17 +347,17 @@ export function EmptyState({
   ...rest
 }: { icon?: IconType; title: string; text?: ReactNode; action?: ReactNode; compact?: boolean } & BoxProps) {
   return (
-    <Flex direction="column" align="center" textAlign="center" gap={3} py={compact ? 6 : 12} px={6} {...rest}>
+    <Flex direction="column" align="center" textAlign="center" gap={compact ? 2 : 3} py={compact ? 6 : 12} px={6} {...rest}>
       {icon && (
-        <Flex w="52px" h="52px" borderRadius="14px" bg="accent.soft" color="accent.text" align="center" justify="center">
-          <Icon as={icon} boxSize="24px" />
+        <Flex w={compact ? "40px" : "48px"} h={compact ? "40px" : "48px"} borderRadius="md" bg="sunk" color="tx3" align="center" justify="center">
+          <Icon as={icon} boxSize={compact ? "20px" : "24px"} />
         </Flex>
       )}
-      <Text fontFamily="heading" fontWeight={600} fontSize="20px">
+      <Text fontWeight={600} fontSize={compact ? "15px" : "17px"} lineHeight={compact ? "20px" : "24px"}>
         {title}
       </Text>
       {text && (
-        <Text color="fg.muted" maxW="440px">
+        <Text color="tx2" fontSize={compact ? "13px" : "15px"} lineHeight={compact ? "18px" : "22px"} maxW="440px">
           {text}
         </Text>
       )}
@@ -319,7 +366,8 @@ export function EmptyState({
   );
 }
 
-/** Inline banner for gaps and limits ("Udaipur has 3 nights without a stay", "Add a Maps key"). */
+/** Callout / banner (§7.5) for gaps and limits ("Udaipur has 3 nights without a stay"). Info
+ * (accent) is an accent tint with ink text; the others are soft + strong. */
 export function Banner({
   tone = "warn",
   icon,
@@ -328,10 +376,11 @@ export function Banner({
   ...rest
 }: { tone?: Tone; icon?: IconType; children: ReactNode; action?: ReactNode } & FlexProps) {
   const t = TONES[tone];
+  const color = tone === "accent" ? "tx" : t.color;
   return (
-    <Flex align="center" gap={3} px={4} py={3} borderRadius="lg" bg={t.bg} color={t.color} {...rest}>
-      {icon && <Icon as={icon} boxSize="18px" flexShrink={0} />}
-      <Box flex={1} fontSize="13px" minW={0}>
+    <Flex align="center" gap={3} px={4} py={3} borderRadius="lg" bg={t.bg} color={color} flexWrap={{ base: "wrap", sm: "nowrap" }} {...rest}>
+      {icon && <Icon as={icon} boxSize="20px" flexShrink={0} color={t.color} />}
+      <Box flex={1} fontSize={tone === "neutral" ? "13px" : "14px"} lineHeight={tone === "neutral" ? "18px" : "20px"} fontWeight={tone === "neutral" ? 400 : 500} minW={0}>
         {children}
       </Box>
       {action}
@@ -339,39 +388,54 @@ export function Banner({
   );
 }
 
-/** Page heading block: overline + Fraunces title + optional actions on the right. */
+/** Page heading block: eyebrow + 22/28 page title + optional actions on the right. */
 export function PageHeader({ overline, title, subtitle, actions }: { overline?: ReactNode; title: ReactNode; subtitle?: ReactNode; actions?: ReactNode }) {
   return (
     <Flex justify="space-between" align={{ base: "flex-start", md: "flex-end" }} gap={4} direction={{ base: "column", md: "row" }}>
       <Box minW={0}>
         {overline && <Overline mb={1}>{overline}</Overline>}
-        <Text as="h1" fontFamily="heading" fontWeight={600} fontSize={{ base: "28px", md: "34px" }} lineHeight={1.15} letterSpacing="-0.01em">
+        <Text as="h1" fontWeight={600} fontSize="22px" lineHeight="28px">
           {title}
         </Text>
         {subtitle && (
-          <Text color="fg.muted" mt={1}>
+          <Text color="tx2" fontSize="14px" lineHeight="20px" mt={1}>
             {subtitle}
           </Text>
         )}
       </Box>
-      {actions && <HStack spacing={2} flexShrink={0}>{actions}</HStack>}
+      {actions && <HStack spacing={2} flexShrink={0} flexWrap="wrap">{actions}</HStack>}
     </Flex>
   );
 }
 
-/** Row button used in sheets and settings lists (icon, label, value, chevron). */
+/** Link row (§7.6) used in sheets and settings lists: icon, label, value, chevron. */
 export function ListRowButton({ icon, label, value, onClick }: { icon: IconType; label: string; value?: ReactNode; onClick?: () => void }) {
   return (
-    <Button variant="ghost" onClick={onClick} justifyContent="flex-start" h="56px" px={4} borderRadius={0} fontWeight={600} w="full">
-      <Icon as={icon} boxSize="20px" mr={4} />
+    <Button
+      variant="ghost"
+      colorScheme="gray"
+      onClick={onClick}
+      justifyContent="flex-start"
+      h="auto"
+      minH="48px"
+      px={4}
+      borderRadius={0}
+      fontWeight={400}
+      fontSize="14px"
+      color="tx"
+      w="full"
+      gap={3}
+    >
+      <Icon as={icon} boxSize="20px" color="tx2" />
       <Text flex={1} textAlign="left">
         {label}
       </Text>
       {value && (
-        <Text fontSize="13px" fontWeight={400} color="fg.muted" mr={3}>
+        <Text fontSize="13px" color="tx3">
           {value}
         </Text>
       )}
+      <Icon as={FiChevronRight} boxSize="18px" color="tx3" />
     </Button>
   );
 }

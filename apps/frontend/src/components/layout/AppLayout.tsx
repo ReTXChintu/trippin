@@ -29,7 +29,7 @@ export function AppLayout({ children }: AppLayoutProps) {
   const inTrip = TRIP_WORKSPACE.test(pathname);
 
   return (
-    <Flex minH="100vh" bg="bg.canvas">
+    <Flex minH="100vh" bg="bg">
       {/* Desktop navigation: full sidebar on app pages, slim rail inside a trip. */}
       <Box flexShrink={0} display={{ base: "none", lg: "block" }} position="sticky" top={0} h="100vh">
         {inTrip ? <Rail /> : <Sidebar />}
@@ -37,7 +37,7 @@ export function AppLayout({ children }: AppLayoutProps) {
 
       <Drawer isOpen={isOpen} placement="left" onClose={onClose}>
         <DrawerOverlay />
-        <DrawerContent maxW="236px">
+        <DrawerContent maxW="248px">
           <Sidebar onNavigate={onClose} />
         </DrawerContent>
       </Drawer>
@@ -51,9 +51,9 @@ export function AppLayout({ children }: AppLayoutProps) {
           as="main"
           flex={1}
           minW={0}
-          px={inTrip ? { base: 4, md: 7 } : { base: 4, md: 8, xl: 10 }}
-          pt={inTrip ? { base: 4, md: 5 } : { base: 5, md: 8 }}
-          pb={{ base: "88px", lg: 10 }}
+          px={inTrip ? { base: 4, md: 6, lg: 8 } : { base: 4, md: 6, lg: 8 }}
+          pt={inTrip ? { base: 4, md: 5 } : { base: 4, md: 6 }}
+          pb={{ base: "96px", lg: 12 }}
           overflowX="clip"
         >
           {children}

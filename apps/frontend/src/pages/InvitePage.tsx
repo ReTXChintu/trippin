@@ -23,9 +23,10 @@ import {
 } from "react-icons/fi";
 import { Link as RouterLink, useNavigate, useParams } from "react-router-dom";
 import { getApiErrorMessage } from "@/lib/api";
-import { EmptyState, Pill, SurfaceCard } from "@/components/ui";
+import { EmptyState, Pill } from "@/components/ui";
 import { formatDateRange, initials } from "@/components/ui/app-format";
 import { LoadingState } from "@/components/ui/LoadingState";
+import { AuthCard, AuthSplit } from "@/components/layout/AuthPageWrapper";
 import { IllustratedMap } from "@/modules/landing/components/IllustratedMap";
 import {
   useAcceptInvite,
@@ -85,189 +86,195 @@ export function InvitePage() {
     }
   };
 
-  return (
-    <Flex direction="column" minH="100vh" bg="bg.canvas">
-      <Flex
-        as="header"
-        h="76px"
-        px={{ base: "16px", md: "64px" }}
-        align="center"
-        justify="space-between"
-        flexShrink={0}
-      >
-        <RouterLink to="/">
-          <BrandLogo size={34} />
-        </RouterLink>
-        {user ? (
-          <Link
-            as={RouterLink}
-            to="/dashboard"
-            fontSize="13px"
-            fontWeight={600}
-            color="accent.text"
-          >
-            Go to dashboard
-          </Link>
-        ) : (
-          <Text fontSize="13px" color="fg.muted">
-            <Link
-              as={RouterLink}
-              to={`/login?callbackUrl=${encodeURIComponent(here)}`}
-              fontWeight={600}
-              color="accent.text"
-            >
-              Sign in
-            </Link>
-          </Text>
-        )}
-      </Flex>
-      <Flex
-        flex={1}
-        justify="center"
-        align={{ base: "flex-start", md: "center" }}
-        px={{ base: "16px", md: 0 }}
-        pb={{ base: "24px", md: "60px" }}
-      >
-        <SurfaceCard raised w="full" maxW="600px" overflow="hidden">
-          <IllustratedMap
-            height={200}
-            h={{ base: "150px", md: "200px" }}
-            seed={11}
-            color="var(--chakra-colors-accent)"
-            pins={
-              error || !data
-                ? []
-                : [
-                    { x: 120, y: 90, label: "1" },
-                    ...((data.route?.length ?? 0) > 1
-                      ? [{ x: 250, y: 150, label: "2" }]
-                      : []),
-                    ...((data.route?.length ?? 0) > 2
-                      ? [{ x: 390, y: 110, label: "3" }]
-                      : []),
-                  ]
+  const topRight = user ? (
+    <Link as={RouterLink} to="/dashboard" fontSize="14px" fontWeight={600}>
+      Go to dashboard
+    </Link>
+  ) : (
+    <Link as={RouterLink} to={`/login?callbackUrl=${encodeURIComponent(here)}`} fontSize="14px" fontWeight={600}>
+      Sign in
+    </Link>
+  );
+
+  const map = (
+    <Box
+      position="relative"
+      h={{ base: "150px", md: "220px" }}
+      maxW="560px"
+      borderRadius="xl"
+      overflow="hidden"
+      borderWidth="1px"
+      borderColor="ln"
+    >
+      <IllustratedMap
+        height={220}
+        position="absolute"
+        inset={0}
+        seed={11}
+        color="var(--chakra-colors-ac)"
+        pins={
+          error || !data
+            ? []
+            : [
+                { x: 120, y: 90, label: "1" },
+                ...((data.route?.length ?? 0) > 1
+                  ? [{ x: 250, y: 150, label: "2" }]
+                  : []),
+                ...((data.route?.length ?? 0) > 2
+                  ? [{ x: 390, y: 110, label: "3" }]
+                  : []),
+              ]
+        }
+      />
+    </Box>
+  );
+
+  const logo = (
+    <Box as={RouterLink} to="/" alignSelf="flex-start" aria-label="Trippin' home">
+      <BrandLogo />
+    </Box>
+  );
+
+  if (error || !data) {
+    return (
+      <AuthSplit brand={<>{logo}{map}</>} topRight={topRight}>
+        <AuthCard>
+          <EmptyState
+            compact
+            icon={FiLink}
+            title="This invite link doesn’t work"
+            text={
+              getApiErrorMessage(error) ||
+              "It may have expired or been reset. Ask for a new link."
+            }
+            action={
+              <Button
+                as={RouterLink}
+                to={user ? "/dashboard" : "/"}
+                variant="outline"
+              >
+                {user ? "Go to dashboard" : "Go to Trippin'"}
+              </Button>
             }
           />
-          {error || !data ? (
-            <EmptyState
-              icon={FiLink}
-              title="This invite link doesn’t work"
-              text={
-                getApiErrorMessage(error) ||
-                "It may have expired or been reset. Ask for a new link."
-              }
-              action={
-                <Button
-                  as={RouterLink}
-                  to={user ? "/dashboard" : "/"}
-                  variant="outline"
-                >
-                  {user ? "Go to dashboard" : "Go to Trippin'"}
-                </Button>
-              }
-            />
-          ) : (
-            <Stack spacing="16px" p={{ base: "20px", md: "28px" }}>
-              <HStack spacing="10px">
-                <Flex
-                  w="30px"
-                  h="30px"
-                  borderRadius="full"
-                  bg="day.2"
-                  color="pin.fg"
-                  fontSize="12px"
-                  fontWeight={700}
-                  align="center"
-                  justify="center"
-                  aria-hidden
-                >
-                  {initials(data.invitedBy)}
-                </Flex>
-                <Text color="fg.muted">{data.invitedBy} invited you</Text>
-              </HStack>
-              <Heading
-                as="h1"
-                fontSize={{ base: "28px", md: "34px" }}
-                lineHeight={1.15}
-              >
-                {data.tripTitle}
-              </Heading>
-              <HStack spacing="8px" flexWrap="wrap" rowGap="8px">
-                {data.route && data.route.length > 0 && (
-                  <Pill icon={FiMapPin}>{data.route.join(" → ")}</Pill>
-                )}
-                {data.dates && (
-                  <Pill icon={FiCalendar}>{niceDates(data.dates)}</Pill>
-                )}
-                {data.travellers && data.travellers > 1 && (
-                  <Pill icon={FiUsers}>{data.travellers} travellers</Pill>
-                )}
-                <Pill icon={data.role === "viewer" ? FiEye : FiEdit2}>
-                  {data.role === "viewer" ? "Viewer" : "Editor"}
-                </Pill>
-              </HStack>
-              <Box
-                bg="bg.canvas"
-                borderWidth="1px"
-                borderColor="border.line"
-                borderRadius="xl"
-                px="14px"
-                py="12px"
-              >
-                <Text fontWeight={600}>{ROLE_TEXT[data.role].title}</Text>
-                <Text fontSize="12px" color="fg.muted" mt="4px">
-                  {ROLE_TEXT[data.role].text}
-                </Text>
-              </Box>
-              {expiresIn !== null && (
-                <HStack spacing="8px" color="fg.muted" fontSize="12px">
-                  <Icon as={FiClock} boxSize="16px" />
-                  <Text>
-                    {expiresIn <= 0
-                      ? "Link expires today"
-                      : expiresIn === 1
-                        ? "Link expires tomorrow"
-                        : `Link expires in ${expiresIn} days`}
-                  </Text>
-                </HStack>
-              )}
-              {data.alreadyMember ? (
-                <>
-                  <Button
-                    as={RouterLink}
-                    to={`/trips/${data.tripId}`}
-                    size="xl"
-                    w="full"
-                    leftIcon={<FiArrowRight />}
-                  >
-                    Open the trip
-                  </Button>
-                  <Text fontSize="12px" color="fg.muted" textAlign="center">
-                    You&rsquo;re already on this trip.
-                  </Text>
-                </>
-              ) : (
-                <>
-                  <Button
-                    size="xl"
-                    w="full"
-                    leftIcon={<FiArrowRight />}
-                    onClick={join}
-                    isLoading={accept.isPending}
-                  >
-                    Join trip
-                  </Button>
-                  <Text fontSize="12px" color="fg.muted" textAlign="center">
-                    {user
-                      ? "You’ll go straight to the trip."
-                      : "You’ll be asked to log in or sign up, then brought straight back here."}
-                  </Text>
-                </>
-              )}
-            </Stack>
+        </AuthCard>
+      </AuthSplit>
+    );
+  }
+
+  const brand = (
+    <>
+      {logo}
+      <Stack spacing={4} maxW="560px">
+        <HStack spacing={3}>
+          <Flex
+            w="36px"
+            h="36px"
+            borderRadius="full"
+            bg="day.2"
+            color="pin.fg"
+            fontSize="13px"
+            fontWeight={600}
+            align="center"
+            justify="center"
+            flexShrink={0}
+            aria-hidden
+          >
+            {initials(data.invitedBy)}
+          </Flex>
+          <Text color="tx2" fontSize="15px" lineHeight="22px">
+            {data.invitedBy} invited you
+          </Text>
+        </HStack>
+        <Heading
+          as="h1"
+          fontSize={{ base: "28px", md: "34px" }}
+          lineHeight={{ base: "34px", md: "40px" }}
+          letterSpacing="-0.02em"
+        >
+          {data.tripTitle}
+        </Heading>
+        <HStack spacing={2} flexWrap="wrap" rowGap={2}>
+          {data.route && data.route.length > 0 && (
+            <Pill icon={FiMapPin}>{data.route.join(" → ")}</Pill>
           )}
-        </SurfaceCard>
-      </Flex>
-    </Flex>
+          {data.dates && (
+            <Pill icon={FiCalendar}>{niceDates(data.dates)}</Pill>
+          )}
+          {data.travellers && data.travellers > 1 && (
+            <Pill icon={FiUsers}>{data.travellers} travellers</Pill>
+          )}
+          <Pill tone="accent" icon={data.role === "viewer" ? FiEye : FiEdit2}>
+            {data.role === "viewer" ? "Viewer" : "Editor"}
+          </Pill>
+        </HStack>
+      </Stack>
+      {map}
+    </>
+  );
+
+  return (
+    <AuthSplit brand={brand} topRight={topRight}>
+      <AuthCard>
+        <Box>
+          <Text as="h2" fontWeight={600} fontSize="22px" lineHeight="28px">
+            Join the trip
+          </Text>
+          <Text color="tx2" fontSize="15px" lineHeight="22px" mt={2}>
+            {ROLE_TEXT[data.role].title}.
+          </Text>
+        </Box>
+        <Box bg="sf2" borderWidth="1px" borderColor="ln" borderRadius="lg" px="14px" py={3}>
+          <Text fontSize="14px" lineHeight="20px" color="tx2">
+            {ROLE_TEXT[data.role].text}
+          </Text>
+        </Box>
+        {expiresIn !== null && (
+          <HStack spacing={2} color="tx3" fontSize="13px" lineHeight="18px">
+            <Icon as={FiClock} boxSize="16px" />
+            <Text className="num">
+              {expiresIn <= 0
+                ? "Link expires today"
+                : expiresIn === 1
+                  ? "Link expires tomorrow"
+                  : `Link expires in ${expiresIn} days`}
+            </Text>
+          </HStack>
+        )}
+        {data.alreadyMember ? (
+          <>
+            <Button
+              as={RouterLink}
+              to={`/trips/${data.tripId}`}
+              size="xl"
+              w="full"
+              rightIcon={<FiArrowRight size={18} />}
+            >
+              Open the trip
+            </Button>
+            <Text fontSize="12px" lineHeight="17px" color="tx3">
+              You&rsquo;re already on this trip.
+            </Text>
+          </>
+        ) : (
+          <>
+            <Button
+              size="xl"
+              w="full"
+              rightIcon={<FiArrowRight size={18} />}
+              onClick={join}
+              isLoading={accept.isPending}
+            >
+              Join trip
+            </Button>
+            <Text fontSize="12px" lineHeight="17px" color="tx3">
+              {user
+                ? "You’ll go straight to the trip."
+                : "You’ll be asked to log in or sign up, then brought straight back here."}
+            </Text>
+          </>
+        )}
+      </AuthCard>
+    </AuthSplit>
   );
 }

@@ -128,7 +128,7 @@ export function PlaceFilterBar({
             </Button>
           </PopoverTrigger>
           <PopoverContent w="280px">
-            <PopoverArrow bg="bg.surface" />
+            <PopoverArrow bg="sf" />
             <PopoverBody p={4}>
               <Stack spacing={3}>
                 <FormControl>
@@ -157,7 +157,7 @@ export function PlaceFilterBar({
           </PopoverContent>
         </Popover>
       </Flex>
-      <Flex align="center" gap={2} fontSize="12px" color="fg.muted" minH="28px" flexWrap="wrap">
+      <Flex align="center" gap={2} fontSize="12px" color="tx3" minH="28px" flexWrap="wrap">
         <Text aria-live="polite">
           Showing {resultCount} of {totalCount}
         </Text>
@@ -165,7 +165,7 @@ export function PlaceFilterBar({
           <Box
             as="button"
             type="button"
-            color="accent.text"
+            color="ac"
             fontWeight={600}
             onClick={() => {
               onChange(DEFAULT_PLACE_FILTERS);

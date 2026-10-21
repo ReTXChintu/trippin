@@ -30,7 +30,7 @@ class TripScreen extends ConsumerWidget {
         content: const Text('The trip stays in your account. You won’t be able to open it offline until you save it again.'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Cancel')),
-          FilledButton(onPressed: () => Navigator.pop(c, true), child: const Text('Remove')),
+          FilledButton(style: dsDangerFilled(c), onPressed: () => Navigator.pop(c, true), child: const Text('Remove')),
         ],
       ),
     );
@@ -76,16 +76,20 @@ class TripScreen extends ConsumerWidget {
         data: (trip) => ListView(
           padding: const EdgeInsets.fromLTRB(16, 4, 16, 32),
           children: [
-            Text('${trip.city} · ${dateRange(trip.startDate, trip.endDate)}', style: TextStyle(color: context.muted, fontSize: 15)),
+            Padding(
+              padding: const EdgeInsets.only(top: 12),
+              child: Text('${trip.city} · ${dateRange(trip.startDate, trip.endDate)}',
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: context.ds.tx2, fontFeatures: Ds.tabular)),
+            ),
             const SizedBox(height: 12),
             if (busy != null)
               Card(
                 child: Padding(
-                  padding: const EdgeInsets.all(14),
+                  padding: const EdgeInsets.all(Ds.s16),
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text(busy.label, style: const TextStyle(fontWeight: FontWeight.w600)),
+                    Text(busy.label, style: Theme.of(context).textTheme.titleSmall),
                     const SizedBox(height: 8),
-                    LinearProgressIndicator(value: busy.value, borderRadius: BorderRadius.circular(4)),
+                    LinearProgressIndicator(value: busy.value),
                   ]),
                 ),
               )
@@ -119,13 +123,22 @@ class TripScreen extends ConsumerWidget {
             if (trip.checklist.isNotEmpty) ...[
               const SectionTitle('Checklist'),
               Card(
+                clipBehavior: Clip.antiAlias,
                 child: Column(children: [
-                  for (final c in trip.checklist)
+                  for (final (i, c) in trip.checklist.indexed) ...[
+                    if (i > 0) const Divider(),
                     ListTile(
                       dense: true,
-                      leading: Icon(c.done ? Icons.check_box : Icons.check_box_outline_blank, color: c.done ? context.success : context.muted),
-                      title: Text(c.text, style: TextStyle(decoration: c.done ? TextDecoration.lineThrough : null)),
+                      minTileHeight: 48,
+                      leading: Icon(c.done ? Icons.check_box : Icons.check_box_outline_blank, color: c.done ? context.ds.ac : context.ds.ln2),
+                      title: Text(c.text,
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: c.done ? context.ds.tx3 : context.ds.tx,
+                            decoration: c.done ? TextDecoration.lineThrough : null,
+                          )),
                     ),
+                  ],
                 ]),
               ),
             ],
@@ -148,27 +161,25 @@ class _DayTile extends StatelessWidget {
     final visits = day.visits;
     final done = visits.where((v) => v.done).length;
     final isToday = day.date == todayYmd();
-    final color = TrippinColors.day(day.number);
+    final c = context.ds;
     return Card(
       clipBehavior: Clip.antiAlias,
+      // Today is "now": the selected-item treatment (accent tint + accent hairline).
+      color: isToday ? c.acSoft : null,
+      shape: isToday ? RoundedRectangleBorder(borderRadius: BorderRadius.circular(Ds.rXl), side: BorderSide(color: c.acLine)) : null,
       child: InkWell(
         onTap: () => context.push('/trip/${trip.id}/day/${day.number}'),
         child: Padding(
-          padding: const EdgeInsets.all(14),
+          padding: const EdgeInsets.fromLTRB(16, 12, 8, 12),
           child: Row(children: [
-            Container(
-              width: 44,
-              height: 44,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(12)),
-              child: Text('${day.number}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 18)),
-            ),
+            DayNumberTile(day.number),
             const SizedBox(width: 12),
             Expanded(
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Row(children: [
-                  Flexible(child: Text(shortDate(day.date), style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15.5))),
-                  if (isToday) ...[const SizedBox(width: 8), Pill('Today', bg: context.successSoft, fg: context.success)],
+                  Flexible(child: Text(shortDate(day.date), style: Theme.of(context).textTheme.titleSmall)),
+                  // A badge on a tinted row sits on the surface, in the row's strong colour.
+                  if (isToday) ...[const SizedBox(width: 8), Pill('Today', bg: c.sf, fg: c.ac)],
                 ]),
                 const SizedBox(height: 2),
                 Text(
@@ -177,7 +188,7 @@ class _DayTile extends StatelessWidget {
                     if (visits.isNotEmpty) '${visits.length} place${visits.length == 1 ? '' : 's'}',
                     if (done > 0) '$done done',
                   ].join(' · '),
-                  style: TextStyle(color: context.muted, fontSize: 13),
+                  style: TextStyle(color: c.tx3, fontSize: 13, height: 18 / 13, fontFeatures: Ds.tabular),
                   overflow: TextOverflow.ellipsis,
                 ),
               ]),
@@ -185,10 +196,10 @@ class _DayTile extends StatelessWidget {
             if (weather != null)
               Column(children: [
                 Text(weather.icon, style: const TextStyle(fontSize: 20)),
-                Text('${weather.max}°', style: TextStyle(color: context.muted, fontSize: 12, fontWeight: FontWeight.w600)),
+                Text('${weather.max}°', style: TextStyle(color: c.tx2, fontSize: 12, fontWeight: FontWeight.w600, fontFeatures: Ds.tabular)),
               ]),
             const SizedBox(width: 4),
-            Icon(Icons.chevron_right, color: context.muted),
+            Icon(Icons.chevron_right, size: 20, color: c.tx3),
           ]),
         ),
       ),
@@ -209,23 +220,26 @@ class _Stays extends StatelessWidget {
       for (final s in stays) ...[
         Card(
           child: Padding(
-            padding: const EdgeInsets.all(14),
+            padding: const EdgeInsets.all(Ds.s16),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Row(children: [
-                Icon(Icons.hotel_outlined, color: context.accent),
-                const SizedBox(width: 10),
-                Expanded(child: Text(s.name, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15.5))),
+                const DsIconTile(Icons.hotel_outlined),
+                const SizedBox(width: 12),
+                Expanded(child: Text(s.name, style: Theme.of(context).textTheme.titleSmall)),
               ]),
-              if (s.address != null) ...[const SizedBox(height: 6), SelectableText(s.address!, style: TextStyle(color: context.muted))],
-              if (s.checkInDate != null || s.confirmation != null) ...[
+              if (s.address != null) ...[
                 const SizedBox(height: 8),
+                SelectableText(s.address!, style: TextStyle(color: context.ds.tx2, fontSize: 13, height: 18 / 13)),
+              ],
+              if (s.checkInDate != null || s.confirmation != null) ...[
+                const SizedBox(height: 10),
                 Wrap(spacing: 6, runSpacing: 6, children: [
                   if (s.checkInDate != null) Pill('${shortDate(s.checkInDate!)} → ${s.checkOutDate != null ? shortDate(s.checkOutDate!) : ''}'),
                   if (s.confirmation != null) Pill('Booking ${s.confirmation}', icon: Icons.confirmation_number_outlined),
                 ]),
               ],
               if (s.point != null) ...[
-                const SizedBox(height: 10),
+                const SizedBox(height: 12),
                 Row(children: [
                   Expanded(
                     child: OutlinedButton.icon(
@@ -267,9 +281,10 @@ class _BookingTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Card(
         child: ListTile(
-          leading: Icon(_icon, color: context.accent),
-          title: Text(b.title, style: const TextStyle(fontWeight: FontWeight.w600)),
-          subtitle: Text([
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+          leading: DsIconTile(_icon, tone: DsTone.neutral),
+          title: Text(b.title, style: Theme.of(context).textTheme.titleSmall),
+          subtitle: Text(style: const TextStyle(fontFeatures: Ds.tabular), [
             if (b.startDate != null) '${shortDate(b.startDate!)}${b.startTime != null ? ' ${b.startTime}' : ''}',
             if (b.fromPlace != null || b.toPlace != null) '${b.fromPlace ?? ''} → ${b.toPlace ?? ''}',
             if (b.provider != null) b.provider!,

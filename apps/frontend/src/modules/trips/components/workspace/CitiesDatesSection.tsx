@@ -70,13 +70,13 @@ export function CitiesDatesSection({
         {legs.map((leg, i) => {
           const days = differenceInCalendarDays(parseISO(leg.endDate), parseISO(leg.startDate)) + 1;
           return (
-            <Flex key={leg.id} align="center" gap={3} px={3} py={2.5} borderWidth="1px" borderColor="border.line" borderRadius="lg">
+            <Flex key={leg.id} align="center" gap={3} px={3} py={2.5} borderWidth="1px" borderColor="ln" borderRadius="lg">
               <DayBadge dayNumber={i + 1} size={30} />
               <Box flex={1} minW={0}>
                 <Text fontWeight={600} noOfLines={1}>
                   {leg.name || leg.baseCity}
                 </Text>
-                <Text fontSize="12px" color="fg.muted">
+                <Text fontSize="12px" color="tx3">
                   {nice(leg.startDate)} – {nice(leg.endDate)} · {days} day{days === 1 ? "" : "s"}
                 </Text>
               </Box>
@@ -103,7 +103,7 @@ export function CitiesDatesSection({
               {offset ? `Move ${offset > 0 ? "+" : "−"}${Math.abs(offset)} day${Math.abs(offset) === 1 ? "" : "s"}` : "Move"}
             </Button>
           </HStack>
-          <FormHelperText fontSize="12px" color="fg.muted">
+          <FormHelperText fontSize="12px" color="tx3">
             Shifts every city, travel day and stay together. Bookings stay as they are.
           </FormHelperText>
         </FormControl>

@@ -13,7 +13,7 @@ export interface RoutePoint {
 function pin(n: number): L.DivIcon {
   return L.divIcon({
     className: "",
-    html: `<div style="background:var(--chakra-colors-accent);color:var(--chakra-colors-accent-fg);width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font:700 12px 'DM Sans',sans-serif;border:2.5px solid var(--chakra-colors-bg-surface);box-shadow:0 2px 6px rgba(0,0,0,.3);box-sizing:border-box">${n}</div>`,
+    html: `<div style="background:var(--chakra-colors-ac);color:var(--chakra-colors-acTx);width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font:700 12px 'IBM Plex Sans',sans-serif;border:2.5px solid var(--chakra-colors-sf);box-shadow:0 2px 6px rgba(0,0,0,.3);box-sizing:border-box">${n}</div>`,
     iconSize: [28, 28],
     iconAnchor: [14, 14],
   });
@@ -45,7 +45,7 @@ export function RoutePreviewMap({ points, height = "240px", borderRadius = "lg" 
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
-        {latLngs.length > 1 && <Polyline positions={latLngs} pathOptions={{ color: "var(--chakra-colors-accent)", weight: 4, opacity: 0.9, lineCap: "round", lineJoin: "round" }} />}
+        {latLngs.length > 1 && <Polyline positions={latLngs} pathOptions={{ color: "var(--chakra-colors-ac)", weight: 4, opacity: 0.9, lineCap: "round", lineJoin: "round" }} />}
         {points.map((p, i) => (
           <Marker key={`${p.label}-${i}`} position={[p.lat, p.lng]} icon={pin(i + 1)}>
             <Tooltip direction="top" offset={[0, -12]}>

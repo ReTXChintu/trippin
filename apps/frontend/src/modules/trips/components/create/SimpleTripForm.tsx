@@ -220,11 +220,11 @@ function Section({ step, title, hint, id, children }: { step: number; title: str
           <StepNumber n={step} />
         </Box>
         <Box>
-          <Heading as="h2" id={id} fontSize={{ base: "14px", md: "18px" }} fontFamily={{ base: "body", md: "heading" }} lineHeight={1.35}>
+          <Heading as="h2" id={id} fontSize={{ base: "15px", md: "17px" }} lineHeight={{ base: "20px", md: "24px" }}>
             {title}
           </Heading>
           {hint && (
-            <Text fontSize="12px" color="fg.muted" display={{ base: "none", md: "block" }}>
+            <Text fontSize="12px" color="tx3" display={{ base: "none", md: "block" }}>
               {hint}
             </Text>
           )}
@@ -237,7 +237,7 @@ function Section({ step, title, hint, id, children }: { step: number; title: str
 
 function Label({ children, htmlFor }: { children: ReactNode; htmlFor?: string }) {
   return (
-    <FormLabel htmlFor={htmlFor} m={0} mb="6px" fontSize="12px" fontWeight={600} color="fg.muted">
+    <FormLabel htmlFor={htmlFor} m={0} mb="6px" fontSize="12px" fontWeight={600} color="tx3">
       {children}
     </FormLabel>
   );
@@ -246,11 +246,12 @@ function Label({ children, htmlFor }: { children: ReactNode; htmlFor?: string })
 function DaysStepper({ value, onChange, city }: { value: number; onChange: (n: number) => void; city: string }) {
   const name = city || "this city";
   return (
-    <HStack spacing={0} borderWidth="1px" borderColor="border.line" borderRadius="md" bg="bg.surface" h={{ base: "44px", md: "36px" }} flexShrink={0}>
+    <HStack spacing={0} borderWidth="1px" borderColor="ln" borderRadius="md" bg="sf" h={{ base: "44px", md: "36px" }} flexShrink={0}>
       <IconButton
         aria-label={`Fewer days in ${name}`}
         icon={<FiMinus />}
         variant="ghost"
+        colorScheme="gray"
         size={{ base: "lg", md: "md" }}
         h="full"
         onClick={() => onChange(Math.max(1, value - 1))}
@@ -267,6 +268,7 @@ function DaysStepper({ value, onChange, city }: { value: number; onChange: (n: n
         aria-label={`More days in ${name}`}
         icon={<FiPlus />}
         variant="ghost"
+        colorScheme="gray"
         size={{ base: "lg", md: "md" }}
         h="full"
         onClick={() => onChange(Math.min(MAX_DAYS_PER_CITY, value + 1))}
@@ -290,14 +292,14 @@ function OptionTile({ selected, icon, label, onClick }: { selected: boolean; ico
       p={selected ? "11px" : "12px"}
       borderRadius="lg"
       borderWidth={selected ? "2px" : "1px"}
-      borderColor={selected ? "accent" : "border.line"}
-      bg={selected ? "accent.soft" : "bg.surface"}
+      borderColor={selected ? "ac" : "ln"}
+      bg={selected ? "acSoft" : "sf"}
       textAlign="left"
       minW={0}
-      _hover={selected ? undefined : { bg: "bg.subtle" }}
-      _focusVisible={{ outline: "2px solid", outlineColor: "accent", outlineOffset: "2px" }}
+      _hover={selected ? undefined : { bg: "sunk" }}
+      _focusVisible={{ outline: "2px solid", outlineColor: "ac", outlineOffset: "2px" }}
     >
-      <Icon as={icon} boxSize="18px" color="accent" />
+      <Icon as={icon} boxSize="18px" color="ac" />
       <Text fontWeight={600} lineHeight={1.4}>
         {label}
       </Text>
@@ -343,9 +345,9 @@ function CityCard({
 
   return (
     <Box
-      bg={{ base: "bg.canvas", md: "bg.surface" }}
+      bg={{ base: "bg", md: "sf" }}
       borderWidth="1px"
-      borderColor="border.line"
+      borderColor="ln"
       borderRadius="xl"
       opacity={dragHandlers.isDragging ? 0.5 : 1}
       onDragEnter={dragHandlers.onDragEnter}
@@ -358,7 +360,7 @@ function CityCard({
           icon={<LuGripVertical />}
           variant="ghost"
           size="xs"
-          color="fg.muted"
+          color="tx3"
           cursor="grab"
           display={{ base: "none", md: "inline-flex" }}
           draggable
@@ -382,7 +384,7 @@ function CityCard({
           <Text fontWeight={600} fontSize={{ base: "14px", md: "15px" }} noOfLines={1}>
             {row.city}
           </Text>
-          <Text fontSize="12px" color="fg.muted" noOfLines={2}>
+          <Text fontSize="12px" color="tx3" noOfLines={2}>
             {place || "Country needed"}
             {dates && (
               <Text as="span" display={{ base: "inline", md: "none" }}>
@@ -393,7 +395,7 @@ function CityCard({
           </Text>
         </Box>
         {dates && (
-          <Text fontSize="12px" color="fg.muted" flexShrink={0} display={{ base: "none", md: "block" }}>
+          <Text fontSize="12px" color="tx3" flexShrink={0} display={{ base: "none", md: "block" }}>
             {shortRange(dates.start, dates.end)}
           </Text>
         )}
@@ -407,7 +409,7 @@ function CityCard({
           display={{ base: "none", md: "inline-flex" }}
           onClick={onToggle}
         />
-        <IconButton aria-label={`Remove ${name}`} title={`Remove ${name}`} icon={<FiX />} variant="ghost" display={{ base: "none", md: "inline-flex" }} onClick={onRemove} />
+        <IconButton aria-label={`Remove ${name}`} title={`Remove ${name}`} icon={<FiX />} variant="ghost" colorScheme="gray" display={{ base: "none", md: "inline-flex" }} onClick={onRemove} />
       </Flex>
 
       {needsCountry && (
@@ -429,28 +431,28 @@ function CityCard({
 
       {/* Phone: the details open from a link instead of the chevron. */}
       <HStack display={{ base: "flex", md: "none" }} px="12px" pb="10px" spacing="12px" fontSize="12px">
-        <Link as="button" type="button" color="accent.text" fontWeight={600} onClick={onToggle} aria-expanded={isOpen}>
+        <Link as="button" type="button" color="ac" fontWeight={600} onClick={onToggle} aria-expanded={isOpen}>
           {isOpen ? "Hide details" : "Times, day trips, hotel"}
         </Link>
-        <Link as="button" type="button" color="danger" fontWeight={600} onClick={onRemove}>
+        <Link as="button" type="button" color="crit" fontWeight={600} onClick={onRemove}>
           Remove
         </Link>
       </HStack>
 
       <Collapse in={isOpen} animateOpacity>
-        <Stack spacing="12px" p="14px" borderTopWidth="1px" borderColor="border.line" bg="bg.canvas" borderBottomRadius="xl">
+        <Stack spacing="12px" p="14px" borderTopWidth="1px" borderColor="ln" bg="bg" borderBottomRadius="xl">
           <SimpleGrid columns={{ base: 1, sm: 2 }} spacing="12px">
             <FormControl>
               <Label>Arrival time</Label>
               <IconInput icon={FiClock} type="time" value={row.arrivalTime ?? ""} onChange={(e) => onChange({ arrivalTime: e.target.value || undefined })} aria-label={`Arrival time in ${name}`} />
-              <Text fontSize="12px" color="fg.muted" mt="4px">
+              <Text fontSize="12px" color="tx3" mt="4px">
                 First day starts after you get in.
               </Text>
             </FormControl>
             <FormControl>
               <Label>Departure time</Label>
               <IconInput icon={FiClock} type="time" value={row.departureTime ?? ""} onChange={(e) => onChange({ departureTime: e.target.value || undefined })} aria-label={`Departure time from ${name}`} />
-              <Text fontSize="12px" color="fg.muted" mt="4px">
+              <Text fontSize="12px" color="tx3" mt="4px">
                 Last day ends in time to leave.
               </Text>
             </FormControl>
@@ -519,7 +521,7 @@ function CityCard({
             }
             onClear={() => onChange({ hotel: undefined })}
           />
-          <Text fontSize="12px" color="fg.muted" mt="-6px">
+          <Text fontSize="12px" color="tx3" mt="-6px">
             Optional — you can add stays later too.
           </Text>
         </Stack>
@@ -552,14 +554,14 @@ function PreviewBody({ title, cities, legs, totalDays, pace, transport, budgetLe
         <Heading as="h2" fontSize="24px" mt="2px" noOfLines={2}>
           {title || "Where to?"}
         </Heading>
-        <Text fontSize="12px" color="fg.muted">
+        <Text fontSize="12px" color="tx3">
           Name is auto-generated if left blank
         </Text>
       </Box>
       <RoutePreviewMap points={points} height={mapHeight} borderRadius={0} />
       <Stack spacing="10px" px="24px" py="20px">
         {cities.length === 0 ? (
-          <Text fontSize="12px" color="fg.muted">
+          <Text fontSize="12px" color="tx3">
             Add a city — your route and dates show up here.
           </Text>
         ) : (
@@ -568,7 +570,7 @@ function PreviewBody({ title, cities, legs, totalDays, pace, transport, budgetLe
             return (
               <Box key={c.id}>
                 {i > 0 && leg && (
-                  <HStack spacing="8px" fontSize="12px" color="fg.muted" pl="6px" mb="10px">
+                  <HStack spacing="8px" fontSize="12px" color="tx3" pl="6px" mb="10px">
                     <Icon as={LuCar} boxSize="14px" />
                     <Text>Travel day {fmt(leg.startDate, "d MMM")}</Text>
                   </HStack>
@@ -580,7 +582,7 @@ function PreviewBody({ title, cities, legs, totalDays, pace, transport, budgetLe
                       {c.city}
                     </Text>
                   </HStack>
-                  <Text fontSize="12px" color="fg.muted" flexShrink={0}>
+                  <Text fontSize="12px" color="tx3" flexShrink={0}>
                     {leg ? `${shortRange(leg.startDate, leg.endDate)} · ${plural(c.days, "day")}` : plural(c.days, "day")}
                   </Text>
                 </Flex>
@@ -610,7 +612,7 @@ function PreviewBody({ title, cities, legs, totalDays, pace, transport, budgetLe
           )}
         </Wrap>
         {interests.length > 0 && (
-          <Text fontSize="12px" color="fg.muted">
+          <Text fontSize="12px" color="tx3">
             {interests.map((i, n) => (n === 0 ? i : i.toLowerCase())).join(", ")}
           </Text>
         )}
@@ -755,12 +757,12 @@ export function SimpleTripForm({ header }: { header?: ReactNode }) {
       }}
       templateColumns={{ base: "minmax(0, 1fr)", xl: "minmax(0, 1fr) clamp(360px, 32vw, 460px)" }}
       columnGap={{ xl: "2.5rem" }}
-      mr={{ xl: "-2.5rem" }}
-      mt={{ xl: "-2rem" }}
-      mb={{ lg: "-2.5rem" }}
+      mr={{ xl: "-2rem" }}
+      mt={{ xl: "-1.5rem" }}
+      mb={{ lg: "-3rem" }}
       alignItems="start"
     >
-      <Stack spacing={{ base: "14px", md: "20px" }} minW={0} pt={{ xl: "28px" }} pb={{ lg: "40px" }}>
+      <Stack spacing={{ base: "14px", md: "20px" }} minW={0} pt={{ xl: "24px" }} pb={{ lg: "48px" }}>
         {header}
 
         <Section step={1} title="Where and when" id="where-when">
@@ -770,7 +772,7 @@ export function SimpleTripForm({ header }: { header?: ReactNode }) {
               <IconInput id="trip-start" icon={FiCalendar} type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
             </FormControl>
             {startDate && (
-              <Text fontSize="12px" color="fg.muted" pb={{ md: "12px" }} display={{ base: "none", md: "block" }}>
+              <Text fontSize="12px" color="tx3" pb={{ md: "12px" }} display={{ base: "none", md: "block" }}>
                 Ends {fmt(endDate, "EEE d MMM")} · {plural(totalDays, "day")} · dates and travel days are computed
               </Text>
             )}
@@ -782,7 +784,7 @@ export function SimpleTripForm({ header }: { header?: ReactNode }) {
             return (
               <Box key={row.id}>
                 {i > 0 && (
-                  <HStack spacing="8px" color="fg.muted" fontSize="12px" pl={{ base: "12px", md: "56px" }} minH="32px" mb="12px" mt="-2px">
+                  <HStack spacing="8px" color="tx3" fontSize="12px" pl={{ base: "12px", md: "56px" }} minH="32px" mb="12px" mt="-2px">
                     <Icon as={LuCar} boxSize="14px" />
                     <Text>
                       Travel day{leg ? ` ${fmt(leg.startDate, "d MMM")}` : ""}
@@ -850,7 +852,7 @@ export function SimpleTripForm({ header }: { header?: ReactNode }) {
               aria-label="Pace"
               sx={{ "& > button": { flex: 1, justifyContent: "center", h: { base: "40px", md: "30px" } } }}
             />
-            <Text fontSize="12px" color="fg.muted" mt="6px" display={{ base: "none", md: "block" }}>
+            <Text fontSize="12px" color="tx3" mt="6px" display={{ base: "none", md: "block" }}>
               {paceItem?.label} · {paceItem?.hint}
             </Text>
           </FormControl>
@@ -915,7 +917,7 @@ export function SimpleTripForm({ header }: { header?: ReactNode }) {
               <Text fontWeight={600} fontSize="14px">
                 Track spending in SpendLog
               </Text>
-              <Text fontSize="12px" color="fg.muted">
+              <Text fontSize="12px" color="tx3">
                 Creates a SpendLog trip for everyone on it — log, split and settle what you actually spend.
               </Text>
             </Checkbox>
@@ -923,7 +925,7 @@ export function SimpleTripForm({ header }: { header?: ReactNode }) {
               <Text fontWeight={600} fontSize="14px">
                 Share photos in InFrame
               </Text>
-              <Text fontSize="12px" color="fg.muted">
+              <Text fontSize="12px" color="tx3">
                 Creates a shared InFrame event so everyone&apos;s trip photos land in one album.
               </Text>
             </Checkbox>
@@ -949,7 +951,7 @@ export function SimpleTripForm({ header }: { header?: ReactNode }) {
                 <Text as="h2" id="more-options" fontWeight={600}>
                   More options
                 </Text>
-                <Text fontSize="12px" color="fg.muted" display={{ base: "none", md: "block" }}>
+                <Text fontSize="12px" color="tx3" display={{ base: "none", md: "block" }}>
                   Trip name, status, daily hours, best-time scheduling, budget, must-see and skip lists, notes
                 </Text>
               </Box>
@@ -962,8 +964,8 @@ export function SimpleTripForm({ header }: { header?: ReactNode }) {
               justify="center"
               borderRadius="md"
               borderWidth={{ base: 0, md: "1px" }}
-              borderColor="border.line"
-              bg={{ md: "bg.surface" }}
+              borderColor="ln"
+              bg={{ md: "sf" }}
               flexShrink={0}
               aria-hidden
             >
@@ -971,7 +973,7 @@ export function SimpleTripForm({ header }: { header?: ReactNode }) {
             </Flex>
           </Flex>
           <Collapse in={more.isOpen} animateOpacity>
-            <SimpleGrid id="more-options-panel" columns={{ base: 1, md: 2 }} spacing="16px" mt="16px" pt="16px" borderTopWidth="1px" borderColor="border.line">
+            <SimpleGrid id="more-options-panel" columns={{ base: 1, md: 2 }} spacing="16px" mt="16px" pt="16px" borderTopWidth="1px" borderColor="ln">
               <FormControl>
                 <Label htmlFor="trip-title">Trip name</Label>
                 <Input id="trip-title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder={autoName || "e.g. Japan in spring"} />
@@ -989,7 +991,7 @@ export function SimpleTripForm({ header }: { header?: ReactNode }) {
                 <Label>Day starts / ends</Label>
                 <HStack>
                   <IconInput icon={FiClock} type="time" value={dailyStart} onChange={(e) => setDailyStart(e.target.value)} aria-label="Day starts" />
-                  <Text color="fg.muted">–</Text>
+                  <Text color="tx3">–</Text>
                   <IconInput icon={FiClock} type="time" value={dailyEnd} onChange={(e) => setDailyEnd(e.target.value)} aria-label="Day ends" />
                 </HStack>
                 <Checkbox mt="8px" size="sm" isChecked={flexible} onChange={(e) => setFlexible(e.target.checked)}>
@@ -1054,20 +1056,20 @@ export function SimpleTripForm({ header }: { header?: ReactNode }) {
         <Box
           display={{ base: "block", xl: "none" }}
           position="sticky"
-          bottom={{ base: "64px", lg: 0 }}
+          bottom={{ base: "calc(72px + env(safe-area-inset-bottom))", lg: 0 }}
           zIndex={2}
-          mx={{ base: "-1rem", md: "-2rem" }}
-          px="16px"
-          py="12px"
-          bg="bg.surface"
+          mx={{ base: "-1rem", md: "-1.5rem", lg: "-2rem" }}
+          px={{ base: 4, md: 6, lg: 8 }}
+          py={3}
+          bg="sf"
           borderTopWidth="1px"
-          borderColor="border.line"
+          borderColor="ln"
         >
           <Flex justify="space-between" align="center" gap="8px" mb="8px" fontSize="12px">
-            <Text color="fg.muted" noOfLines={1}>
+            <Text color="tx3" noOfLines={1}>
               {summary}
             </Text>
-            <Link as="button" type="button" fontWeight={600} color="accent.text" textDecoration="underline" flexShrink={0} onClick={preview.onOpen}>
+            <Link as="button" type="button" fontSize="13px" flexShrink={0} onClick={preview.onOpen}>
               Preview map
             </Link>
           </Flex>
@@ -1081,18 +1083,18 @@ export function SimpleTripForm({ header }: { header?: ReactNode }) {
         display={{ base: "none", xl: "flex" }}
         direction="column"
         position="sticky"
-        top="60px"
-        h="calc(100vh - 60px)"
+        top="72px"
+        h="calc(100vh - 72px)"
         overflowY="auto"
-        bg="bg.surface"
+        bg="sf"
         borderLeftWidth="1px"
-        borderColor="border.line"
+        borderColor="ln"
       >
         <PreviewBody {...previewProps} />
         <Box flex={1} />
-        <Stack spacing="8px" px="24px" py="20px" borderTopWidth="1px" borderColor="border.line">
+        <Stack spacing="8px" px="24px" py="20px" borderTopWidth="1px" borderColor="ln">
           {createButton}
-          <Text fontSize="12px" color="fg.muted" textAlign="center">
+          <Text fontSize="12px" color="tx3" textAlign="center">
             Next you&rsquo;ll pick places. Nothing is generated until you say so.
           </Text>
         </Stack>

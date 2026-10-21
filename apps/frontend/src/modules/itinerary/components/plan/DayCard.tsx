@@ -139,9 +139,9 @@ export const DayCard = forwardRef<HTMLDivElement, DayCardProps>(function DayCard
         ref={ref}
         as="section"
         aria-label={`Day ${day.dayNumber}, ${formatDayDate(day.date, "EEE d MMM")}`}
-        bg="bg.surface"
+        bg="sf"
         borderWidth="1px"
-        borderColor="border.line"
+        borderColor="ln"
         borderRadius="xl"
         px={4}
         py={3}
@@ -151,7 +151,7 @@ export const DayCard = forwardRef<HTMLDivElement, DayCardProps>(function DayCard
         cursor="pointer"
         onClick={onSelect}
         scrollMarginTop="140px"
-        _hover={{ borderColor: "fg.muted" }}
+        _hover={{ borderColor: "tx3" }}
       >
         <HStack spacing={3} minW={0}>
           <DayBadge dayNumber={day.dayNumber} size={36} fontSize="17px" />
@@ -160,7 +160,7 @@ export const DayCard = forwardRef<HTMLDivElement, DayCardProps>(function DayCard
               {formatDayDate(day.date, "EEE d MMM")}
               {place ? ` · ${place}` : ""}
             </Text>
-            <Text fontSize="12px" color="fg.muted" noOfLines={1}>
+            <Text fontSize="12px" color="tx3" noOfLines={1}>
               {isTravelDay || transferStop
                 ? `Travel day${transferStop ? ` · ${transferStop.placeName} · about ${fmtDur(transferStop.visitDurationMinutes)}` : ""}${summary.visits > 0 ? ` · ${summary.visits} stop${summary.visits === 1 ? "" : "s"}` : ""}`
                 : statsLine}
@@ -199,9 +199,9 @@ export const DayCard = forwardRef<HTMLDivElement, DayCardProps>(function DayCard
       ref={ref}
       as="section"
       aria-label={`Day ${day.dayNumber}, ${formatDayDate(day.date, "EEE d MMM")}`}
-      bg="bg.surface"
+      bg="sf"
       borderWidth="1px"
-      borderColor={isSelected && !plan.compact ? "border.line" : "border.line"}
+      borderColor={isSelected && !plan.compact ? "ln" : "ln"}
       borderRadius="xl"
       scrollMarginTop="140px"
     >
@@ -212,7 +212,7 @@ export const DayCard = forwardRef<HTMLDivElement, DayCardProps>(function DayCard
               {formatDayDate(day.date, "EEE d MMM")}
               {place ? ` · ${place}` : ""}
             </Text>
-            <Text fontSize="12px" color="fg.muted">
+            <Text fontSize="12px" color="tx3">
               {statsLine}
             </Text>
           </Box>
@@ -232,7 +232,7 @@ export const DayCard = forwardRef<HTMLDivElement, DayCardProps>(function DayCard
               <DayBadge dayNumber={day.dayNumber} borderRadius="12px" fontSize="20px" />
               <Box minW={0}>
                 <HStack spacing={2} flexWrap="wrap">
-                  <Text as="h2" fontFamily="heading" fontWeight={600} fontSize="20px" lineHeight={1.25}>
+                  <Text as="h2" fontWeight={600} fontSize="17px" lineHeight="24px">
                     {formatDayDate(day.date, "EEE d MMM")}
                   </Text>
                   {(isTravelDay || transferStop || isFreeDay || dayTrip) && (
@@ -245,7 +245,7 @@ export const DayCard = forwardRef<HTMLDivElement, DayCardProps>(function DayCard
                   )}
                 </HStack>
                 {place && (
-                  <Text fontSize="12px" color="fg.muted">
+                  <Text fontSize="12px" color="tx3">
                     {place}
                   </Text>
                 )}
@@ -322,7 +322,7 @@ export const DayCard = forwardRef<HTMLDivElement, DayCardProps>(function DayCard
           {(insights.overrunMinutes > 0 || insights.savingKm > 0) && (
             <Flex direction="column" gap={2} px="18px" pb={3}>
               {insights.overrunMinutes > 0 && (
-                <Flex align="center" gap={2} px={3} py={2} borderRadius="md" bg="warn.soft" color="warn" fontSize="13px" flexWrap="wrap">
+                <Flex align="center" gap={2} px={3} py={2} borderRadius="md" bg="warnSoft" color="warn" fontSize="13px" flexWrap="wrap">
                   <Icon as={LuClock} boxSize="15px" flexShrink={0} />
                   <Text flex={1} minW="200px">
                     <b>Runs until {insights.endsAt}</b> — {fmtDur(insights.overrunMinutes)} past your {plan.trip.dailyEndTime} end. Move a stop to another day
@@ -331,12 +331,12 @@ export const DayCard = forwardRef<HTMLDivElement, DayCardProps>(function DayCard
                 </Flex>
               )}
               {insights.savingKm > 0 && !plan.readOnly && (
-                <Flex align="center" gap={2} px={3} py={2} borderRadius="md" bg="accent.soft" color="accent.text" fontSize="13px" flexWrap="wrap">
+                <Flex align="center" gap={2} px={3} py={2} borderRadius="md" bg="acSoft" color="ac" fontSize="13px" flexWrap="wrap">
                   <Icon as={LuRoute} boxSize="15px" flexShrink={0} />
                   <Text flex={1} minW="180px">
                     A better order saves about <b>{insights.savingKm} km</b> of driving.
                   </Text>
-                  <Button size="xs" variant="outline" bg="bg.surface" onClick={() => plan.optimizeDay(day)}>
+                  <Button size="xs" variant="outline" bg="sf" onClick={() => plan.optimizeDay(day)}>
                     Optimize route
                   </Button>
                 </Flex>
@@ -344,12 +344,12 @@ export const DayCard = forwardRef<HTMLDivElement, DayCardProps>(function DayCard
             </Flex>
           )}
           {day.dressCode && (
-            <HStack px="18px" pb={3} mt="-6px" spacing="6px" fontSize="12px" color="fg.muted">
+            <HStack px="18px" pb={3} mt="-6px" spacing="6px" fontSize="12px" color="tx3">
               <Icon as={LuShirt} boxSize="13px" />
               <Text>{day.dressCode}</Text>
             </HStack>
           )}
-          <Divider borderColor="border.line" />
+          <Divider borderColor="ln" />
         </>
       )}
 
@@ -360,8 +360,8 @@ export const DayCard = forwardRef<HTMLDivElement, DayCardProps>(function DayCard
               const meta = BOOKING_META[b.type];
               const inPlan = day.stops.some((s) => s.placeName === b.title && s.fixedStartTime === b.startTime);
               return (
-                <HStack key={b.id} spacing={2} fontSize="13px" px={3} py={2} borderRadius="md" bg="bg.subtle" flexWrap="wrap">
-                  <Icon as={meta.icon} color="accent.text" />
+                <HStack key={b.id} spacing={2} fontSize="13px" px={3} py={2} borderRadius="md" bg="sunk" flexWrap="wrap">
+                  <Icon as={meta.icon} color="ac" />
                   <Text fontWeight={600}>{b.startTime ?? "Booked"}</Text>
                   <Text noOfLines={1} flex={1} minW="120px">
                     {b.title}
@@ -379,7 +379,7 @@ export const DayCard = forwardRef<HTMLDivElement, DayCardProps>(function DayCard
         )}
 
         {ordered.length === 0 ? (
-          <Text fontSize="13px" color="fg.muted" textAlign="center" py={4}>
+          <Text fontSize="13px" color="tx3" textAlign="center" py={4}>
             {isFreeDay ? "Free day — nothing planned yet." : "Nothing planned for this day yet."}
           </Text>
         ) : (
@@ -438,7 +438,7 @@ export const DayCard = forwardRef<HTMLDivElement, DayCardProps>(function DayCard
         )}
 
         {!plan.readOnly && !isTravelDay && (
-          <Button mt={3} ml={plan.compact ? 0 : "62px"} size="sm" variant="ghost" color="fg.muted" leftIcon={<LuPlus />} onClick={() => plan.openAddStop(day)}>
+          <Button mt={3} ml={plan.compact ? 0 : "62px"} size="sm" variant="ghost" color="tx3" leftIcon={<LuPlus />} onClick={() => plan.openAddStop(day)}>
             Add a place or activity
           </Button>
         )}

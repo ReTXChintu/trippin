@@ -107,21 +107,21 @@ function ItemCard({ item, dragging, overlay }: { item: BoardItem; dragging?: boo
       py={2}
       borderWidth="1px"
       borderStyle={isMeal ? "dashed" : "solid"}
-      borderColor={overlay ? "accent" : "border.line"}
+      borderColor={overlay ? "ac" : "ln"}
       borderRadius="md"
-      bg={isMeal ? "transparent" : "bg.surface"}
+      bg={isMeal ? "transparent" : "sf"}
       boxShadow={overlay ? "raised" : undefined}
       opacity={dragging ? 0.35 : 1}
       cursor={item.draggable ? "grab" : "default"}
       minW={0}
     >
-      {item.draggable && <Icon as={LuGripVertical} boxSize="14px" color="fg.muted" flexShrink={0} />}
+      {item.draggable && <Icon as={LuGripVertical} boxSize="14px" color="tx3" flexShrink={0} />}
       <Flex
         w="28px"
         h="28px"
         borderRadius="8px"
-        bg={isMeal ? "bg.subtle" : "accent.soft"}
-        color={isMeal ? "fg.muted" : "accent.text"}
+        bg={isMeal ? "sunk" : "acSoft"}
+        color={isMeal ? "tx3" : "ac"}
         align="center"
         justify="center"
         flexShrink={0}
@@ -131,23 +131,23 @@ function ItemCard({ item, dragging, overlay }: { item: BoardItem; dragging?: boo
       <Box flex={1} minW={0}>
         <HStack spacing={1.5} minW={0}>
           {item.time && (
-            <Text fontSize="12px" fontWeight={600} color="fg.muted" flexShrink={0} sx={{ fontVariantNumeric: "tabular-nums" }}>
+            <Text fontSize="12px" fontWeight={600} color="tx3" flexShrink={0} sx={{ fontVariantNumeric: "tabular-nums" }}>
               {item.time}
             </Text>
           )}
-          <Text fontSize="13px" fontWeight={isMeal ? 500 : 600} color={isMeal ? "fg.muted" : "fg.default"} noOfLines={1}>
+          <Text fontSize="13px" fontWeight={isMeal ? 500 : 600} color={isMeal ? "tx3" : "tx"} noOfLines={1}>
             {item.title}
           </Text>
-          {item.locked && <Icon as={LuLock} boxSize="12px" color="accent.text" flexShrink={0} aria-label="Locked" />}
+          {item.locked && <Icon as={LuLock} boxSize="12px" color="ac" flexShrink={0} aria-label="Locked" />}
         </HStack>
         {item.subtitle && (
-          <Text fontSize="12px" color="fg.muted" noOfLines={1}>
+          <Text fontSize="12px" color="tx3" noOfLines={1}>
             {item.subtitle}
           </Text>
         )}
       </Box>
       {item.tag && (
-        <Text fontSize="11px" fontWeight={600} color="accent.text" bg="accent.soft" px={1.5} borderRadius="full" flexShrink={0}>
+        <Text fontSize="11px" fontWeight={600} color="ac" bg="acSoft" px={1.5} borderRadius="full" flexShrink={0}>
           {item.tag}
         </Text>
       )}
@@ -181,9 +181,9 @@ function DropArea({ id, children, enabled, highlight, ...rest }: { id: string; c
       p={2}
       minH="96px"
       borderRadius="lg"
-      bg={isOver && enabled ? "accent.soft" : highlight ? "bg.subtle" : "transparent"}
+      bg={isOver && enabled ? "acSoft" : highlight ? "sunk" : "transparent"}
       outline={isOver && enabled ? "2px dashed" : undefined}
-      outlineColor="accent"
+      outlineColor="ac"
       transition="background .12s"
       {...rest}
     >
@@ -310,7 +310,7 @@ export function PlanBoard({ tray, columns, onMove, readOnly, header }: PlanBoard
         <HStack mb={3} spacing={2} minH="20px">
           <Box flex={1}>{header}</Box>
           {saving && (
-            <HStack spacing={1.5} fontSize="12px" color="fg.muted" flexShrink={0}>
+            <HStack spacing={1.5} fontSize="12px" color="tx3" flexShrink={0}>
               <Spinner size="xs" />
               <Text>Saving…</Text>
             </HStack>
@@ -325,9 +325,9 @@ export function PlanBoard({ tray, columns, onMove, readOnly, header }: PlanBoard
           direction="column"
           w={{ base: "full", lg: "280px" }}
           flexShrink={0}
-          bg="bg.surface"
+          bg="sf"
           borderWidth="1px"
-          borderColor="border.line"
+          borderColor="ln"
           borderRadius="xl"
           maxH={{ base: "320px", lg: "calc(100vh - 220px)" }}
           position={{ lg: "sticky" }}
@@ -337,19 +337,19 @@ export function PlanBoard({ tray, columns, onMove, readOnly, header }: PlanBoard
           <Box px={3} pt={3} pb={2}>
             <HStack justify="space-between">
               <Text fontWeight={600}>{tray.title}</Text>
-              <Text fontSize="12px" color="fg.muted">
+              <Text fontSize="12px" color="tx3">
                 {containers[TRAY].length}
               </Text>
             </HStack>
             {tray.hint && (
-              <Text fontSize="12px" color="fg.muted" mt={0.5}>
+              <Text fontSize="12px" color="tx3" mt={0.5}>
                 {tray.hint}
               </Text>
             )}
             {tray.items.length > 6 && (
               <InputGroup size="sm" mt={2}>
                 <InputLeftElement pointerEvents="none">
-                  <Icon as={LuSearch} color="fg.muted" />
+                  <Icon as={LuSearch} color="tx3" />
                 </InputLeftElement>
                 <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Filter places" aria-label="Filter places" borderRadius="md" />
               </InputGroup>
@@ -359,7 +359,7 @@ export function PlanBoard({ tray, columns, onMove, readOnly, header }: PlanBoard
             <SortableContext id={TRAY} items={trayIds} strategy={verticalListSortingStrategy}>
               <DropArea id={TRAY} enabled={tray.acceptsDrop} highlight={Boolean(active) && active?.kind === "stop" && tray.acceptsDrop}>
                 {trayIds.length === 0 ? (
-                  <Flex direction="column" align="center" justify="center" gap={1.5} py={6} color="fg.muted" textAlign="center">
+                  <Flex direction="column" align="center" justify="center" gap={1.5} py={6} color="tx3" textAlign="center">
                     <Icon as={LuInbox} boxSize="20px" />
                     <Text fontSize="12px">{active?.kind === "stop" && tray.acceptsDrop ? "Drop here to unschedule" : (tray.emptyText ?? "Everything is on a day.")}</Text>
                   </Flex>
@@ -388,9 +388,9 @@ export function PlanBoard({ tray, columns, onMove, readOnly, header }: PlanBoard
                   direction="column"
                   w={{ base: "82vw", sm: "260px" }}
                   flexShrink={0}
-                  bg="bg.surface"
+                  bg="sf"
                   borderWidth="1px"
-                  borderColor="border.line"
+                  borderColor="ln"
                   borderRadius="xl"
                   opacity={active && (!col.droppable || dim) ? 0.55 : 1}
                   transition="opacity .15s"
@@ -405,13 +405,13 @@ export function PlanBoard({ tray, columns, onMove, readOnly, header }: PlanBoard
                         </Text>
                         {col.warning && <WarnDot />}
                       </HStack>
-                      <Text fontSize="12px" color="fg.muted" noOfLines={1}>
+                      <Text fontSize="12px" color="tx3" noOfLines={1}>
                         {[col.city, col.summary].filter(Boolean).join(" · ")}
                       </Text>
                     </Box>
                   </HStack>
                   {col.marker && (
-                    <HStack mx={3} mb={1} spacing={1.5} fontSize="12px" color="fg.muted">
+                    <HStack mx={3} mb={1} spacing={1.5} fontSize="12px" color="tx3">
                       <Icon as={LuTrainFront} boxSize="13px" />
                       <Text noOfLines={1}>{col.marker}</Text>
                     </HStack>
@@ -419,7 +419,7 @@ export function PlanBoard({ tray, columns, onMove, readOnly, header }: PlanBoard
                   <SortableContext id={colId(col.key)} items={ids} strategy={verticalListSortingStrategy}>
                     <DropArea id={colId(col.key)} enabled={col.droppable && !readOnly} highlight={false}>
                       {ids.length === 0 && (
-                        <Flex align="center" justify="center" minH="72px" borderWidth="1px" borderStyle="dashed" borderColor="border.line" borderRadius="md" color="fg.muted" fontSize="12px" textAlign="center" px={3}>
+                        <Flex align="center" justify="center" minH="72px" borderWidth="1px" borderStyle="dashed" borderColor="ln" borderRadius="md" color="tx3" fontSize="12px" textAlign="center" px={3}>
                           {col.droppable ? "Drop places here" : "Travel day"}
                         </Flex>
                       )}

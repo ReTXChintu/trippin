@@ -112,11 +112,11 @@ export function TripMapView({ days, stays, onSelectDay, height = "100%", zoomCon
               gap="6px"
               h="28px"
               px="10px"
-              bg="bg.surface"
+              bg="sf"
               borderWidth="1px"
-              borderColor="border.line"
+              borderColor="ln"
               borderRadius="full"
-              boxShadow="raised"
+              boxShadow="ds1"
               fontSize="12px"
               fontWeight={600}
               onClick={() => onSelectDay(day.dayNumber)}

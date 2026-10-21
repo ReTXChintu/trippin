@@ -70,7 +70,7 @@ function PlaceMeta({ place, lead, from }: { place?: Place; lead?: string; from?:
   if (place?.priceLevel) parts.push(place.priceLevel);
   if (place?.coordinates && from) parts.push(formatDistance(haversineKm(from, place.coordinates)));
   return (
-    <Text fontSize="12px" color="fg.muted" noOfLines={1}>
+    <Text fontSize="12px" color="tx3" noOfLines={1}>
       {parts.map((p, i) => (
         <Box as="span" key={i}>
           {i > 0 && " · "}
@@ -181,12 +181,12 @@ export function FoodView({ trip, cityId, onCityChange, onGoToGuide }: FoodViewPr
             {localFood.map((item) => {
               const dish = splitDish(item);
               return (
-                <Flex key={item} direction="column" px={3} py={2} bg="bg.surface" borderWidth="1px" borderColor="border.line" borderRadius="xl" maxW="100%">
+                <Flex key={item} direction="column" px={3} py={2} bg="sf" borderWidth="1px" borderColor="ln" borderRadius="xl" maxW="100%">
                   <Text fontWeight={600} fontSize="12px">
                     {dish.name}
                   </Text>
                   {dish.description && (
-                    <Text fontSize="12px" color="fg.muted" letterSpacing="0.02em">
+                    <Text fontSize="12px" color="tx3" letterSpacing="0.02em">
                       {dish.description}
                     </Text>
                   )}
@@ -197,7 +197,7 @@ export function FoodView({ trip, cityId, onCityChange, onGoToGuide }: FoodViewPr
         ) : (
           <RowCard>
             <IconTile icon={FiBookOpen} />
-            <Text fontSize="13px" color="fg.muted" flex={1}>
+            <Text fontSize="13px" color="tx3" flex={1}>
               Generate the local guide to get {city}&rsquo;s must-try dishes.
             </Text>
             <Button variant="outline" onClick={onGoToGuide} flexShrink={0}>
@@ -236,7 +236,7 @@ export function FoodView({ trip, cityId, onCityChange, onGoToGuide }: FoodViewPr
       <Stack spacing={2}>
         <Overline>Discover in {city}</Overline>
         {discover.length === 0 ? (
-          <Text fontSize="13px" color="fg.muted">
+          <Text fontSize="13px" color="tx3">
             {restaurants.length === 0
               ? "Run discovery on the Places tab to get restaurant ideas for this city — or pick straight from a meal slot."
               : "Every suggestion here is already planned for a meal."}
@@ -273,7 +273,7 @@ export function FoodView({ trip, cityId, onCityChange, onGoToGuide }: FoodViewPr
               <OpenPill place={place} />
             </RowCard>
           ))}
-          <Text fontSize="12px" color="fg.muted">
+          <Text fontSize="12px" color="tx3">
             Want to visit one? Add it to a day from the Plan tab (&ldquo;Add a place or activity&rdquo;).
           </Text>
         </Stack>
@@ -284,17 +284,17 @@ export function FoodView({ trip, cityId, onCityChange, onGoToGuide }: FoodViewPr
   const aside = (
     <Stack spacing={4}>
       <Box>
-        <Text as="h2" fontFamily="heading" fontWeight={600} fontSize="22px" lineHeight={1.25}>
+        <Text as="h2" fontWeight={600} fontSize="17px" lineHeight="24px">
           Meal slots in your plan
         </Text>
-        <Text fontSize="12px" color="fg.muted" mt={1}>
+        <Text fontSize="12px" color="tx3" mt={1}>
           Assign a place to a slot &mdash; it appears on the timeline at the right time.
         </Text>
       </Box>
       {mealSlots.length === 0 ? (
         <RowCard dashed>
           <IconTile icon={LuUtensils} />
-          <Text fontSize="13px" color="fg.muted">
+          <Text fontSize="13px" color="tx3">
             Generate the day plan first — meal breaks are added automatically.
           </Text>
         </RowCard>
@@ -307,7 +307,7 @@ export function FoodView({ trip, cityId, onCityChange, onGoToGuide }: FoodViewPr
               <IconTile icon={MEAL_ICONS[meal]} />
               <Flex direction="column" flex={1} minW={0}>
                 <Text fontWeight={600}>{MEAL_LABELS[meal]}</Text>
-                <Text fontSize="12px" color="fg.muted">
+                <Text fontSize="12px" color="tx3">
                   Day {slot.day.dayNumber} · {formatDayDate(slot.day.date, "EEE d")} · {slot.stop.arrivalTime}
                 </Text>
               </Flex>

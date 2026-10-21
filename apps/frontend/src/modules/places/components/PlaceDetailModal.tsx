@@ -97,7 +97,7 @@ function PhotoStrip({ photos, alt, seed, category, mapsUrl }: { photos: string[]
   const widths = tiles.length === 1 ? ["100%"] : tiles.length === 2 ? ["65%", "35%"] : ["60%", "20%", "20%"];
   return (
     <>
-      <Flex gap="4px" h={{ base: "160px", md: "200px" }} bg="bg.subtle">
+      <Flex gap="4px" h={{ base: "160px", md: "200px" }} bg="sunk">
         {tiles.map((src, i) => (
           <Box
             key={src}
@@ -256,19 +256,19 @@ export function PlaceDetailModal({
   return (
     <Modal isOpen={isOpen} onClose={onClose} size="3xl" scrollBehavior="inside" isCentered>
       <ModalOverlay />
-      <ModalContent maxW="760px" mx={4} borderRadius="xl" overflow="hidden" bg="bg.surface" boxShadow="raised">
+      <ModalContent maxW="760px" mx={4} borderRadius="3xl" overflow="hidden" bg="sf" boxShadow="ds2">
         <ModalBody p={0}>
           {isLoading || !detail ? (
             <Stack p={6} spacing={4}>
               {isLoading ? (
                 <>
-                  <Skeleton h="200px" borderRadius="lg" startColor="bg.subtle" endColor="border.line" />
-                  <Skeleton h="28px" w="50%" startColor="bg.subtle" endColor="border.line" />
-                  <Skeleton h="16px" w="70%" startColor="bg.subtle" endColor="border.line" />
+                  <Skeleton h="200px" borderRadius="lg" startColor="sunk" endColor="ln" />
+                  <Skeleton h="28px" w="50%" startColor="sunk" endColor="ln" />
+                  <Skeleton h="16px" w="70%" startColor="sunk" endColor="ln" />
                 </>
               ) : (
                 <Flex justify="space-between" align="center">
-                  <Text color="fg.muted" fontSize="13px">
+                  <Text color="tx3" fontSize="13px">
                     Select a place to view details.
                   </Text>
                   <IconButton aria-label="Close" icon={<LuX size={18} />} variant="outline" onClick={onClose} />
@@ -281,10 +281,10 @@ export function PlaceDetailModal({
               <Stack spacing="14px" px={{ base: 5, md: "26px" }} py="22px">
                 <Flex justify="space-between" align="flex-start" gap={3}>
                   <Box minW={0}>
-                    <Text as="h2" fontFamily="heading" fontWeight={600} fontSize={{ base: "24px", md: "28px" }} lineHeight={1.2} letterSpacing="-0.01em">
+                    <Text as="h2" fontWeight={600} fontSize="22px" lineHeight="28px">
                       {detail.name}
                     </Text>
-                    <Flex align="center" gap={2} color="fg.muted" flexWrap="wrap" mt={1}>
+                    <Flex align="center" gap={2} color="tx3" flexWrap="wrap" mt={1}>
                       <HStack as="span" spacing="6px">
                         <Icon as={CatIcon} boxSize="15px" />
                         <span>{detail.category}</span>
@@ -297,7 +297,7 @@ export function PlaceDetailModal({
                       ))}
                     </Flex>
                     {detail.formattedAddress && (
-                      <Text fontSize="12px" color="fg.muted" mt={1}>
+                      <Text fontSize="12px" color="tx3" mt={1}>
                         {detail.formattedAddress}
                       </Text>
                     )}
@@ -312,7 +312,7 @@ export function PlaceDetailModal({
                 )}
 
                 {(detail.reviewSummary || detail.description) && (
-                  <Flex gap="10px" px="14px" py={3} bg="accent.soft" color="accent.text" borderRadius="xl" align="flex-start">
+                  <Flex gap="10px" px="14px" py={3} bg="acSoft" color="ac" borderRadius="xl" align="flex-start">
                     <Icon as={LuSparkles} boxSize="16px" mt="2px" flexShrink={0} />
                     <Text fontSize="13px">
                       <b>{detail.reviewSummary ? "Summary" : "About"}</b> · {detail.reviewSummary ?? detail.description}
@@ -339,7 +339,7 @@ export function PlaceDetailModal({
                       </>
                     )}
                     <SectionLabel mt={hasHours ? 2 : 0}>Entry / cost</SectionLabel>
-                    <Text fontSize="13px" color={detail.entryFee ?? detail.priceLevel ? undefined : "fg.muted"}>
+                    <Text fontSize="13px" color={detail.entryFee ?? detail.priceLevel ? undefined : "tx3"}>
                       {detail.entryFee ?? detail.priceLevel ?? "Not listed — check Google Maps for ticket prices"}
                     </Text>
                     {planInfo && (
@@ -352,24 +352,24 @@ export function PlaceDetailModal({
                   <Stack spacing="6px">
                     <SectionLabel>Reviews</SectionLabel>
                     {reviews.length === 0 ? (
-                      <Text fontSize="13px" color="fg.muted">
+                      <Text fontSize="13px" color="tx3">
                         No reviews loaded — see them on Google Maps.
                       </Text>
                     ) : (
                       <Stack spacing={3} maxH="240px" overflowY="auto" pr={1}>
                         {reviews.map((review, i) => (
                           <Box key={i}>
-                            <Text fontSize="13px" color="fg.muted" noOfLines={4}>
+                            <Text fontSize="13px" color="tx3" noOfLines={4}>
                               “{review.text}”
                             </Text>
-                            <Text fontSize="12px" color="fg.muted" mt="2px">
+                            <Text fontSize="12px" color="tx3" mt="2px">
                               — {review.authorName ?? "Google user"}
                               {review.rating !== undefined ? ` · ${review.rating}★` : ""}
                               {review.relativeTime ? ` · ${review.relativeTime}` : ""}
                             </Text>
                           </Box>
                         ))}
-                        <Text fontSize="12px" color="fg.muted">
+                        <Text fontSize="12px" color="tx3">
                           Reviews from Google
                         </Text>
                       </Stack>

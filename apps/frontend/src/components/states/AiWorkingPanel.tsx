@@ -32,31 +32,31 @@ export function AiWorkingPanel({
   note?: string;
 } & BoxProps) {
   return (
-    <Box role="status" aria-live="polite" bg="bg.surface" borderWidth="1px" borderColor="border.line" borderRadius="xl" p={4} {...rest}>
+    <Box role="status" aria-live="polite" bg="sf" borderWidth="1px" borderColor="ln" borderRadius="xl" p={4} {...rest}>
       <Stack spacing="10px">
-        <HStack spacing={2} fontWeight={600}>
-          <Icon as={LuSparkles} color="accent.text" boxSize="16px" />
+        <HStack spacing={2} fontWeight={600} fontSize="15px" lineHeight="20px">
+          <Icon as={LuSparkles} color="ac" boxSize="18px" />
           <Text>{title}</Text>
         </HStack>
-        <Box h="6px" borderRadius="full" bg="bg.subtle" overflow="hidden" position="relative">
+        <Box h="6px" borderRadius="full" bg="sunk" overflow="hidden" position="relative">
           {progress === undefined ? (
             <Box
               position="absolute"
               insetY={0}
               w="40%"
-              bg="accent"
+              bg="ac"
               borderRadius="full"
               animation={`${slide} 1.3s ease-in-out infinite`}
               sx={{ "@media (prefers-reduced-motion: reduce)": { animation: "none", left: "30%" } }}
             />
           ) : (
-            <Box h="100%" w={`${Math.max(0, Math.min(100, progress))}%`} bg="accent" borderRadius="full" transition="width .3s" />
+            <Box h="100%" w={`${Math.max(0, Math.min(100, progress))}%`} bg="ac" borderRadius="full" transition="width .3s" />
           )}
         </Box>
         {steps && steps.length > 0 && (
           <Stack spacing="6px" fontSize="13px">
             {steps.map((s) => (
-              <HStack key={s.label} spacing={2} color={s.done ? "fg.default" : "fg.muted"}>
+              <HStack key={s.label} spacing={2} color={s.done ? "tx" : "tx3"}>
                 <Icon as={s.done ? FiCheck : FiClock} boxSize="14px" />
                 <Text>{s.label}</Text>
               </HStack>
@@ -71,7 +71,7 @@ export function AiWorkingPanel({
               </Button>
             )}
             {note && (
-              <Text fontSize="12px" color="fg.muted">
+              <Text fontSize="12px" color="tx3">
                 {note}
               </Text>
             )}

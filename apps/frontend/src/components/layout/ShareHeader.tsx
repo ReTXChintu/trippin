@@ -4,7 +4,7 @@ import { BrandLogo } from "@/components/brand/BrandLogo";
 
 export function ShareHeader() {
   return (
-    <Flex as="header" align="center" justify="center" h="60px" bg="bg.surface" borderBottomWidth="1px" borderColor="border.line">
+    <Flex as="header" align="center" justify="center" h="60px" bg="sf" borderBottomWidth="1px" borderColor="ln">
       <Link to="/">
         <BrandLogo size={30} />
       </Link>

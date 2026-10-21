@@ -43,7 +43,7 @@ const EMPTY_OPTIONAL: OptionalItineraryPlace[] = [];
 function ColumnHeading({ title, total, better }: { title: string; total?: number; better?: boolean }) {
   return (
     <Flex justify="space-between" align="center" gap={2}>
-      <Text as="h2" fontFamily="heading" fontWeight={600} fontSize="20px" letterSpacing="-0.01em">
+      <Text as="h2" fontWeight={600} fontSize="17px" lineHeight="24px">
         {title}
       </Text>
       {total !== undefined && (
@@ -279,7 +279,7 @@ export function ItineraryComparePageContent() {
       text="Needs an AI key. Everything else works — drag, lock and edit your plan by hand."
     />
   ) : (
-    <Box bg="bg.surface" borderWidth="1px" borderColor="border.line" borderRadius="xl">
+    <Box bg="sf" borderWidth="1px" borderColor="ln" borderRadius="xl">
       <EmptyState
         compact
         icon={LuSparkles}
@@ -306,18 +306,18 @@ export function ItineraryComparePageContent() {
   );
 
   return (
-    <Box maxW="1320px" mx="auto">
+    <Box>
       <Stack spacing="18px">
         {/* Breadcrumb, title and city switch */}
         <Flex justify="space-between" align={{ base: "flex-start", md: "flex-end" }} gap={4} direction={{ base: "column", md: "row" }}>
           <Box minW={0}>
-            <Text fontSize="12px" color="fg.muted" noOfLines={1}>
+            <Text fontSize="12px" color="tx3" noOfLines={1}>
               <Text as={RouterLink} to={`/trips/${tripId}?tab=plan${legId ? `&city=${legId}` : ""}`} _hover={{ textDecoration: "underline" }}>
                 {trip?.title ?? "Trip"}
               </Text>{" "}
               / Compare
             </Text>
-            <Text as="h1" fontFamily="heading" fontWeight={600} fontSize={{ base: "28px", md: "32px" }} lineHeight={1.2} letterSpacing="-0.01em">
+            <Text as="h1" fontWeight={600} fontSize="22px" lineHeight="28px">
               Compare with AI plan
             </Text>
           </Box>
@@ -343,7 +343,7 @@ export function ItineraryComparePageContent() {
         </Flex>
 
         {aiCandidate && canEdit && hasAiKey && !generating && (
-          <Box bg="bg.surface" borderWidth="1px" borderColor="border.line" borderRadius="xl" px={4} py={3}>
+          <Box bg="sf" borderWidth="1px" borderColor="ln" borderRadius="xl" px={4} py={3}>
             <AiInstructions
               value={instructions}
               onChange={setInstructions}
@@ -358,7 +358,7 @@ export function ItineraryComparePageContent() {
           </Box>
         )}
         {instructionNote && aiCandidate && !generating && (
-          <Flex gap={2} align="flex-start" bg="accent.soft" color="accent.text" borderRadius="lg" px={4} py={3} fontSize="13px">
+          <Flex gap={2} align="flex-start" bg="acSoft" color="ac" borderRadius="lg" px={4} py={3} fontSize="13px">
             <Icon as={LuSparkles} boxSize="16px" mt="1px" flexShrink={0} />
             <Text>
               <b>How AI used your instructions:</b> {instructionNote}
@@ -375,7 +375,7 @@ export function ItineraryComparePageContent() {
               {currentDays.map((d) => (
                 <CompareDayCard key={d.date} day={d} side="system" chosen={false} showCity={showCity} />
               ))}
-              {currentDays.length === 0 && <Text color="fg.muted">No days planned yet.</Text>}
+              {currentDays.length === 0 && <Text color="tx3">No days planned yet.</Text>}
             </Stack>
             <Stack spacing={3}>
               <ColumnHeading title="AI plan" />
@@ -404,7 +404,7 @@ export function ItineraryComparePageContent() {
                       <GridItem display="flex" alignItems="center" justifyContent="center" flexDirection="column" gap={1}>
                         <PlanChooser dayNumber={d.dayNumber} value={choice} aiAvailable={Boolean(aiDay)} disabled={!canEdit || busy} onChange={(v) => handleChoose(d.date, v)} />
                         {choice === null && (
-                          <Text fontSize="12px" color="accent.text" fontWeight={600}>
+                          <Text fontSize="12px" color="ac" fontWeight={600}>
                             Edited
                           </Text>
                         )}
@@ -438,11 +438,11 @@ export function ItineraryComparePageContent() {
                         </Overline>
                         <PlanChooser direction="row" dayNumber={d.dayNumber} value={choice} aiAvailable={Boolean(aiDay)} disabled={!canEdit || busy} onChange={(v) => handleChoose(d.date, v)} />
                       </Flex>
-                      <Text fontSize="12px" fontWeight={600} color="fg.muted">
+                      <Text fontSize="12px" fontWeight={600} color="tx3">
                         Your plan
                       </Text>
                       <CompareDayCard day={d} side="system" chosen={choice === "system"} showCity={showCity} />
-                      <Text fontSize="12px" fontWeight={600} color="fg.muted">
+                      <Text fontSize="12px" fontWeight={600} color="tx3">
                         AI plan
                       </Text>
                       <CompareDayCard day={aiDay} side="ai" chosen={choice === "ai"} showCity={showCity} differences={aiDay ? differenceLabels(d, aiDay) : undefined} />
@@ -487,15 +487,15 @@ export function ItineraryComparePageContent() {
             gap={3}
             px="18px"
             py="14px"
-            bg="bg.surface"
+            bg="sf"
             borderWidth="1px"
-            borderColor="border.line"
+            borderColor="ln"
             borderRadius="xl"
-            boxShadow="raised"
+            boxShadow="ds1"
           >
-            <Text fontSize="12px" color="fg.muted" aria-live="polite">
+            <Text fontSize="12px" color="tx3" aria-live="polite">
               Merge result:{" "}
-              <Text as="b" color="fg.default">
+              <Text as="b" color="tx">
                 {mergeSummary || "nothing to merge"}
               </Text>{" "}
               — you can undo after applying.

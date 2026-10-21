@@ -192,7 +192,7 @@ export function TripHeader({
       <Box display={{ base: "none", lg: "block" }}>
         <Flex justify="space-between" align="flex-start" gap={4} mb={3} flexWrap="wrap">
           <Box minW={0}>
-            <HStack as="nav" aria-label="Breadcrumb" spacing={2} fontSize="13px" color="fg.muted">
+            <HStack as="nav" aria-label="Breadcrumb" spacing={2} fontSize="13px" color="tx3">
               <Link to="/trips">My trips</Link>
               <Icon as={LuChevronRight} boxSize="12px" />
               <Text as="span" aria-current="page" noOfLines={1}>
@@ -200,7 +200,7 @@ export function TripHeader({
               </Text>
             </HStack>
             <HStack spacing={3} mt={1} flexWrap="wrap">
-              <Text as="h1" fontFamily="heading" fontWeight={600} fontSize="28px" lineHeight={1.2} letterSpacing="-0.01em">
+              <Text as="h1" fontWeight={600} fontSize="22px" lineHeight="28px">
                 {trip.title}
               </Text>
               <Pill tone={status.tone} icon={trip.status === "draft" ? LuPencil : undefined}>
@@ -212,7 +212,7 @@ export function TripHeader({
                 </Pill>
               )}
             </HStack>
-            <Flex gap={4} mt="2px" fontSize="13px" color="fg.muted" flexWrap="wrap">
+            <Flex gap={4} mt={1} fontSize="13px" lineHeight="18px" color="tx3" flexWrap="wrap" className="num">
               <HStack spacing="6px">
                 <Icon as={LuCalendar} boxSize="14px" />
                 <Text>
@@ -241,7 +241,7 @@ export function TripHeader({
             <Button variant="outline" leftIcon={<LuMessageSquare size={16} />} onClick={discussion.onOpen}>
               Discussion
               {tripComments > 0 && (
-                <Pill tone="accent" h="20px" px="7px" ml={1}>
+                <Pill tone="accent" h="20px" px="6px" ml={1}>
                   {tripComments}
                 </Pill>
               )}
@@ -260,23 +260,23 @@ export function TripHeader({
                     <Flex
                       key={m.id}
                       ml="-8px"
-                      w="30px"
-                      h="30px"
+                      w="36px"
+                      h="36px"
                       borderRadius="full"
                       bg={dayToken(i + 1)}
                       color="pin.fg"
-                      fontSize="12px"
-                      fontWeight={700}
+                      fontSize="13px"
+                      fontWeight={600}
                       align="center"
                       justify="center"
                       borderWidth="2px"
-                      borderColor="bg.surface"
+                      borderColor="bg"
                     >
                       {initials(m.name)}
                     </Flex>
                   ))}
                   {members.length > 4 && (
-                    <Flex ml="-8px" w="30px" h="30px" borderRadius="full" bg="bg.subtle" color="fg.muted" fontSize="12px" fontWeight={700} align="center" justify="center" borderWidth="2px" borderColor="bg.surface">
+                    <Flex ml="-8px" w="36px" h="36px" borderRadius="full" bg="sunk" color="tx2" fontSize="13px" fontWeight={600} align="center" justify="center" borderWidth="2px" borderColor="bg">
                       +{members.length - 4}
                     </Flex>
                   )}
@@ -307,7 +307,7 @@ export function TripHeader({
 
         <StageBar summary={stages} onStage={handleStage} onNext={handleNext} />
 
-        <Box py="10px" borderTopWidth="1px" borderColor="border.line">
+        <Box py={3} borderTopWidth="1px" borderColor="ln">
           <CityRow
             trip={trip}
             legs={legs}
@@ -326,17 +326,17 @@ export function TripHeader({
       <Box display={{ base: "block", lg: "none" }} mx={-4}>
         <Flex justify="space-between" align="flex-start" pl={4} pr={2} pt={2} pb={1}>
           <Box minW={0}>
-            <Text as="h1" fontFamily="heading" fontWeight={600} fontSize="22px" lineHeight={1.2} noOfLines={2}>
+            <Text as="h1" fontWeight={600} fontSize="22px" lineHeight="28px" noOfLines={2}>
               {trip.title}
             </Text>
-            <Text fontSize="13px" color="fg.muted">
+            <Text fontSize="13px" lineHeight="18px" color="tx3" className="num">
               {shortRange(start, end)}
               {totalDays ? ` · ${totalDays} day${totalDays === 1 ? "" : "s"}` : ""} · {trip.travelStyle}
             </Text>
           </Box>
           <HStack spacing={0} flexShrink={0}>
-            <IconButton aria-label="Discussion" icon={<LuMessageSquare size={18} />} variant="ghost" color="fg.default" size="lg" onClick={discussion.onOpen} />
-            <IconButton aria-label={canEdit ? "Edit trip" : "Trip details"} icon={<LuSlidersHorizontal size={18} />} variant="ghost" color="fg.default" size="lg" onClick={settings.onOpen} />
+            <IconButton aria-label="Discussion" icon={<LuMessageSquare size={20} />} variant="ghost" colorScheme="gray" borderRadius="full" size="lg" onClick={discussion.onOpen} />
+            <IconButton aria-label={canEdit ? "Edit trip" : "Trip details"} icon={<LuSlidersHorizontal size={20} />} variant="ghost" colorScheme="gray" borderRadius="full" size="lg" onClick={settings.onOpen} />
             <TripActionsMenu trip={trip} isOwner={isOwner} exportActions={exportActions} variant="ghost" size="lg" />
           </HStack>
         </Flex>
@@ -356,11 +356,11 @@ export function TripHeader({
 
       <Drawer isOpen={settings.isOpen} onClose={settings.onClose} size="md" placement="right">
         <DrawerOverlay />
-        <DrawerContent maxW={{ base: "100vw", md: "540px" }} bg="bg.surface">
+        <DrawerContent maxW={{ base: "100vw", md: "540px" }} bg="sf">
           <PanelHeader title={canEdit ? "Edit trip" : "Trip details"} subtitle={trip.title} onClose={settings.onClose} />
           <DrawerBody px={6} py={5}>
             <CitiesDatesSection trip={trip} canEdit={canEdit} onEditCity={setEditingLegId} onAddCity={canAddCity ? addCity.onOpen : undefined} />
-            <Divider borderColor="border.line" my={4} />
+            <Divider borderColor="ln" my={4} />
             <TripHeaderPanel trip={trip} currentUserId={currentUserId} isOwner={isOwner} embedded />
           </DrawerBody>
         </DrawerContent>
@@ -369,7 +369,7 @@ export function TripHeader({
       <Modal isOpen={Boolean(editingLeg)} onClose={() => setEditingLegId(null)} size="xl" scrollBehavior="inside">
         <ModalOverlay />
         <ModalContent>
-          <ModalHeader fontFamily="heading" fontSize="22px">
+          <ModalHeader>
             {editingLeg?.name || editingLeg?.baseCity}
           </ModalHeader>
           <ModalCloseButton />

@@ -60,7 +60,7 @@ export function AiSettingsCard({ profile, id }: { profile: ProfileDTO; id?: stri
 
   const listStatus = !hasKey[provider] ? null : modelsQuery.isFetching ? (
     <HStack spacing="6px">
-      <Spinner size="xs" />
+      <Spinner size="xs" color="ac" emptyColor="sunk" />
       <span>Loading models…</span>
     </HStack>
   ) : modelsQuery.data && !modelsQuery.data.live ? (
@@ -70,12 +70,12 @@ export function AiSettingsCard({ profile, id }: { profile: ProfileDTO; id?: stri
   );
 
   return (
-    <SurfaceCard as="section" id={id} aria-labelledby="ai-settings-title" p="18px" display="flex" flexDirection="column" gap="12px" scrollMarginTop="80px">
+    <SurfaceCard as="section" id={id} aria-labelledby="ai-settings-title" p={5} display="flex" flexDirection="column" gap={4} scrollMarginTop="96px">
       <Flex justify="space-between" align="center" gap="8px" wrap="wrap">
-        <Heading as="h2" id="ai-settings-title" fontSize="18px">
+        <Heading as="h2" id="ai-settings-title" fontSize="17px" lineHeight="24px">
           AI settings
         </Heading>
-        <Text fontSize="12px" color="fg.muted">
+        <Text fontSize="12px" lineHeight="16px" color="tx3">
           {listStatus}
         </Text>
       </Flex>
@@ -87,7 +87,7 @@ export function AiSettingsCard({ profile, id }: { profile: ProfileDTO; id?: stri
       )}
 
       <Box>
-        <Text fontSize="12px" fontWeight={600} color="fg.muted" mb="6px">
+        <Text fontSize="12px" lineHeight="16px" fontWeight={600} letterSpacing="0.02em" color="tx2" mb="6px">
           Provider
         </Text>
         <HStack spacing="12px" flexWrap="wrap">
@@ -110,36 +110,38 @@ export function AiSettingsCard({ profile, id }: { profile: ProfileDTO; id?: stri
       </Box>
 
       {!hasKey[provider] ? (
-        <Text fontSize="13px" color="fg.muted">
+        <Text fontSize="14px" lineHeight="20px" color="tx2">
           No {PROVIDER_NAME[provider]} key yet — add one above to use it.
         </Text>
       ) : (
         <Box>
-          <Text fontSize="12px" fontWeight={600} color="fg.muted" mb="6px" id="ai-model-label">
+          <Text fontSize="12px" lineHeight="16px" fontWeight={600} letterSpacing="0.02em" color="tx2" mb="6px" id="ai-model-label">
             Model
           </Text>
           <RadioGroup value={selectedModel} onChange={(v) => setModels((prev) => ({ ...prev, [provider]: v }))} aria-labelledby="ai-model-label">
-            <SurfaceCard>
+            <SurfaceCard overflow="hidden">
               {visible.map((m, i) => (
                 <Flex
                   as="label"
                   key={m.id}
                   align="center"
-                  gap="10px"
+                  gap={3}
                   px="14px"
                   py="10px"
+                  minH="48px"
                   borderTopWidth={i === 0 ? 0 : "1px"}
-                  borderColor="border.line"
+                  borderColor="ln"
                   cursor="pointer"
-                  _hover={{ bg: "bg.subtle" }}
+                  bg={m.id === selectedModel ? "acSoft" : undefined}
+                  _hover={{ bg: m.id === selectedModel ? "acSoft" : "sf2" }}
                 >
                   <Radio value={m.id} />
                   <Box flex={1} minW={0}>
-                    <Text fontWeight={600} noOfLines={1}>
+                    <Text fontWeight={500} fontSize="14px" lineHeight="20px" noOfLines={1}>
                       {m.label === m.id ? m.id : `${m.label} (${m.id})`}
                     </Text>
                     {m.note && (
-                      <Text fontSize="12px" color="fg.muted" noOfLines={1}>
+                      <Text fontSize="12px" color="tx3" noOfLines={1}>
                         {m.note}
                       </Text>
                     )}
@@ -154,7 +156,7 @@ export function AiSettingsCard({ profile, id }: { profile: ProfileDTO; id?: stri
               {showAll ? "Show fewer models" : `Show all ${ordered.length} models`}
             </Button>
           )}
-          <Text fontSize="12px" color="fg.muted" mt="6px">
+          <Text fontSize="12px" color="tx3" mt="6px">
             {selectedNote ?? "Bigger models write better guides but are slower and cost more on your key."}
           </Text>
         </Box>

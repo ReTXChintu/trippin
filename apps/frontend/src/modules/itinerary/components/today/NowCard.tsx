@@ -39,11 +39,11 @@ export function NowCard({
     <Box
       as="section"
       aria-label={`${state.pill}: ${stop.placeName}`}
-      bg="bg.surface"
+      bg="sf"
       borderWidth="2px"
-      borderColor={late ? "warn" : "accent"}
+      borderColor={late ? "warn" : "ac"}
       borderRadius="xl"
-      boxShadow="raised"
+      boxShadow="none"
       p="18px"
     >
       <Stack spacing="12px">
@@ -51,7 +51,7 @@ export function NowCard({
           <Pill tone={PILL_TONE[state.tone]} icon={FiNavigation}>
             {state.pill}
           </Pill>
-          <Text fontSize="12px" color="fg.muted" sx={{ fontVariantNumeric: "tabular-nums" }}>
+          <Text fontSize="12px" color="tx3" sx={{ fontVariantNumeric: "tabular-nums" }}>
             {stop.arrivalTime} – {stop.departureTime}
           </Text>
         </Flex>
@@ -59,11 +59,11 @@ export function NowCard({
         <Flex gap="12px" align="center">
           <PhotoFallback seed={stop.placeName} icon={categoryIcon(stop.category, stop.stopType)} iconSize={26} w="64px" h="64px" borderRadius="14px" flexShrink={0} aria-hidden />
           <Box minW={0}>
-            <Text as="h2" fontFamily="heading" fontWeight={600} fontSize={{ base: "24px", md: "26px" }} lineHeight={1.15} letterSpacing="-0.01em" noOfLines={2}>
+            <Text as="h2" fontWeight={600} fontSize="22px" lineHeight="28px" noOfLines={2}>
               {name}
             </Text>
             {meta && (
-              <HStack spacing={1} fontSize="12px" color="fg.muted" mt="2px">
+              <HStack spacing={1} fontSize="12px" color="tx3" mt="2px">
                 {stop.locked && <Icon as={FiLock} boxSize="11px" />}
                 <Text>{meta}</Text>
               </HStack>
@@ -71,18 +71,18 @@ export function NowCard({
           </Box>
         </Flex>
 
-        <Flex justify="space-between" align="center" gap={3} bg="bg.subtle" borderRadius="12px" px="14px" py="10px">
+        <Flex justify="space-between" align="center" gap={3} bg="sunk" borderRadius="12px" px="14px" py="10px">
           <Box minW={0}>
-            <Text fontSize="12px" letterSpacing="0.02em" color="fg.muted">
+            <Text fontSize="12px" letterSpacing="0.02em" color="tx3">
               {state.countdownLabel}
             </Text>
-            <Text fontFamily="heading" fontWeight={600} fontSize={{ base: "26px", md: "28px" }} lineHeight={1.2} color={late ? "warn" : "fg.default"} sx={{ fontVariantNumeric: "tabular-nums" }}>
+            <Text fontWeight={600} fontSize="28px" lineHeight="34px" letterSpacing="-0.02em" color={late ? "warn" : "tx"} sx={{ fontVariantNumeric: "tabular-nums" }}>
               {state.countdownValue}
             </Text>
           </Box>
           {state.sideLabel && (
             <Box textAlign="right" flexShrink={0}>
-              <Text fontSize="12px" letterSpacing="0.02em" color="fg.muted">
+              <Text fontSize="12px" letterSpacing="0.02em" color="tx3">
                 {state.sideLabel}
               </Text>
               <Text fontWeight={600} sx={{ fontVariantNumeric: "tabular-nums" }}>
@@ -128,9 +128,9 @@ export function NowCard({
         </Flex>
 
         <Collapse in={details.isOpen} animateOpacity>
-          <Stack spacing={2} fontSize="13px" bg="bg.subtle" borderRadius="12px" px="14px" py="12px">
+          <Stack spacing={2} fontSize="13px" bg="sunk" borderRadius="12px" px="14px" py="12px">
             <Text>
-              <Text as="span" color="fg.muted">
+              <Text as="span" color="tx3">
                 Planned:{" "}
               </Text>
               {stop.arrivalTime}–{stop.departureTime} · {formatDuration(stop.visitDurationMinutes)} here
@@ -139,7 +139,7 @@ export function NowCard({
             </Text>
             {stop.fixedStartTime && (
               <Text>
-                <Text as="span" color="fg.muted">
+                <Text as="span" color="tx3">
                   Fixed start:{" "}
                 </Text>
                 {stop.fixedStartTime}
@@ -147,7 +147,7 @@ export function NowCard({
             )}
             {stop.openingHoursToday && (
               <Text>
-                <Text as="span" color="fg.muted">
+                <Text as="span" color="tx3">
                   Open today:{" "}
                 </Text>
                 {stop.openingHoursToday}
@@ -155,7 +155,7 @@ export function NowCard({
             )}
             {stop.visitIntel?.bestTime && (
               <Text>
-                <Text as="span" color="fg.muted">
+                <Text as="span" color="tx3">
                   Best time:{" "}
                 </Text>
                 {stop.visitIntel.bestTime}
@@ -163,7 +163,7 @@ export function NowCard({
             )}
             {stop.visitIntel?.why && <Text>{stop.visitIntel.why}</Text>}
             {stop.notes && <Text>Note: {stop.notes}</Text>}
-            {stop.aiNotes && <Text color="fg.muted">{stop.aiNotes}</Text>}
+            {stop.aiNotes && <Text color="tx3">{stop.aiNotes}</Text>}
             {tips.map((t) => (
               <Text key={t}>· {t}</Text>
             ))}
@@ -172,7 +172,7 @@ export function NowCard({
 
         {canEdit && (
           <Flex gap={2}>
-            <Button variant="outline" size="lg" h="48px" flex={1} color="success" leftIcon={<FiCheck />} onClick={onDone} isLoading={busy} isDisabled={disabled}>
+            <Button variant="outline" size="lg" h="48px" flex={1} color="good" leftIcon={<FiCheck />} onClick={onDone} isLoading={busy} isDisabled={disabled}>
               Mark done
             </Button>
             <Button variant="outline" size="lg" h="48px" flex={1} leftIcon={<FiFlag />} onClick={onSkip} isDisabled={busy || disabled}>

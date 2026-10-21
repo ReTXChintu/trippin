@@ -71,8 +71,8 @@ export function IllustratedMap({
       position="relative"
       overflow="hidden"
       bg="map.land"
-      sx={{ "--street": "#FFFFFF", "--street-2": "#DCD5C3" }}
-      _dark={{ "--street": "#2B3836", "--street-2": "#26312F" } as never}
+      sx={{ "--street": "#FFFFFF", "--street-2": "#E2DED4" }}
+      _dark={{ "--street": "#2B2D32", "--street-2": "#202125" } as never}
       {...rest}
     >
       <svg
@@ -104,8 +104,8 @@ export function IllustratedMap({
         )}
         {stay && (
           <g transform={`translate(${stay.x - 14} ${stay.y - 14})`} filter="url(#pin-shadow)">
-            <rect width="28" height="28" rx="9" fill="var(--chakra-colors-fg-default)" stroke="var(--chakra-colors-bg-surface)" strokeWidth="2.5" />
-            <g transform="translate(6.5 6.5) scale(0.625)" fill="none" stroke="var(--chakra-colors-bg-canvas)" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+            <rect width="28" height="28" rx="9" fill="var(--chakra-colors-tx)" stroke="var(--chakra-colors-sf)" strokeWidth="2.5" />
+            <g transform="translate(6.5 6.5) scale(0.625)" fill="none" stroke="var(--chakra-colors-bg)" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
               <path d="M3 18V7M3 14h18v4M21 14v-2a3 3 0 00-3-3h-7v5" />
               <circle cx="7" cy="11" r="1.5" />
             </g>
@@ -113,8 +113,8 @@ export function IllustratedMap({
         )}
         {pins.map((p) => (
           <g key={p.label + p.x} filter="url(#pin-shadow)">
-            <circle cx={p.x} cy={p.y} r="13" fill={color} stroke="var(--chakra-colors-bg-surface)" strokeWidth="2.5" />
-            <text x={p.x} y={p.y} dy="0.35em" textAnchor="middle" fontSize="12" fontWeight="700" fill="var(--chakra-colors-pin-fg)" fontFamily="'DM Sans', sans-serif">
+            <circle cx={p.x} cy={p.y} r="13" fill={color} stroke="var(--chakra-colors-sf)" strokeWidth="2.5" />
+            <text x={p.x} y={p.y} dy="0.35em" textAnchor="middle" fontSize="12" fontWeight="700" fill="var(--chakra-colors-pin-fg)" fontFamily="'IBM Plex Sans', sans-serif">
               {p.label}
             </text>
           </g>

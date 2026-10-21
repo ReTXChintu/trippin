@@ -72,12 +72,12 @@ export function TripsPageContent() {
   const filterLabel = FILTERS.find((f) => f.value === filter)?.label.toLowerCase();
 
   return (
-    <Stack spacing="20px">
-      <Flex justify="space-between" align="center" gap="16px">
-        <Heading as="h1" fontSize={{ base: "28px", md: "34px" }} lineHeight={1.15}>
+    <Stack spacing={5}>
+      <Flex justify="space-between" align="center" gap={4}>
+        <Heading as="h1" fontSize="22px" lineHeight="28px">
           My trips
         </Heading>
-        <Button as={RouterLink} to="/trips/new" size="lg" leftIcon={<FiPlus />} flexShrink={0}>
+        <Button as={RouterLink} to="/trips/new" leftIcon={<FiPlus size={18} />} flexShrink={0}>
           New trip
         </Button>
       </Flex>
@@ -108,13 +108,13 @@ export function TripsPageContent() {
       </Flex>
 
       {isLoading ? (
-        <Grid templateColumns={{ base: "1fr", md: "repeat(2, minmax(0, 1fr))", xl: "repeat(3, minmax(0, 1fr))" }} gap="20px">
+        <Grid templateColumns={{ base: "1fr", md: "repeat(auto-fill, minmax(300px, 1fr))" }} gap={5}>
           {[0, 1, 2].map((i) => (
             <Skeleton key={i} h="254px" borderRadius="xl" />
           ))}
         </Grid>
       ) : shown.length === 0 ? (
-        <SurfaceCard borderStyle="dashed" bg="transparent">
+        <SurfaceCard borderStyle="dashed" borderColor="ln2" bg="transparent">
           <EmptyState
             icon={FiBriefcase}
             title={trips.length === 0 ? "No trips yet" : query ? "No trips match your search" : `No ${filterLabel} trips`}
@@ -139,7 +139,7 @@ export function TripsPageContent() {
           />
         </SurfaceCard>
       ) : view === "grid" ? (
-        <Grid templateColumns={{ base: "1fr", md: "repeat(2, minmax(0, 1fr))", xl: "repeat(3, minmax(0, 1fr))" }} gap="20px">
+        <Grid templateColumns={{ base: "1fr", md: "repeat(auto-fill, minmax(300px, 1fr))" }} gap={5}>
           {shown.map((trip) => (
             <TripCard key={trip.id} trip={trip} isOwner={trip.userId === user?.id} />
           ))}
@@ -147,7 +147,7 @@ export function TripsPageContent() {
       ) : (
         <SurfaceCard>
           {shown.map((trip, i) => (
-            <Box key={trip.id} borderTopWidth={i === 0 ? 0 : "1px"} borderColor="border.line">
+            <Box key={trip.id} borderTopWidth={i === 0 ? 0 : "1px"} borderColor="ln">
               <TripCard trip={trip} isOwner={trip.userId === user?.id} variant="row" />
             </Box>
           ))}

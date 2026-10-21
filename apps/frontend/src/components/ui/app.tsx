@@ -8,6 +8,7 @@ import {
   Flex,
   HStack,
   Icon,
+  IconButton,
   Input,
   InputGroup,
   type InputProps,
@@ -15,9 +16,9 @@ import {
   InputRightElement,
   Text,
 } from "@chakra-ui/react";
-import { forwardRef, type ReactNode } from "react";
+import { forwardRef, useState, type ReactNode } from "react";
 import type { IconType } from "react-icons";
-import { FiUsers } from "react-icons/fi";
+import { FiEye, FiEyeOff, FiUsers } from "react-icons/fi";
 import { PhotoFallback, Pill } from "@/components/ui";
 import { initials, tripStatusInfo } from "./app-format";
 import type { Trip } from "@/modules/trips/types/trip.types";
@@ -51,7 +52,7 @@ export function ProgressBar({ value, label, ...rest }: { value: number; label?: 
     <Box
       h="6px"
       borderRadius="full"
-      bg="bg.subtle"
+      bg="sunk"
       overflow="hidden"
       role="progressbar"
       aria-valuenow={pct}
@@ -60,7 +61,7 @@ export function ProgressBar({ value, label, ...rest }: { value: number; label?: 
       aria-label={label}
       {...rest}
     >
-      <Box h="100%" w={`${pct}%`} bg="accent" borderRadius="full" />
+      <Box h="100%" w={`${pct}%`} bg="ac" borderRadius="full" />
     </Box>
   );
 }
@@ -83,7 +84,7 @@ export function MemberCount({ trip, max = 3 }: { trip: Trip; max?: number }) {
   const people = trip.people ?? [];
   if (people.length === 0) {
     return (
-      <HStack spacing={1} color="fg.muted" fontSize="12px" fontWeight={600} title={`${n} people on this trip`} aria-label={`${n} people on this trip`}>
+      <HStack spacing={1} color="tx3" fontSize="12px" fontWeight={600} title={`${n} people on this trip`} aria-label={`${n} people on this trip`}>
         <Icon as={FiUsers} boxSize="14px" />
         <span>{n}</span>
       </HStack>
@@ -101,7 +102,7 @@ export function MemberCount({ trip, max = 3 }: { trip: Trip; max?: number }) {
           ml={i === 0 ? 0 : "-8px"}
           borderRadius="full"
           borderWidth="2px"
-          borderColor="bg.surface"
+          borderColor="bg"
           bg={AVATAR_COLORS[i % AVATAR_COLORS.length]}
           color="pin.fg"
           fontSize="12px"
@@ -115,7 +116,7 @@ export function MemberCount({ trip, max = 3 }: { trip: Trip; max?: number }) {
         </Flex>
       ))}
       {extra > 0 && (
-        <Flex w="30px" h="30px" ml="-8px" borderRadius="full" borderWidth="2px" borderColor="bg.surface" bg="bg.subtle" color="fg.muted" fontSize="12px" fontWeight={700} align="center" justify="center" aria-hidden>
+        <Flex w="30px" h="30px" ml="-8px" borderRadius="full" borderWidth="2px" borderColor="bg" bg="sunk" color="tx2" fontSize="12px" fontWeight={700} align="center" justify="center" aria-hidden>
           +{extra}
         </Flex>
       )}
@@ -130,8 +131,8 @@ export function StepNumber({ n, solid, size = 26 }: { n: number | string; solid?
       w={`${size}px`}
       h={`${size}px`}
       borderRadius="full"
-      bg={solid ? "accent" : "accent.soft"}
-      color={solid ? "accent.fg" : "accent.text"}
+      bg={solid ? "ac" : "acSoft"}
+      color={solid ? "acTx" : "ac"}
       align="center"
       justify="center"
       fontSize={size >= 28 ? "14px" : "13px"}
@@ -143,18 +144,66 @@ export function StepNumber({ n, solid, size = 26 }: { n: number | string; solid?
   );
 }
 
-/** Text input with a leading icon — the design's `.inp` row. Forwards its ref for react-hook-form. */
-export const IconInput = forwardRef<HTMLInputElement, { icon: IconType; right?: ReactNode; h?: string } & Omit<InputProps, "h">>(
-  function IconInput({ icon, right, h = "40px", ...rest }, ref) {
+/**
+ * Password / secret field (design system 7.2): every password, PIN and API key field gets an eye
+ * button that shows and hides the value. 44px field, 44×44 ghost button at the right, labelled
+ * "Show key" / "Hide key" (the noun follows the object) with `aria-pressed`. While shown, the value
+ * switches to IBM Plex Mono so look-alike characters are clear.
+ */
+export const SecretInput = forwardRef<HTMLInputElement, { icon?: IconType; noun?: string; h?: string } & Omit<InputProps, "h" | "type">>(
+  function SecretInput({ icon, noun = "password", h = "44px", ...rest }, ref) {
+    const [shown, setShown] = useState(false);
+    const label = `${shown ? "Hide" : "Show"} ${noun}`;
     return (
       <InputGroup>
-        <InputLeftElement h={h} pointerEvents="none" color="fg.muted">
-          <Icon as={icon} boxSize="16px" />
+        {icon && (
+          <InputLeftElement h={h} w="44px" pointerEvents="none" color="tx3">
+            <Icon as={icon} boxSize="18px" />
+          </InputLeftElement>
+        )}
+        <Input
+          ref={ref}
+          type={shown ? "text" : "password"}
+          h={h}
+          pl={icon ? "44px" : undefined}
+          pr="48px"
+          fontFamily={shown ? "mono" : undefined}
+          {...rest}
+        />
+        <InputRightElement h={h} w={h}>
+          <IconButton
+            type="button"
+            aria-label={label}
+            title={label}
+            aria-pressed={shown}
+            aria-controls={rest.id}
+            icon={<Icon as={shown ? FiEyeOff : FiEye} boxSize="20px" />}
+            variant="ghost"
+            colorScheme="gray"
+            w={h}
+            h={h}
+            minW={h}
+            borderRadius="md"
+            onClick={() => setShown((s) => !s)}
+          />
+        </InputRightElement>
+      </InputGroup>
+    );
+  },
+);
+
+/** Text input with a leading icon — the design's `.inp` row. Forwards its ref for react-hook-form. */
+export const IconInput = forwardRef<HTMLInputElement, { icon: IconType; right?: ReactNode; h?: string } & Omit<InputProps, "h">>(
+  function IconInput({ icon, right, h = "44px", ...rest }, ref) {
+    return (
+      <InputGroup>
+        <InputLeftElement h={h} w="44px" pointerEvents="none" color="tx3">
+          <Icon as={icon} boxSize="18px" />
         </InputLeftElement>
         <Input
           ref={ref}
           h={h}
-          pl="38px"
+          pl="44px"
           // Date/time fields: the leading icon replaces the browser's own; the whole field opens the picker.
           sx={
             rest.type === "date" || rest.type === "time"
@@ -163,7 +212,7 @@ export const IconInput = forwardRef<HTMLInputElement, { icon: IconType; right?: 
           }
           {...rest}
         />
-        {right && <InputRightElement h={h}>{right}</InputRightElement>}
+        {right && <InputRightElement h={h} w={h}>{right}</InputRightElement>}
       </InputGroup>
     );
   },

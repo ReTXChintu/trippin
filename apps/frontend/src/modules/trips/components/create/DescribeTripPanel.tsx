@@ -68,7 +68,7 @@ export function DescribeTripPanel({ rows = 2, variant = "card" }: { rows?: numbe
 
   const chips = (
     <HStack spacing="8px" flexWrap="wrap" rowGap="8px" minW={0}>
-      <Text fontSize="12px" color="fg.muted" letterSpacing="0.02em" display={{ base: "none", md: "block" }}>
+      <Text fontSize="12px" color="tx3" letterSpacing="0.02em" display={{ base: "none", md: "block" }}>
         Try
       </Text>
       {EXAMPLES.map((ex, i) => (
@@ -110,7 +110,7 @@ export function DescribeTripPanel({ rows = 2, variant = "card" }: { rows?: numbe
         {textarea}
         {chips}
         <Flex justify="space-between" align={{ base: "stretch", md: "center" }} gap="12px" direction={{ base: "column-reverse", md: "row" }}>
-          <Text fontSize="12px" color="fg.muted" maxW="420px">
+          <Text fontSize="12px" color="tx3" maxW="420px">
             {NOTE}
           </Text>
           {button}
@@ -127,7 +127,7 @@ export function DescribeTripPanel({ rows = 2, variant = "card" }: { rows?: numbe
         <Flex align="center" gap="12px" direction={{ base: "column-reverse", md: "row" }} flexShrink={0}>
           <Box
             fontSize="12px"
-            color="fg.muted"
+            color="tx3"
             maxW={{ md: "340px" }}
             textAlign={{ base: "left", md: "right" }}
             alignSelf={{ base: "flex-start", md: "center" }}

@@ -24,11 +24,11 @@ export function AiInstructions({
   return (
     <Box textAlign="left">
       <HStack spacing={1.5} mb={1.5}>
-        <Icon as={LuSparkles} boxSize="14px" color="accent.text" />
+        <Icon as={LuSparkles} boxSize="14px" color="ac" />
         <Text as="label" htmlFor="ai-instructions" fontSize="13px" fontWeight={600}>
           Special instructions for AI
         </Text>
-        <Text fontSize="12px" color="fg.muted">
+        <Text fontSize="12px" color="tx3">
           optional
         </Text>
       </HStack>
@@ -45,7 +45,7 @@ export function AiInstructions({
       />
       <Flex mt={2} gap={2} wrap="wrap" align="center" justify="space-between">
         <Flex gap="6px" wrap="wrap" align="center" minW={0}>
-          <Text fontSize="12px" color="fg.muted">
+          <Text fontSize="12px" color="tx3">
             Try
           </Text>
           {examples.map((ex) => (
@@ -58,7 +58,7 @@ export function AiInstructions({
         </Flex>
         {action}
       </Flex>
-      <Text fontSize="12px" color="fg.muted" mt={2}>
+      <Text fontSize="12px" color="tx3" mt={2}>
         AI follows these first. Places you tie to a day are locked there.
       </Text>
     </Box>

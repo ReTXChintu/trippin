@@ -13,9 +13,9 @@ interface DestinationGuidePanelProps {
 
 function GuideCard({ icon, title, children }: { icon: IconType; title: string; children: ReactNode }) {
   return (
-    <Box as="section" p="18px" bg="bg.surface" borderWidth="1px" borderColor="border.line" borderRadius="xl" aria-label={title}>
+    <Box as="section" p="18px" bg="sf" borderWidth="1px" borderColor="ln" borderRadius="xl" aria-label={title}>
       <Flex align="center" gap={2} fontWeight={600} fontSize="15px" mb="10px">
-        <Icon as={icon} color="accent" boxSize="18px" />
+        <Icon as={icon} color="ac" boxSize="18px" />
         <Text as="h3">{title}</Text>
       </Flex>
       {children}
@@ -38,7 +38,7 @@ function Lines({ items }: { items: { name: string; description?: string }[] }) {
 
 function StaticChip({ children }: { children: ReactNode }) {
   return (
-    <Flex as="li" align="center" h="32px" px={3} borderRadius="full" borderWidth="1px" borderColor="border.line" bg="bg.surface" fontSize="13px" fontWeight={500} whiteSpace="nowrap">
+    <Flex as="li" align="center" h="32px" px={3} borderRadius="full" borderWidth="1px" borderColor="ln" bg="sf" fontSize="13px" fontWeight={500} whiteSpace="nowrap">
       {children}
     </Flex>
   );
@@ -57,7 +57,7 @@ export function GuideSections({ brief }: { brief: LegDestinationBrief }) {
               ))}
             </Flex>
           ) : (
-            <Text fontSize="12px" color="fg.muted">
+            <Text fontSize="12px" color="tx3">
               Nothing listed.
             </Text>
           )}
@@ -66,7 +66,7 @@ export function GuideSections({ brief }: { brief: LegDestinationBrief }) {
           {brief.localFood.length ? (
             <Lines items={brief.localFood.map(splitDish)} />
           ) : (
-            <Text fontSize="12px" color="fg.muted">
+            <Text fontSize="12px" color="tx3">
               Nothing listed.
             </Text>
           )}
@@ -75,7 +75,7 @@ export function GuideSections({ brief }: { brief: LegDestinationBrief }) {
           {brief.markets.length ? (
             <Lines items={brief.markets.map((m) => ({ name: m.name, description: m.whatToBuy.length ? `${m.whatToBuy.join(", ")}.` : undefined }))} />
           ) : (
-            <Text fontSize="12px" color="fg.muted">
+            <Text fontSize="12px" color="tx3">
               Nothing listed.
             </Text>
           )}
@@ -107,7 +107,7 @@ export function DestinationGuidePanel({ legs, singleBrief }: DestinationGuidePan
   const withBriefs = legs.filter((l) => l.brief);
   if (withBriefs.length === 0 && !singleBrief) {
     return (
-      <Text fontSize="13px" color="fg.muted">
+      <Text fontSize="13px" color="tx3">
         Generate the local guide for specialties, food picks, markets, festivals and tips.
       </Text>
     );
@@ -120,7 +120,7 @@ export function DestinationGuidePanel({ legs, singleBrief }: DestinationGuidePan
     <Stack spacing={6}>
       {withBriefs.map(({ leg, brief }) => (
         <Stack key={leg.id} spacing={3}>
-          <Text as="h2" fontFamily="heading" fontWeight={600} fontSize="20px">
+          <Text as="h2" fontWeight={600} fontSize="17px" lineHeight="24px">
             {leg.name || leg.baseCity}
           </Text>
           <GuideSections brief={brief!} />

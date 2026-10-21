@@ -2,7 +2,7 @@ import { Box, type BoxProps, Button, Flex, Icon, Text } from "@chakra-ui/react";
 import type { ReactNode } from "react";
 import { FiAlertTriangle, FiRefreshCw } from "react-icons/fi";
 
-/** "Couldn't load …" block: danger icon, Fraunces title, one reassuring line, Try again (+ optional second action). */
+/** "Couldn't load …" block: critical icon tile, 17/24 title, one reassuring line, Try again (+ optional second action). */
 export function ErrorState({
   title = "Couldn't load this",
   text = "Your changes are safe. Check your connection and try again.",
@@ -18,21 +18,23 @@ export function ErrorState({
   secondaryAction?: ReactNode;
 } & BoxProps) {
   return (
-    <Box role="alert" p={6} bg="bg.surface" borderWidth="1px" borderColor="border.line" borderRadius="xl" {...rest}>
-      <Flex direction="column" align="flex-start" gap="10px">
-        <Icon as={FiAlertTriangle} boxSize="24px" color="danger" />
-        <Text as="h3" fontFamily="heading" fontWeight={600} fontSize="20px" letterSpacing="-0.01em">
+    <Box role="alert" p={5} bg="sf" borderWidth="1px" borderColor="ln" borderRadius="xl" {...rest}>
+      <Flex direction="column" align="flex-start" gap={3}>
+        <Flex w="40px" h="40px" borderRadius="md" bg="critSoft" color="crit" align="center" justify="center">
+          <Icon as={FiAlertTriangle} boxSize="20px" />
+        </Flex>
+        <Text as="h3" fontWeight={600} fontSize="17px" lineHeight="24px">
           {title}
         </Text>
         {text && (
-          <Text fontSize="13px" color="fg.muted">
+          <Text fontSize="14px" lineHeight="20px" color="tx2">
             {text}
           </Text>
         )}
         {(onRetry || secondaryAction) && (
           <Flex gap={2} wrap="wrap">
             {onRetry && (
-              <Button leftIcon={<FiRefreshCw />} onClick={onRetry} isLoading={retrying}>
+              <Button variant="outline" leftIcon={<FiRefreshCw />} onClick={onRetry} isLoading={retrying}>
                 Try again
               </Button>
             )}

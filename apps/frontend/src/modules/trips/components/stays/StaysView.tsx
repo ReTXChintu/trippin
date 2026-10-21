@@ -113,14 +113,14 @@ function StayCard({ stay, onEdit, onRemove }: { stay: TripStay; onEdit: () => vo
   const times = [stay.checkInTime && `check-in ${stay.checkInTime}`, stay.checkOutTime && `check-out ${stay.checkOutTime}`].filter(Boolean).join(" · ");
 
   return (
-    <Box bg="bg.surface" borderWidth="1px" borderColor="border.line" borderRadius="xl" px={4} py="14px">
+    <Box bg="sf" borderWidth="1px" borderColor="ln" borderRadius="xl" px={4} py="14px">
       <Flex gap={3} align="center">
         <Thumb seed={stay.id} icon={LuBed} size={56} />
         <Flex direction="column" flex={1} minW={0}>
           <Text fontWeight={600} fontSize="16px" noOfLines={1}>
             {stay.name}
           </Text>
-          <Text fontSize="12px" color="fg.muted">
+          <Text fontSize="12px" color="tx3">
             {dateRange(stay.checkInDate, stay.checkOutDate)}
             {times ? ` · ${times}` : ""}
           </Text>
@@ -129,19 +129,19 @@ function StayCard({ stay, onEdit, onRemove }: { stay: TripStay; onEdit: () => vo
           Covers {nights} night{nights === 1 ? "" : "s"}
         </Pill>
         <HStack spacing={0}>
-          <IconButton aria-label={`Edit ${stay.name}`} title="Edit stay" icon={<FiEdit2 size={16} />} variant="ghost" onClick={onEdit} />
-          <IconButton aria-label={`Remove ${stay.name}`} title="Remove stay" icon={<FiTrash2 size={16} />} variant="ghost" color="fg.muted" _hover={{ color: "danger", bg: "danger.soft" }} onClick={onRemove} />
+          <IconButton aria-label={`Edit ${stay.name}`} title="Edit stay" icon={<FiEdit2 size={16} />} variant="ghost" colorScheme="gray" onClick={onEdit} />
+          <IconButton aria-label={`Remove ${stay.name}`} title="Remove stay" icon={<FiTrash2 size={16} />} variant="ghost" color="tx3" _hover={{ color: "crit", bg: "critSoft" }} onClick={onRemove} />
         </HStack>
       </Flex>
       <Flex gap={{ base: 3, md: 5 }} rowGap={1} mt="10px" fontSize="12px" flexWrap="wrap" align="center">
         {stay.pricePerNight !== undefined && (
           <Text>
-            <Text as="span" color="fg.muted">
+            <Text as="span" color="tx3">
               Per night
             </Text>{" "}
             <b>{money(stay.pricePerNight)}</b>
             {total !== undefined && nights > 1 && (
-              <Text as="span" color="fg.muted">
+              <Text as="span" color="tx3">
                 {" "}
                 · {money(total)} total
               </Text>
@@ -150,7 +150,7 @@ function StayCard({ stay, onEdit, onRemove }: { stay: TripStay; onEdit: () => vo
         )}
         {stay.confirmationNumber && (
           <Text>
-            <Text as="span" color="fg.muted">
+            <Text as="span" color="tx3">
               Confirmation
             </Text>{" "}
             <b>{stay.confirmationNumber}</b>
@@ -158,24 +158,24 @@ function StayCard({ stay, onEdit, onRemove }: { stay: TripStay; onEdit: () => vo
         )}
         {stay.rating !== undefined && (
           <HStack spacing={1}>
-            <Text color="fg.muted">Rating</Text>
+            <Text color="tx3">Rating</Text>
             <b>{stay.rating.toFixed(1)}</b>
             <Icon as={FiStar} color="warn" boxSize="12px" />
           </HStack>
         )}
         {stay.bookingUrl && (
-          <Link href={stay.bookingUrl} isExternal color="accent.text" fontWeight={600} textDecoration="underline" display="inline-flex" alignItems="center" gap={1}>
+          <Link href={stay.bookingUrl} isExternal color="ac" fontWeight={600} textDecoration="underline" display="inline-flex" alignItems="center" gap={1}>
             <FiLink /> Booking link
           </Link>
         )}
         {mapsUrl && (
-          <Link href={mapsUrl} isExternal color="accent.text" fontWeight={600} textDecoration="underline" display="inline-flex" alignItems="center" gap={1}>
+          <Link href={mapsUrl} isExternal color="ac" fontWeight={600} textDecoration="underline" display="inline-flex" alignItems="center" gap={1}>
             <FiMapPin /> Map
           </Link>
         )}
       </Flex>
       {stay.address && (
-        <Text fontSize="12px" color="fg.muted" mt={1} noOfLines={1}>
+        <Text fontSize="12px" color="tx3" mt={1} noOfLines={1}>
           {stay.address}
         </Text>
       )}
@@ -203,7 +203,7 @@ function HotelRow({ hotel, index, onAdd }: { hotel: HotelOption; index: number; 
     <RowCard flexWrap={{ base: "wrap", sm: "nowrap" }}>
       <Box position="relative">
         <Thumb src={hotel.photoUrl} seed={hotel.googlePlaceId} icon={LuBed} alt="" />
-        <Flex position="absolute" top="-6px" left="-6px" h="20px" minW="20px" px="4px" borderRadius="full" bg="accent" color="accent.fg" fontSize="11px" fontWeight={700} align="center" justify="center" borderWidth="2px" borderColor="bg.surface" aria-hidden>
+        <Flex position="absolute" top="-6px" left="-6px" h="20px" minW="20px" px="4px" borderRadius="full" bg="ac" color="acTx" fontSize="11px" fontWeight={700} align="center" justify="center" borderWidth="2px" borderColor="sf" aria-hidden>
           H{index + 1}
         </Flex>
       </Box>
@@ -211,7 +211,7 @@ function HotelRow({ hotel, index, onAdd }: { hotel: HotelOption; index: number; 
         <Text fontWeight={600} noOfLines={1}>
           {hotel.name}
         </Text>
-        <Text fontSize="12px" color="fg.muted" noOfLines={2}>
+        <Text fontSize="12px" color="tx3" noOfLines={2}>
           {reasons.length ? reasons.join(" · ") : hotel.address}
         </Text>
       </Flex>
@@ -223,7 +223,7 @@ function HotelRow({ hotel, index, onAdd }: { hotel: HotelOption; index: number; 
           </HStack>
         )}
         {hotel.priceLevel && (
-          <Text fontSize="12px" color="fg.muted">
+          <Text fontSize="12px" color="tx3">
             {hotel.priceLevel}
           </Text>
         )}
@@ -233,10 +233,10 @@ function HotelRow({ hotel, index, onAdd }: { hotel: HotelOption; index: number; 
           Add as stay
         </Button>
         <Tooltip label="See prices" hasArrow>
-          <IconButton as="a" href={hotel.bookingUrl} target="_blank" rel="noopener noreferrer" aria-label={`Prices for ${hotel.name}`} icon={<FiExternalLink size={16} />} variant="ghost" />
+          <IconButton as="a" href={hotel.bookingUrl} target="_blank" rel="noopener noreferrer" aria-label={`Prices for ${hotel.name}`} icon={<FiExternalLink size={16} />} variant="ghost" colorScheme="gray" />
         </Tooltip>
         <Tooltip label="Open in Google Maps" hasArrow>
-          <IconButton as="a" href={hotel.googleMapsUrl} target="_blank" rel="noopener noreferrer" aria-label={`${hotel.name} in Google Maps`} icon={<FiMapPin size={16} />} variant="ghost" />
+          <IconButton as="a" href={hotel.googleMapsUrl} target="_blank" rel="noopener noreferrer" aria-label={`${hotel.name} in Google Maps`} icon={<FiMapPin size={16} />} variant="ghost" colorScheme="gray" />
         </Tooltip>
       </HStack>
     </RowCard>
@@ -252,7 +252,7 @@ function RentalsBlock({ trip, legs }: { trip: Trip; legs: TripLeg[] }) {
 
   if (!ownVehicle && !hasAny) {
     return (
-      <Flex align="center" gap="10px" px="14px" py="10px" borderWidth="1px" borderStyle="dashed" borderColor="border.line" borderRadius="xl" color="fg.muted">
+      <Flex align="center" gap="10px" px="14px" py="10px" borderWidth="1px" borderStyle="dashed" borderColor="ln" borderRadius="xl" color="tx3">
         <Icon as={LuBike} boxSize="16px" flexShrink={0} />
         <Text fontSize="12px">Vehicle and scooter rentals near your stay appear here when &ldquo;Getting around&rdquo; is self-drive or bike.</Text>
       </Flex>
@@ -282,7 +282,7 @@ function RentalsBlock({ trip, legs }: { trip: Trip; legs: TripLeg[] }) {
         return (
           <Stack key={leg.id} spacing={2}>
             <Flex align="center" justify="space-between" gap={2} flexWrap="wrap">
-              <Text fontSize="13px" color="fg.muted">
+              <Text fontSize="13px" color="tx3">
                 {leg.name || leg.baseCity}
                 {leg.hotelName ? ` · near ${leg.hotelName}` : ""}
               </Text>
@@ -297,7 +297,7 @@ function RentalsBlock({ trip, legs }: { trip: Trip; legs: TripLeg[] }) {
             {hasRentals ? (
               <VehicleRentalPanel trip={trip} legId={leg.id} />
             ) : (
-              <Text fontSize="12px" color="fg.muted">
+              <Text fontSize="12px" color="tx3">
                 {hasHotel ? "No rental suggestions yet — search near your stay." : "Add a stay to search rentals near it."}
               </Text>
             )}
@@ -414,7 +414,7 @@ export function StaysView({ trip, cityId }: StaysViewProps) {
                   </Pill>
                 ) : (
                   <HStack spacing={2}>
-                    <Text fontSize="12px" color="fg.muted">
+                    <Text fontSize="12px" color="tx3">
                       {nights} night{nights === 1 ? "" : "s"} · {stays.length} stay{stays.length === 1 ? "" : "s"}
                     </Text>
                     <Button size="sm" variant="ghost" leftIcon={<FiPlus />} onClick={() => openForm(leg, newStayDraft(leg))}>
@@ -442,12 +442,12 @@ export function StaysView({ trip, cityId }: StaysViewProps) {
                   <Text>
                     {nightList(uncovered)} still {uncovered.length === 1 ? "has" : "have"} no stay.
                   </Text>
-                  <Button size="xs" variant="ghost" color="accent.text" onClick={() => openForm(leg, newStayDraft(leg))}>
+                  <Button size="xs" variant="ghost" color="ac" onClick={() => openForm(leg, newStayDraft(leg))}>
                     Add a stay
                   </Button>
                 </Flex>
               ) : (
-                <Stack spacing={2} px={4} py="14px" borderWidth="1.5px" borderStyle="dashed" borderColor="warn" bg="warn.soft" color="warn" borderRadius="xl">
+                <Stack spacing={2} px={4} py="14px" borderWidth="1.5px" borderStyle="dashed" borderColor="warn" bg="warnSoft" color="warn" borderRadius="xl">
                   <Text fontWeight={600}>
                     {nightList(uncovered)} {uncovered.length === 1 ? "has" : "have"} no stay.
                   </Text>
@@ -475,7 +475,7 @@ export function StaysView({ trip, cityId }: StaysViewProps) {
             {legs.length > 1 ? (
               <CityChips cities={legs.map((l) => ({ id: l.id, name: l.name || l.baseCity, warn: getUncoveredNights(l).length > 0 }))} value={suggestLeg.id} onChange={setSuggestLegId} label="Find hotels in" />
             ) : (
-              <Text fontSize="12px" color="fg.muted">
+              <Text fontSize="12px" color="tx3">
                 Scored by distance to what you picked
               </Text>
             )}
@@ -489,7 +489,7 @@ export function StaysView({ trip, cityId }: StaysViewProps) {
             spacing={2}
           >
             <InputGroup>
-              <InputLeftElement pointerEvents="none" color="fg.muted">
+              <InputLeftElement pointerEvents="none" color="tx3">
                 <FiSearch />
               </InputLeftElement>
               <Input
@@ -504,17 +504,17 @@ export function StaysView({ trip, cityId }: StaysViewProps) {
             </Button>
           </HStack>
           {suggestLeg.selectedPlaceIds.length === 0 && !results && (
-            <Text fontSize="12px" color="fg.muted">
+            <Text fontSize="12px" color="tx3">
               Pick some places first — hotels are scored by how close they are to them.
             </Text>
           )}
           {results && (
             <>
-              <Text fontSize="12px" color="fg.muted">
+              <Text fontSize="12px" color="tx3">
                 {results.hotels.length} hotels · scored against {results.basis.label} · prices for {formatShortDate(results.checkInDate)} → {formatShortDate(results.checkOutDate)}
               </Text>
               {results.hotels.length === 0 ? (
-                <Text fontSize="13px" color="fg.muted">
+                <Text fontSize="13px" color="tx3">
                   No hotels found — try a different search.
                 </Text>
               ) : (

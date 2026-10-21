@@ -224,63 +224,63 @@ export function buildItineraryPdfHtml(data: ItineraryPdfData): string {
   return `<!doctype html><html lang="en"><head><meta charset="utf-8">
 <title>${esc(trip.title)} — Itinerary</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 @page { size: A4; margin: 12mm 11mm; }
 * { box-sizing: border-box; }
 html, body { margin: 0; background: #fff; }
-body { font-family: 'DM Sans', system-ui, sans-serif; color: #1A2422; font-size: 11px; line-height: 1.45; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+body { font-family: 'IBM Plex Sans', system-ui, sans-serif; font-variant-numeric: tabular-nums lining-nums; color: #18191D; font-size: 11px; line-height: 1.45; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 h1, h2, h3 { margin: 0; }
-h1, h2 { font-family: 'Fraunces', Georgia, serif; font-weight: 600; letter-spacing: -0.01em; }
-.muted { color: #55625F; } .small { font-size: 10px; }
-.cover { background: #F5F3EE; border: 1px solid #E2DDD1; border-radius: 16px; padding: 18px 20px; margin-bottom: 14px; }
-.brand { display: flex; align-items: center; gap: 7px; font-weight: 700; color: #0F766E; font-size: 11px; letter-spacing: .04em; text-transform: uppercase; }
+h1, h2 { font-weight: 600; letter-spacing: -0.01em; }
+.muted { color: #67686E; } .small { font-size: 10px; }
+.cover { background: #F4F2EC; border: 1px solid #E2DED4; border-radius: 14px; padding: 18px 20px; margin-bottom: 14px; }
+.brand { display: flex; align-items: center; gap: 7px; font-weight: 700; color: #0A6E86; font-size: 12px; letter-spacing: -.01em; }
 .brand img { width: 22px; height: 22px; border-radius: 6px; }
 .cover h1 { font-size: 28px; margin-top: 8px; }
-.cover .meta { color: #55625F; margin-top: 3px; font-size: 12px; }
+.cover .meta { color: #67686E; margin-top: 3px; font-size: 12px; }
 .facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; margin-top: 12px; }
-.fact { background: #fff; border: 1px solid #E2DDD1; border-radius: 10px; padding: 8px 10px; }
-.fact .k { font-size: 9px; text-transform: uppercase; letter-spacing: .07em; color: #55625F; font-weight: 600; }
+.fact { background: #fff; border: 1px solid #E2DED4; border-radius: 10px; padding: 8px 10px; }
+.fact .k { font-size: 9.5px; letter-spacing: .02em; color: #4C4D53; font-weight: 600; }
 .fact ul { margin: 2px 0 0; padding-left: 14px; }
 .summary { margin-top: 12px; font-size: 11.5px; }
 .day + .day { break-before: page; }
 .day-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; border-left: 4px solid; padding: 2px 0 2px 12px; margin-bottom: 10px; }
-.day-no { display: inline-block; color: #fff; font-weight: 700; font-size: 10px; letter-spacing: .06em; text-transform: uppercase; padding: 2px 8px; border-radius: 999px; }
+.day-no { display: inline-block; color: #fff; font-weight: 600; font-size: 10px; padding: 2px 8px; border-radius: 6px; }
 .day-head h2 { font-size: 20px; margin-top: 4px; }
-.day-sub { color: #55625F; font-size: 11px; margin-top: 1px; }
-.weather { display: flex; gap: 8px; align-items: center; background: #F5F3EE; border: 1px solid #E2DDD1; border-radius: 12px; padding: 7px 11px; max-width: 46%; }
-.w-icon { font-size: 20px; } .w-kind { font-size: 9px; color: #55625F; }
-.w-sun { font-size: 10.5px; font-weight: 600; color: #8A4B08; margin-top: 2px; }
-.outfit { background: #DCF0ED; color: #0A544E; border-radius: 10px; padding: 8px 11px; margin-bottom: 10px; }
-.o-label { display: block; font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; margin-bottom: 1px; }
+.day-sub { color: #67686E; font-size: 11px; margin-top: 1px; }
+.weather { display: flex; gap: 8px; align-items: center; background: #F4F2EC; border: 1px solid #E2DED4; border-radius: 12px; padding: 7px 11px; max-width: 46%; }
+.w-icon { font-size: 20px; } .w-kind { font-size: 9px; color: #67686E; }
+.w-sun { font-size: 10.5px; font-weight: 600; color: #8F5200; margin-top: 2px; }
+.outfit { background: #E0F1F5; color: #0A6E86; border-radius: 10px; padding: 8px 11px; margin-bottom: 10px; }
+.o-label { display: block; font-size: 9.5px; font-weight: 600; letter-spacing: .02em; margin-bottom: 1px; }
 .timeline { display: flex; flex-direction: column; }
 .row { display: grid; grid-template-columns: 44px 26px 1fr; gap: 8px; break-inside: avoid; }
-.time { text-align: right; padding-top: 9px; font-size: 11px; } .time span { display: block; color: #55625F; font-size: 9.5px; }
+.time { text-align: right; padding-top: 9px; font-size: 11px; } .time span { display: block; color: #67686E; font-size: 9.5px; }
 .rail { position: relative; display: flex; justify-content: center; }
-.rail::before { content: ""; position: absolute; top: 0; bottom: 0; left: 50%; border-left: 2px solid #E2DDD1; }
+.rail::before { content: ""; position: absolute; top: 0; bottom: 0; left: 50%; border-left: 2px solid #E2DED4; }
 .dot, .ring { position: relative; margin-top: 7px; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: #fff; }
-.ring { background: #fff; border: 2px solid #E2DDD1; color: #55625F; font-size: 11px; }
-.card { border: 1px solid #E2DDD1; border-radius: 12px; padding: 9px 12px; margin: 4px 0; background: #fff; }
-.card.dashed { border-style: dashed; background: #FBFAF7; }
+.ring { background: #fff; border: 2px solid #E2DED4; color: #67686E; font-size: 11px; }
+.card { border: 1px solid #E2DED4; border-radius: 12px; padding: 9px 12px; margin: 4px 0; background: #fff; }
+.card.dashed { border-style: dashed; background: #FAF9F5; }
 .title { display: flex; align-items: center; gap: 8px; } .title h3 { font-size: 13.5px; font-weight: 700; }
-.sub { color: #55625F; font-size: 10.5px; margin-top: 1px; }
-.addr { color: #55625F; font-size: 9.5px; margin: 2px 0 0; }
+.sub { color: #67686E; font-size: 10.5px; margin-top: 1px; }
+.addr { color: #67686E; font-size: 9.5px; margin: 2px 0 0; }
 .chips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 7px; }
-.chip { background: #EEEBE3; border-radius: 999px; padding: 2px 9px; font-size: 10px; font-weight: 500; }
-.chip.muted { color: #55625F; } .chip.danger { background: #FDE4E1; color: #B42318; }
-.chip-label { font-weight: 700; margin-right: 4px; font-size: 8.5px; text-transform: uppercase; letter-spacing: .06em; color: #0F766E; }
-.chip.danger .chip-label { color: #B42318; }
-.tag { font-size: 9px; font-weight: 600; background: #EEEBE3; color: #55625F; border-radius: 999px; padding: 1px 7px; }
-.tag.gem { background: #DDF1E3; color: #25703F; }
-.why { margin: 6px 0 0; font-style: italic; color: #33403D; }
-.tips { margin: 4px 0 0; padding-left: 15px; color: #33403D; } .tips li { margin: 1px 0; }
-.warn { margin: 5px 0 0; color: #8A4B08; background: #FBEBCB; border-radius: 6px; padding: 3px 7px; font-size: 10px; }
+.chip { background: #ECE9E1; border-radius: 999px; padding: 2px 9px; font-size: 10px; font-weight: 500; }
+.chip.muted { color: #67686E; } .chip.danger { background: #FBE5E2; color: #B3302A; }
+.chip-label { font-weight: 600; margin-right: 4px; font-size: 9.5px; color: #0A6E86; }
+.chip.danger .chip-label { color: #B3302A; }
+.tag { font-size: 9px; font-weight: 600; background: #ECE9E1; color: #4C4D53; border-radius: 6px; padding: 1px 7px; }
+.tag.gem { background: #E1F0E6; color: #15724A; }
+.why { margin: 6px 0 0; font-style: italic; color: #4C4D53; }
+.tips { margin: 4px 0 0; padding-left: 15px; color: #4C4D53; } .tips li { margin: 1px 0; }
+.warn { margin: 5px 0 0; color: #8F5200; background: #FBEED6; border-radius: 6px; padding: 3px 7px; font-size: 10px; }
 .ideas { margin: 6px 0 0; padding-left: 16px; } .ideas li { margin: 3px 0; }
-.travel .travel-text { color: #55625F; font-size: 10px; padding: 3px 0; }
+.travel .travel-text { color: #67686E; font-size: 10px; padding: 3px 0; }
 .travel .rail::before { border-left-style: dashed; }
-.end-text { padding-top: 10px; color: #55625F; }
+.end-text { padding-top: 10px; color: #67686E; }
 .extra { break-before: page; } .extra h2 { font-size: 18px; margin-bottom: 6px; }
-.foot { margin-top: 16px; padding-top: 8px; border-top: 1px solid #E2DDD1; color: #55625F; font-size: 9.5px; }
+.foot { margin-top: 16px; padding-top: 8px; border-top: 1px solid #E2DED4; color: #67686E; font-size: 9.5px; }
 </style></head><body>
 <div class="cover">
   <div class="brand"><img src="${esc(data.logoUrl)}" alt="">Trippin</div>

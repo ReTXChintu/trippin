@@ -104,19 +104,19 @@ class ConnectedAppsSection extends ConsumerWidget {
   }
 }
 
-/// The app's mark: a tinted rounded square with its icon.
+/// The app's mark: an icon tile in that app's own accent (SpendLog cobalt, InFrame violet), so a
+/// sibling looks like itself on Trippin's screens.
 class _AppBadge extends StatelessWidget {
   const _AppBadge(this.app);
   final String app;
 
   @override
   Widget build(BuildContext context) {
-    final spend = app == 'spendlog';
-    return Container(
-      width: 40,
-      height: 40,
-      decoration: BoxDecoration(color: spend ? context.successSoft : context.accentSoft, borderRadius: BorderRadius.circular(12)),
-      child: Icon(spend ? Icons.account_balance_wallet_outlined : Icons.photo_library_outlined, color: spend ? context.success : context.accentText, size: 22),
+    final (soft, strong) = SuiteAccents.of(app, dark: context.isDark);
+    return DsIconTile(
+      app == 'spendlog' ? Icons.account_balance_wallet_outlined : Icons.photo_library_outlined,
+      bg: soft,
+      fg: strong,
     );
   }
 }
@@ -172,10 +172,10 @@ class _LinkTogglesState extends ConsumerState<_LinkToggles> {
           if (i > 0) const Divider(height: 1),
           SwitchListTile(
             key: ValueKey('link-${app.app}'),
-            contentPadding: const EdgeInsets.fromLTRB(14, 6, 10, 6),
+            contentPadding: const EdgeInsets.fromLTRB(16, 4, 12, 4),
             secondary: _AppBadge(app.app),
-            title: Text(ConnectedApp.toggleLabel(app.app), style: const TextStyle(fontWeight: FontWeight.w600)),
-            subtitle: Text(app.tagline, style: TextStyle(color: context.muted, fontSize: 12.5)),
+            title: Text(ConnectedApp.toggleLabel(app.app), style: const TextStyle(fontSize: 14, height: 20 / 14, fontWeight: FontWeight.w500)),
+            subtitle: Text(app.tagline, style: TextStyle(color: context.ds.tx3, fontSize: 12, height: 16 / 12)),
             value: _pending[app.app] ?? app.enabled,
             onChanged: _pending.containsKey(app.app) ? null : (v) => _set(app, v),
           ),
@@ -214,10 +214,10 @@ class _AppLinkCardState extends ConsumerState<AppLinkCard> {
     }
   }
 
-  (String, Color, Color)? _pill(BuildContext context) => switch (app.status) {
-        'linked' => ('Linked', context.successSoft, context.success),
-        'pending' => ('Setting up', context.accentSoft, context.accentText),
-        'error' => ('Not linked', context.warnSoft, context.warn),
+  (String, DsTone)? _pill(BuildContext context) => switch (app.status) {
+        'linked' => ('Linked', DsTone.good),
+        'pending' => ('Setting up', DsTone.accent),
+        'error' => ('Not linked', DsTone.warn),
         _ => null,
       };
 
@@ -247,12 +247,12 @@ class _AppLinkCardState extends ConsumerState<AppLinkCard> {
       return Notice(tone: 'warn', icon: Icons.cloud_off_outlined, text: '${app.summaryError}. The rest of your trip works as usual.');
     }
     return Row(children: [
-      const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)),
+      const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2.5, strokeCap: StrokeCap.round)),
       const SizedBox(width: 12),
       Expanded(
         child: Text(
           app.app == 'spendlog' ? 'Setting up the SpendLog trip — spending shows here once it’s ready.' : 'Setting up the InFrame event — photos show here once it’s ready.',
-          style: TextStyle(color: context.muted),
+          style: TextStyle(color: context.ds.tx2, fontSize: 13, height: 18 / 13),
         ),
       ),
     ]);
@@ -265,20 +265,21 @@ class _AppLinkCardState extends ConsumerState<AppLinkCard> {
     final skipped = app.skippedMembers.length;
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.all(Ds.s16),
         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           Row(children: [
             _AppBadge(app.app),
             const SizedBox(width: 12),
             Expanded(
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(app.name, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15.5)),
-                Text(app.app == 'spendlog' ? 'What the trip actually cost' : 'Everyone’s trip photos', style: TextStyle(color: context.muted, fontSize: 12.5)),
+                Text(app.name, style: Theme.of(context).textTheme.titleSmall),
+                Text(app.app == 'spendlog' ? 'What the trip actually cost' : 'Everyone’s trip photos',
+                    style: TextStyle(color: context.ds.tx3, fontSize: 12, height: 16 / 12)),
               ]),
             ),
-            if (pill != null) Pill(pill.$1, bg: pill.$2, fg: pill.$3),
+            if (pill != null) Pill(pill.$1, tone: pill.$2),
           ]),
-          const SizedBox(height: 14),
+          const SizedBox(height: 16),
           _body(context),
           // A summary that loaded still gets the link's error under it.
           if (app.hasSummary && app.status == 'error') ...[const SizedBox(height: 10), _error(context)],
@@ -289,12 +290,12 @@ class _AppLinkCardState extends ConsumerState<AppLinkCard> {
           if (skipped > 0) ...[
             const SizedBox(height: 10),
             Row(children: [
-              Icon(Icons.person_add_alt_outlined, size: 18, color: context.muted),
+              Icon(Icons.person_add_alt_outlined, size: 18, color: context.ds.tx2),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   '$skipped member${skipped == 1 ? '' : 's'} will join the ${app.app == 'spendlog' ? 'SpendLog trip' : 'InFrame event'} once they sign in to ${app.name}',
-                  style: TextStyle(color: context.muted, fontSize: 13),
+                  style: TextStyle(color: context.ds.tx2, fontSize: 13, height: 18 / 13),
                 ),
               ),
             ]),
@@ -319,13 +320,22 @@ class _Stat extends StatelessWidget {
   final Color? color;
 
   @override
+  // The inner tile (§7.5): raised-subtle surface, hairline, radius 14; label over a 17/600 value.
   Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
-        decoration: BoxDecoration(color: context.subtle, borderRadius: BorderRadius.circular(12)),
+        padding: const EdgeInsets.all(Ds.s14),
+        decoration: BoxDecoration(
+          color: context.ds.sf2,
+          border: Border.all(color: context.ds.ln),
+          borderRadius: BorderRadius.circular(Ds.rXl),
+        ),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(label, style: TextStyle(color: context.muted, fontSize: 12), overflow: TextOverflow.ellipsis),
+          Text(label, style: Theme.of(context).textTheme.labelMedium, overflow: TextOverflow.ellipsis),
           const SizedBox(height: 2),
-          Text(value, style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16, color: color), overflow: TextOverflow.ellipsis),
+          Text(
+            value,
+            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 17, height: 24 / 17, color: color ?? context.ds.tx, fontFeatures: Ds.tabular),
+            overflow: TextOverflow.ellipsis,
+          ),
         ]),
       );
 }
@@ -337,16 +347,20 @@ class _SpendlogBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (balanceLabel, balance, balanceColor) = s.iOweMinor > 0
-        ? ('You owe', s.money(s.iOweMinor), context.warn)
+        ? ('You owe', s.money(s.iOweMinor), context.ds.warn)
         : s.owedToMeMinor > 0
-            ? ('Owed to you', s.money(s.owedToMeMinor), context.success)
+            ? ('Owed to you', s.money(s.owedToMeMinor), context.ds.good)
             : ('Your balance', 'Settled up', null);
     const shown = 3;
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      Text(s.money(s.totalSpentMinor), style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w800)),
+      // Money spent is ink, never red (§2).
+      Text(
+        s.money(s.totalSpentMinor),
+        style: Theme.of(context).textTheme.headlineMedium?.copyWith(color: context.ds.moneyOut, fontFeatures: Ds.tabular),
+      ),
       Text(
         'spent by everyone · ${s.transactionCount} transaction${s.transactionCount == 1 ? '' : 's'}',
-        style: TextStyle(color: context.muted, fontSize: 13),
+        style: TextStyle(color: context.ds.tx3, fontSize: 13, height: 18 / 13, fontFeatures: Ds.tabular),
       ),
       const SizedBox(height: 12),
       Row(children: [
@@ -356,20 +370,20 @@ class _SpendlogBody extends StatelessWidget {
       ]),
       if (s.settlement.isNotEmpty) ...[
         const SizedBox(height: 12),
-        Text('To settle up', style: TextStyle(color: context.muted, fontSize: 12, fontWeight: FontWeight.w700)),
+        Text('To settle up', style: Theme.of(context).textTheme.labelMedium),
         for (final line in s.settlement.take(shown))
           Padding(
             padding: const EdgeInsets.only(top: 6),
             child: Row(children: [
-              Expanded(child: Text('${line.fromName} pays ${line.toName}', overflow: TextOverflow.ellipsis)),
+              Expanded(child: Text('${line.fromName} pays ${line.toName}', style: TextStyle(color: context.ds.tx2), overflow: TextOverflow.ellipsis)),
               const SizedBox(width: 8),
-              Text(s.money(line.amountMinor), style: const TextStyle(fontWeight: FontWeight.w700)),
+              Text(s.money(line.amountMinor), style: const TextStyle(fontWeight: FontWeight.w600, fontFeatures: Ds.tabular)),
             ]),
           ),
         if (s.settlement.length > shown)
           Padding(
             padding: const EdgeInsets.only(top: 6),
-            child: Text('+${s.settlement.length - shown} more in SpendLog', style: TextStyle(color: context.muted, fontSize: 12.5)),
+            child: Text('+${s.settlement.length - shown} more in SpendLog', style: TextStyle(color: context.ds.tx3, fontSize: 12, height: 16 / 12)),
           ),
       ],
     ]);
@@ -407,7 +421,7 @@ class _InframeBody extends StatelessWidget {
       ]),
       if (s.photoCount + s.videoCount == 0 && !s.needsStorage) ...[
         const SizedBox(height: 10),
-        Text('No photos yet — everyone on the trip can add theirs in InFrame.', style: TextStyle(color: context.muted, fontSize: 13)),
+        Text('No photos yet — everyone on the trip can add theirs in InFrame.', style: TextStyle(color: context.ds.tx2, fontSize: 13, height: 18 / 13)),
       ],
       // The owner connects a Drive/MEGA folder in InFrame before anyone can add photos; new
       // events start this way.
@@ -433,37 +447,43 @@ class PromoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.ds;
+    // The info treatment: accent tint, accent hairline, ink text; the mark stays in its own app's
+    // accent on the surface ("on tinted" icon tile).
+    final (_, strong) = SuiteAccents.of(app, dark: context.isDark);
     return Card(
-      color: context.accentSoft,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      color: c.acSoft,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(Ds.rXl), side: BorderSide(color: c.acLine)),
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(14, 10, 6, 12),
+        padding: const EdgeInsets.fromLTRB(16, 12, 4, 16),
         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Padding(padding: const EdgeInsets.only(top: 4), child: _AppBadge(app)),
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: DsIconTile(app == 'spendlog' ? Icons.account_balance_wallet_outlined : Icons.photo_library_outlined, bg: c.sf, fg: strong),
+            ),
             const SizedBox(width: 12),
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.only(top: 4),
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(promo.title, style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15.5, color: context.accentText)),
+                  Text(promo.title, style: Theme.of(context).textTheme.titleSmall),
                   if (promo.body.isNotEmpty) ...[
                     const SizedBox(height: 4),
-                    Text(promo.body, style: TextStyle(color: context.accentText, fontSize: 13.5, height: 1.3)),
+                    Text(promo.body, style: TextStyle(color: c.tx2, fontSize: 13, height: 18 / 13)),
                   ],
                 ]),
               ),
             ),
             IconButton(
               tooltip: 'Dismiss',
-              visualDensity: VisualDensity.compact,
               onPressed: onDismiss,
-              icon: Icon(Icons.close, size: 20, color: context.accentText),
+              icon: Icon(Icons.close, size: 20, color: c.tx2),
             ),
           ]),
-          const SizedBox(height: 10),
+          const SizedBox(height: 12),
           Padding(
-            padding: const EdgeInsets.only(right: 8),
+            padding: const EdgeInsets.only(right: 12),
             child: Row(children: [
               Expanded(
                 child: FilledButton.icon(

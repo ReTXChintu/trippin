@@ -26,12 +26,12 @@ export function TodayStopRow({
   const openMeal = isOpenMeal(stop) && !stop.status;
   const actionable = isActionable(stop);
   const StatusIcon = stop.status === "done" ? FiCheck : stop.status === "skipped" ? FiFlag : stop.fixedStartTime ? FiClock : categoryIcon(stop.category, stop.stopType);
-  const iconColor = stop.status === "done" ? "success" : stop.fixedStartTime && !stop.status ? "accent" : "fg.muted";
+  const iconColor = stop.status === "done" ? "success" : stop.fixedStartTime && !stop.status ? "accent" : "tx3";
 
   const menu =
     actionable && (canEdit || directionsUrl) ? (
       <Menu isLazy placement="bottom-end">
-        <MenuButton as={IconButton} icon={<FiMoreVertical />} size="sm" variant="ghost" aria-label={`Options for ${stop.placeName}`} />
+        <MenuButton as={IconButton} icon={<FiMoreVertical />} size="sm" variant="ghost" colorScheme="gray" aria-label={`Options for ${stop.placeName}`} />
         <MenuList fontSize="sm">
           {directionsUrl && (
             <MenuItem as="a" href={directionsUrl} target="_blank" rel="noopener noreferrer" icon={<FiNavigation />}>
@@ -59,11 +59,11 @@ export function TodayStopRow({
 
   if (openMeal) {
     return (
-      <Flex align="center" gap="12px" px="14px" py="10px" minH="52px" borderWidth="1px" borderStyle="dashed" borderColor="border.line" borderRadius="xl">
+      <Flex align="center" gap="12px" px="14px" py="10px" minH="52px" borderWidth="1px" borderStyle="dashed" borderColor="ln" borderRadius="xl">
         <Text w="44px" flexShrink={0} fontSize="12px" fontWeight={600} sx={{ fontVariantNumeric: "tabular-nums" }}>
           {stop.arrivalTime}
         </Text>
-        <Text flex={1} minW={0} fontSize="12px" color="fg.muted" noOfLines={1}>
+        <Text flex={1} minW={0} fontSize="12px" color="tx3" noOfLines={1}>
           {stop.placeName} · not picked yet
         </Text>
         {canEdit && (
@@ -83,9 +83,9 @@ export function TodayStopRow({
       px="14px"
       py="12px"
       minH="60px"
-      bg="bg.surface"
+      bg="sf"
       borderWidth="1px"
-      borderColor="border.line"
+      borderColor="ln"
       borderRadius="xl"
       opacity={stop.status ? 0.6 : 1}
     >
@@ -96,7 +96,7 @@ export function TodayStopRow({
         <Text fontWeight={600} noOfLines={1} title={stop.placeName} textDecoration={stop.status === "skipped" ? "line-through" : undefined}>
           {stop.placeName}
         </Text>
-        <Text fontSize="12px" color="fg.muted" noOfLines={1}>
+        <Text fontSize="12px" color="tx3" noOfLines={1}>
           {stop.status === "done" ? "Done" : stop.status === "skipped" ? "Skipped" : stopSubline(stop, mode)}
         </Text>
       </Box>

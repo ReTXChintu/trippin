@@ -60,17 +60,17 @@ function BookingRow({ booking, trip, onEdit, onRemove }: { booking: TripBooking;
     .join(" · ");
 
   return (
-    <Flex align="center" gap={3} px={4} py="14px" bg="bg.surface" borderWidth="1px" borderColor="border.line" borderRadius="xl" minW={0}>
+    <Flex align="center" gap={3} px={4} py="14px" bg="sf" borderWidth="1px" borderColor="ln" borderRadius="xl" minW={0}>
       <IconTile icon={meta.icon} size={40} tone="accent" />
       <Flex direction="column" flex={1} minW={0}>
         <Text fontWeight={600} noOfLines={1}>
           {booking.title}
         </Text>
-        <Text fontSize="12px" color="fg.muted" noOfLines={2}>
+        <Text fontSize="12px" color="tx3" noOfLines={2}>
           {sub}
         </Text>
         {booking.notes && (
-          <Text fontSize="12px" color="fg.muted" noOfLines={1}>
+          <Text fontSize="12px" color="tx3" noOfLines={1}>
             {booking.notes}
           </Text>
         )}
@@ -80,7 +80,7 @@ function BookingRow({ booking, trip, onEdit, onRemove }: { booking: TripBooking;
           {fmt(booking.startDate, "d MMM")}
         </Text>
         {booking.confirmationNumber && (
-          <Text fontSize="12px" color="fg.muted" letterSpacing="0.02em">
+          <Text fontSize="12px" color="tx3" letterSpacing="0.02em">
             Conf. {booking.confirmationNumber}
           </Text>
         )}
@@ -89,7 +89,7 @@ function BookingRow({ booking, trip, onEdit, onRemove }: { booking: TripBooking;
         {booking.cost !== undefined ? formatMoney(booking.cost, booking.currency ?? trip.currency) : ""}
       </Text>
       <Menu isLazy placement="bottom-end">
-        <MenuButton as={IconButton} aria-label={`Actions for ${booking.title}`} title="Booking actions" icon={<FiMoreHorizontal size={18} />} variant="ghost" flexShrink={0} />
+        <MenuButton as={IconButton} aria-label={`Actions for ${booking.title}`} title="Booking actions" icon={<FiMoreHorizontal size={18} />} variant="ghost" colorScheme="gray" flexShrink={0} />
         <MenuList zIndex={20}>
           <MenuItem icon={<FiEdit2 />} onClick={onEdit}>
             Edit
@@ -99,7 +99,7 @@ function BookingRow({ booking, trip, onEdit, onRemove }: { booking: TripBooking;
               Open booking
             </MenuItem>
           )}
-          <MenuItem icon={<FiTrash2 />} color="danger" onClick={onRemove}>
+          <MenuItem icon={<FiTrash2 />} color="crit" onClick={onRemove}>
             Remove
           </MenuItem>
         </MenuList>
@@ -149,7 +149,7 @@ export function BookingsView({ trip }: { trip: Trip }) {
   const main = (
     <Stack spacing="14px">
       {unbookedTransfers.map((t) => (
-        <Flex key={t.id} align="center" gap={3} px={4} py="14px" bg="warn.soft" color="warn" borderRadius="xl" flexWrap={{ base: "wrap", sm: "nowrap" }}>
+        <Flex key={t.id} align="center" gap={3} px={4} py="14px" bg="warnSoft" color="warn" borderRadius="xl" flexWrap={{ base: "wrap", sm: "nowrap" }}>
           <Icon as={FiAlertTriangle} boxSize="18px" flexShrink={0} />
           <Flex direction="column" flex={1} minW="180px">
             <Text fontWeight={600}>
@@ -182,7 +182,7 @@ export function BookingsView({ trip }: { trip: Trip }) {
       </SectionTitle>
 
       {sorted.length === 0 ? (
-        <Box bg="bg.surface" borderWidth="1px" borderColor="border.line" borderRadius="xl">
+        <Box bg="sf" borderWidth="1px" borderColor="ln" borderRadius="xl">
           <EmptyState
             icon={LuTicket}
             title="Nothing booked yet"
@@ -198,7 +198,7 @@ export function BookingsView({ trip }: { trip: Trip }) {
           />
         </Box>
       ) : shown.length === 0 ? (
-        <Text fontSize="13px" color="fg.muted">
+        <Text fontSize="13px" color="tx3">
           No {filter === "transport" ? "transport" : "activity"} bookings yet.
         </Text>
       ) : (

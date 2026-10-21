@@ -8,8 +8,8 @@ export function LoadingState({ message = "Loading..." }: LoadingStateProps) {
   return (
     <Center py={20}>
       <VStack spacing={4}>
-        <Spinner size="xl" color="brand.500" thickness="3px" />
-        <Text color="fg.muted">{message}</Text>
+        <Spinner w="28px" h="28px" color="ac" emptyColor="sunk" thickness="3px" speed="0.9s" />
+        <Text color="tx3">{message}</Text>
       </VStack>
     </Center>
   );

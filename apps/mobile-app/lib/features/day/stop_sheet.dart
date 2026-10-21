@@ -69,9 +69,9 @@ class _StopSheet extends ConsumerWidget {
       maxChildSize: 0.95,
       builder: (context, scroll) => ListView(
         controller: scroll,
-        padding: const EdgeInsets.fromLTRB(20, 0, 20, 28),
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 28),
         children: [
-          Text(stop.title, style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700)),
+          Text(stop.title, style: Theme.of(context).textTheme.headlineSmall),
           const SizedBox(height: 4),
           Text(
             [
@@ -79,16 +79,20 @@ class _StopSheet extends ConsumerWidget {
               if (stop.visitMinutes > 0 && stop.kind == StopKind.visit) '${stop.visitMinutes} min here',
               if (stop.category != null && stop.kind == StopKind.visit) stop.category!,
             ].join(' · '),
-            style: TextStyle(color: context.muted, fontSize: 15),
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: context.ds.tx2, fontFeatures: Ds.tabular),
           ),
           if (place?.rating != null) ...[
             const SizedBox(height: 6),
-            Text('★ ${place!.rating!.toStringAsFixed(1)}${place.ratingCount != null ? '  (${place.ratingCount} reviews)' : ''}',
-                style: TextStyle(color: context.warn, fontWeight: FontWeight.w600)),
+            Row(children: [
+              Icon(Icons.star_rounded, size: 18, color: context.ds.warnFill),
+              const SizedBox(width: 4),
+              Text('${place!.rating!.toStringAsFixed(1)}${place.ratingCount != null ? '  (${place.ratingCount} reviews)' : ''}',
+                  style: TextStyle(color: context.ds.tx2, fontWeight: FontWeight.w600, fontFeatures: Ds.tabular)),
+            ]),
           ],
           const SizedBox(height: 12),
           if (stop.kind == StopKind.visit || (stop.kind == StopKind.meal && !stop.isMealSlot)) ...[
-            InfoRow(icon: Icons.schedule, label: 'Open', value: hours ?? 'Hours not listed', valueColor: hours == 'Closed this day' ? context.danger : null),
+            InfoRow(icon: Icons.schedule, label: 'Open', value: hours ?? 'Hours not listed', valueColor: hours == 'Closed this day' ? context.ds.crit : null),
             if (stop.kind == StopKind.visit) InfoRow(icon: Icons.confirmation_number_outlined, label: 'Entry', value: entryFeeFor(stop, place)),
             if (stop.kind == StopKind.meal && place?.priceLevel != null) InfoRow(icon: Icons.payments_outlined, label: 'Price', value: place!.priceLevel!),
           ],
@@ -102,7 +106,7 @@ class _StopSheet extends ConsumerWidget {
             ),
           if (intel?.why != null) ...[
             const SizedBox(height: 10),
-            Text(intel!.why!, style: const TextStyle(fontStyle: FontStyle.italic, height: 1.4)),
+            Text(intel!.why!, style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: context.ds.tx2)),
           ],
           if (intel?.tips.isNotEmpty == true) ...[
             const SizedBox(height: 10),
@@ -110,12 +114,12 @@ class _StopSheet extends ConsumerWidget {
               Padding(
                 padding: const EdgeInsets.only(bottom: 4),
                 child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text('•  ', style: TextStyle(color: context.accent, fontWeight: FontWeight.w800)),
-                  Expanded(child: Text(tip, style: const TextStyle(height: 1.35))),
+                  Text('•  ', style: TextStyle(color: context.ds.tx3, fontWeight: FontWeight.w600)),
+                  Expanded(child: Text(tip, style: TextStyle(color: context.ds.tx2))),
                 ]),
               ),
           ],
-          if (stop.notes != null) ...[const SizedBox(height: 10), Notice(text: stop.notes!, icon: Icons.sticky_note_2_outlined)],
+          if (stop.notes != null) ...[const SizedBox(height: 10), Notice(text: stop.notes!, icon: Icons.sticky_note_2_outlined, tone: 'neutral')],
           if (stop.warnings.isNotEmpty) ...[
             const SizedBox(height: 10),
             Notice(text: stop.warnings.join('\n'), icon: Icons.warning_amber_rounded, tone: 'warn'),
@@ -156,6 +160,7 @@ class _StopSheet extends ConsumerWidget {
                 child: stop.done
                     ? OutlinedButton.icon(onPressed: () => _set(context, ref, null), icon: const Icon(Icons.undo), label: const Text('Not done'))
                     : FilledButton.tonalIcon(
+                        style: FilledButton.styleFrom(backgroundColor: context.ds.goodSoft, foregroundColor: context.ds.good),
                         onPressed: () => _set(context, ref, 'done'),
                         icon: const Icon(Icons.check_circle_outline),
                         label: const Text('Visited'),

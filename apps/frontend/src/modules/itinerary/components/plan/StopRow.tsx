@@ -85,7 +85,7 @@ export function TimelineRow({
           </Text>
         )}
         {endTime && !compact && (
-          <Text fontSize="12px" color="fg.muted" sx={{ fontVariantNumeric: "tabular-nums" }}>
+          <Text fontSize="12px" color="tx3" sx={{ fontVariantNumeric: "tabular-nums" }}>
             {endTime}
           </Text>
         )}
@@ -111,10 +111,10 @@ function HopRow({ children }: { children?: ReactNode }) {
         flexShrink={0}
         ml={compact ? "12px" : "13px"}
         mr={compact ? "15px" : "17px"}
-        bgImage="repeating-linear-gradient(var(--chakra-colors-border-line) 0 4px, transparent 4px 8px)"
+        bgImage="repeating-linear-gradient(var(--chakra-colors-ln) 0 4px, transparent 4px 8px)"
       />
       {children && (
-        <Flex direction="column" justify="center" py="5px" gap="2px" fontSize="12px" color="fg.muted">
+        <Flex direction="column" justify="center" py="5px" gap="2px" fontSize="12px" color="tx3">
           {children}
         </Flex>
       )}
@@ -176,7 +176,7 @@ export function StayRow({ time, title, subtitle, action }: { time?: string; titl
             {title}
           </Text>
           {subtitle && (
-            <Text fontSize="12px" color="fg.muted">
+            <Text fontSize="12px" color="tx3">
               {subtitle}
             </Text>
           )}
@@ -204,7 +204,7 @@ function StopMenu({ stop, day, canOpenDetails }: { stop: ItineraryStop; day: Iti
         size="sm"
         w={plan.compact ? "36px" : "32px"}
         h={plan.compact ? "36px" : "32px"}
-        color="fg.muted"
+        color="tx3"
         isLoading={plan.busyStopId === stop.id}
         onClick={(e) => e.stopPropagation()}
       />
@@ -260,7 +260,7 @@ function StopMenu({ stop, day, canOpenDetails }: { stop: ItineraryStop; day: Iti
               </>
             )}
             <MenuDivider />
-            <MenuItem icon={<LuTrash2 />} color="danger" onClick={() => plan.removeStop(stop, day)}>
+            <MenuItem icon={<LuTrash2 />} color="crit" onClick={() => plan.removeStop(stop, day)}>
               Remove from this day
             </MenuItem>
           </>
@@ -332,7 +332,7 @@ function StopActionRow({ stop, day, canOpenDetails }: { stop: ItineraryStop; day
   const plan = usePlan();
   return (
     <>
-      <Divider borderColor="border.line" mt="10px" mb="8px" />
+      <Divider borderColor="ln" mt="10px" mb="8px" />
       <Flex gap="6px" flexWrap="wrap" onClick={(e) => e.stopPropagation()}>
         {canOpenDetails && (
           <Button variant="outline" leftIcon={<LuEye size={16} />} onClick={() => plan.openDetails(stop, day)}>
@@ -376,7 +376,7 @@ function CommentButton({ stop }: { stop: ItineraryStop }) {
         size="sm"
         h="32px"
         variant="ghost"
-        color="fg.muted"
+        color="tx3"
         leftIcon={<LuMessageSquare size={16} />}
         iconSpacing={n > 0 ? "4px" : 0}
         minW="auto"
@@ -400,8 +400,8 @@ function DragHandle({ listeners, attributes }: { listeners?: object; attributes?
       {...attributes}
       {...listeners}
       cursor="grab"
-      color="fg.muted"
-      _hover={{ color: "fg.default" }}
+      color="tx3"
+      _hover={{ color: "tx" }}
       display="flex"
       alignItems="center"
       aria-label="Drag to reorder"
@@ -470,9 +470,9 @@ export function StopRow({ stop, day, visitNumber, draggable }: StopRowProps) {
 function TransferRow({ stop, day }: { stop: ItineraryStop; day: ItineraryDay }) {
   return (
     <TimelineRow time={stop.arrivalTime} endTime={stop.departureTime} marker={<StayMarker icon={LuTrainFront} bg={dayToken(day.dayNumber)} color="pin.fg" />} offset={10}>
-      <Box bg="bg.subtle" borderRadius="xl" px={3} py="10px">
+      <Box bg="sunk" borderRadius="xl" px={3} py="10px">
         <Text fontWeight={600}>{stop.placeName}</Text>
-        <Text fontSize="12px" color="fg.muted">
+        <Text fontSize="12px" color="tx3">
           {stop.notes ? `${stop.notes} · ` : ""}
           {fmtDur(stop.visitDurationMinutes)}
         </Text>
@@ -487,17 +487,17 @@ function StatusRow({ stop, day }: { stop: ItineraryStop; day: ItineraryDay }) {
   const done = stop.status === "done";
   return (
     <TimelineRow time={stop.arrivalTime} marker={<Box w={plan.compact ? "26px" : "28px"} />} offset={10}>
-      <Flex align="center" gap="10px" bg="bg.surface" borderWidth="1px" borderColor="border.line" borderRadius="xl" px={3} py="10px" opacity={0.75}>
+      <Flex align="center" gap="10px" bg="sf" borderWidth="1px" borderColor="ln" borderRadius="xl" px={3} py="10px" opacity={0.75}>
         {done ? (
-          <Flex w="26px" h="26px" borderRadius="full" bg="success" color="accent.fg" align="center" justify="center" flexShrink={0}>
+          <Flex w="26px" h="26px" borderRadius="full" bg="good" color="acTx" align="center" justify="center" flexShrink={0}>
             <Icon as={LuCheck} boxSize="14px" />
           </Flex>
         ) : (
-          <Flex w="26px" h="26px" borderRadius="full" borderWidth="2px" borderColor="fg.muted" color="fg.muted" align="center" justify="center" flexShrink={0}>
+          <Flex w="26px" h="26px" borderRadius="full" borderWidth="2px" borderColor="tx3" color="tx3" align="center" justify="center" flexShrink={0}>
             <Icon as={LuFlag} boxSize="12px" />
           </Flex>
         )}
-        <Text fontWeight={600} flex={1} minW={0} noOfLines={1} textDecoration={done ? "line-through" : undefined} color={done ? undefined : "fg.muted"}>
+        <Text fontWeight={600} flex={1} minW={0} noOfLines={1} textDecoration={done ? "line-through" : undefined} color={done ? undefined : "tx3"}>
           {stop.placeName}
         </Text>
         <Pill tone={done ? "success" : "neutral"}>{done ? "Done" : "Skipped"}</Pill>
@@ -546,7 +546,7 @@ function VisitRow({ stop, day, visitNumber, handle }: { stop: ItineraryStop; day
         </HStack>
       ))}
       {stop.aiNotes && (
-        <Text fontSize="12px" color="fg.muted" mt="6px" fontStyle="italic">
+        <Text fontSize="12px" color="tx3" mt="6px" fontStyle="italic">
           {stop.aiNotes}
         </Text>
       )}
@@ -561,10 +561,10 @@ function VisitRow({ stop, day, visitNumber, handle }: { stop: ItineraryStop; day
   return (
     <TimelineRow time={stop.arrivalTime} endTime={stop.departureTime !== stop.arrivalTime ? stop.departureTime : undefined} marker={marker}>
       <Box
-        bg="bg.surface"
-        borderWidth={selected ? "1.5px" : "1px"}
-        borderColor={selected ? "accent" : hovered ? "fg.muted" : "border.line"}
-        boxShadow={selected ? "0 0 0 3px var(--chakra-colors-accent-soft), var(--chakra-shadows-raised)" : undefined}
+        bg={selected ? "acSoft" : "sf"}
+        borderWidth="1px"
+        borderColor={selected ? "acLine" : hovered ? "ln2" : "ln"}
+        boxShadow={selected ? "inset 0 0 0 1px var(--chakra-colors-acLine)" : undefined}
         borderRadius="xl"
         px={3}
         py="10px"
@@ -583,23 +583,23 @@ function VisitRow({ stop, day, visitNumber, handle }: { stop: ItineraryStop; day
               <Text fontWeight={600} flex={1} minW={0} noOfLines={1} title={stop.placeName}>
                 {stop.placeName}
               </Text>
-              {stop.locked && <Icon as={LuLock} boxSize="13px" color="accent" aria-label="Locked" />}
+              {stop.locked && <Icon as={LuLock} boxSize="13px" color="ac" aria-label="Locked" />}
               <Box mr="-8px" my="-6px">
                 <StopMenu stop={stop} day={day} canOpenDetails={canOpenDetails} />
               </Box>
             </Flex>
-            <HStack spacing="10px" fontSize="12px" color="fg.muted" mt={1} flexWrap="wrap">
+            <HStack spacing="10px" fontSize="12px" color="tx3" mt={1} flexWrap="wrap">
               <Text>
                 {showCategory ? `${stop.category} · ` : ""}
                 {stop.fixedStartTime ? "fixed start" : fmtDur(stop.visitDurationMinutes)}
               </Text>
               {stop.placeId && (shared || votes > 0) && (
-                <HStack spacing="4px" color="danger">
+                <HStack spacing="4px" color="crit">
                   <Icon as={LuHeart} boxSize="12px" />
                   <Text>{votes}</Text>
                 </HStack>
               )}
-              {hoursClosed && <Text color="danger">Closed today</Text>}
+              {hoursClosed && <Text color="crit">Closed today</Text>}
             </HStack>
             {extras}
           </>
@@ -616,13 +616,13 @@ function VisitRow({ stop, day, visitNumber, handle }: { stop: ItineraryStop; day
                   {stop.locked && (
                     <Tooltip label="Locked — replanning keeps it on this day" hasArrow>
                       <span>
-                        <Icon as={LuLock} boxSize="13px" color="accent" aria-label="Locked" />
+                        <Icon as={LuLock} boxSize="13px" color="ac" aria-label="Locked" />
                       </span>
                     </Tooltip>
                   )}
-                  {stop.fixedStartTime && <Icon as={LuClock} boxSize="13px" color="accent" aria-label="Fixed time" />}
+                  {stop.fixedStartTime && <Icon as={LuClock} boxSize="13px" color="ac" aria-label="Fixed time" />}
                 </HStack>
-                <Flex gap={2} fontSize="12px" color="fg.muted" align="center" flexWrap="wrap" mt="2px">
+                <Flex gap={2} fontSize="12px" color="tx3" align="center" flexWrap="wrap" mt="2px">
                   {showCategory && (
                     <HStack spacing="4px">
                       <Icon as={CatIcon} boxSize="13px" />
@@ -644,7 +644,7 @@ function VisitRow({ stop, day, visitNumber, handle }: { stop: ItineraryStop; day
                     </Tooltip>
                   )}
                   {stop.openingHoursToday && (
-                    <Text color={hoursClosed ? "danger" : undefined}>· {hoursClosed ? "Closed today" : `Open ${stop.openingHoursToday}`}</Text>
+                    <Text color={hoursClosed ? "crit" : undefined}>· {hoursClosed ? "Closed today" : `Open ${stop.openingHoursToday}`}</Text>
                   )}
                 </Flex>
               </Box>
@@ -678,7 +678,7 @@ function MealBlock({ stop, day, handle }: { stop: ItineraryStop; day: ItineraryD
   if (picked) {
     return (
       <TimelineRow time={stop.arrivalTime} marker={marker} offset={10}>
-        <Flex align="center" gap="10px" bg="bg.surface" borderWidth="1px" borderColor="border.line" borderRadius="xl" px={3} py="10px">
+        <Flex align="center" gap="10px" bg="sf" borderWidth="1px" borderColor="ln" borderRadius="xl" px={3} py="10px">
           {!plan.compact && handle}
           <Box flex={1} minW={0}>
             <Text
@@ -690,7 +690,7 @@ function MealBlock({ stop, day, handle }: { stop: ItineraryStop; day: ItineraryD
             >
               {meal} · {stop.placeName}
             </Text>
-            <Text fontSize="12px" color="fg.muted">
+            <Text fontSize="12px" color="tx3">
               Picked · {fmtDur(stop.visitDurationMinutes)}
               {stop.openingHoursToday ? ` · ${stop.openingHoursToday === "Closed" ? "closed today" : `open ${stop.openingHoursToday}`}` : ""}
             </Text>
@@ -710,8 +710,8 @@ function MealBlock({ stop, day, handle }: { stop: ItineraryStop; day: ItineraryD
   return (
     <TimelineRow time={stop.arrivalTime} marker={plan.compact ? <RingMarker icon={LuUtensils} size={26} /> : marker} offset={4}>
       <Flex align="center" gap={2} minH="36px" flexWrap="wrap" px={1}>
-        <Text fontSize="13px" color="fg.muted" mr={1}>
-          <Text as="span" fontWeight={600} color="fg.default">
+        <Text fontSize="13px" color="tx3" mr={1}>
+          <Text as="span" fontWeight={600} color="tx">
             {meal}
           </Text>{" "}
           · not picked{!plan.compact && anchor ? ` · ${anchor}` : ""}
@@ -723,7 +723,7 @@ function MealBlock({ stop, day, handle }: { stop: ItineraryStop; day: ItineraryD
             </SuggestionChip>
           ))}
         {!plan.readOnly && (
-          <Button size="xs" variant="ghost" color="accent.text" leftIcon={<LuUtensils size={13} />} onClick={() => plan.openMealPicker(stop, day, saved > 0 && nearby.length === 0 ? "saved" : "nearby")}>
+          <Button size="xs" variant="ghost" color="ac" leftIcon={<LuUtensils size={13} />} onClick={() => plan.openMealPicker(stop, day, saved > 0 && nearby.length === 0 ? "saved" : "nearby")}>
             Pick a place
           </Button>
         )}
@@ -747,9 +747,9 @@ function SuggestionChip({ children, onClick, soft, icon, label }: { children: Re
       px={3}
       borderRadius="full"
       borderWidth="1px"
-      borderColor={soft ? "transparent" : "border.line"}
-      bg={soft ? "accent.soft" : "bg.surface"}
-      color={soft ? "accent.text" : "fg.default"}
+      borderColor={soft ? "transparent" : "ln"}
+      bg={soft ? "acSoft" : "sf"}
+      color={soft ? "ac" : "tx"}
       fontSize="13px"
       fontWeight={500}
       whiteSpace="nowrap"

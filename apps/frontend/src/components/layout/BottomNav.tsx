@@ -26,11 +26,11 @@ export function BottomNav() {
       left={0}
       right={0}
       zIndex="sticky"
-      h="64px"
+      h="calc(72px + env(safe-area-inset-bottom))"
       pb="env(safe-area-inset-bottom)"
-      bg="bg.surface"
+      bg="sf"
       borderTopWidth="1px"
-      borderColor="border.line"
+      borderColor="ln"
       display={{ base: "flex", lg: "none" }}
     >
       {ITEMS.map((item) => {
@@ -44,13 +44,17 @@ export function BottomNav() {
             direction="column"
             align="center"
             justify="center"
-            gap="2px"
-            color={on ? "accent.text" : "fg.muted"}
-            fontWeight={on ? 600 : 500}
+            gap="4px"
+            color={on ? "ac" : "tx2"}
+            fontWeight={600}
             aria-current={on ? "page" : undefined}
           >
-            <Icon as={item.icon} boxSize="20px" />
-            <Text fontSize="12px">{item.label}</Text>
+            <Flex w="56px" h="32px" borderRadius="2xl" bg={on ? "acSoft" : "transparent"} align="center" justify="center" transition="background .2s">
+              <Icon as={item.icon} boxSize="24px" />
+            </Flex>
+            <Text fontSize="12px" lineHeight="16px">
+              {item.label}
+            </Text>
           </Flex>
         );
       })}

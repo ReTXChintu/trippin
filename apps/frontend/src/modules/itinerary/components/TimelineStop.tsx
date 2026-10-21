@@ -29,10 +29,10 @@ export interface AvailableDay {
  * the itinerary engine enforces server-side.
  */
 export function PinnedTimelineStop({ stop, isLast = false }: { stop: ItineraryStop; isLast?: boolean }) {
-  const borderColor = "border.line";
-  const dotColor = "accent";
-  const lineColor = "border.line";
-  const cardBg = "bg.subtle";
+  const borderColor = "ln";
+  const dotColor = "ac";
+  const lineColor = "ln";
+  const cardBg = "sunk";
 
   return (
     <Flex gap={3} position="relative" pb={isLast ? 0 : 4}>
@@ -50,11 +50,11 @@ export function PinnedTimelineStop({ stop, isLast = false }: { stop: ItinerarySt
           </Text>
         </HStack>
         {stop.notes && (
-          <Text fontSize="xs" color="fg.muted" mt={0.5}>
+          <Text fontSize="xs" color="tx3" mt={0.5}>
             {stop.notes}
           </Text>
         )}
-        <Flex mt={2} gap={4} flexWrap="wrap" fontSize="xs" color="fg.muted">
+        <Flex mt={2} gap={4} flexWrap="wrap" fontSize="xs" color="tx3">
           <Flex align="center" gap={1}>
             <Icon as={FiClock} />
             <Text>
@@ -103,11 +103,11 @@ export function TimelineStop({
   destinationCity,
   destinationCountry,
 }: TimelineStopProps) {
-  const borderColor = "border.line";
-  const dotColor = "accent";
-  const lineColor = "border.line";
+  const borderColor = "ln";
+  const dotColor = "ac";
+  const lineColor = "ln";
   const mealDotColor = "warn";
-  const cardBg = "bg.surface";
+  const cardBg = "sf";
 
   const {
     attributes,
@@ -176,17 +176,17 @@ export function TimelineStop({
               <HypeBadge level={stop.visitIntel?.hypeLevel} />
             </HStack>
             {stop.category && (
-              <Text fontSize="xs" color="fg.muted" mt={0.5}>
+              <Text fontSize="xs" color="tx3" mt={0.5}>
                 {stop.category}
               </Text>
             )}
             {stop.aiNotes && (
-              <Text fontSize="xs" color="fg.muted" mt={1.5} fontStyle="italic">
+              <Text fontSize="xs" color="tx3" mt={1.5} fontStyle="italic">
                 {stop.aiNotes}
               </Text>
             )}
             {stop.visitIntel?.bestTime && !stop.aiNotes && (
-              <Text fontSize="xs" color="fg.muted" mt={1}>
+              <Text fontSize="xs" color="tx3" mt={1}>
                 Best time: {stop.visitIntel.bestTime}
               </Text>
             )}
@@ -209,6 +209,7 @@ export function TimelineStop({
                   icon={<FiCalendar />}
                   size="xs"
                   variant="ghost"
+                  colorScheme="gray"
                   aria-label="Move to another day"
                   isLoading={isMoving}
                 />
@@ -225,8 +226,8 @@ export function TimelineStop({
               {...attributes}
               {...listeners}
               cursor="grab"
-              color="fg.muted"
-              _hover={{ color: "fg.default" }}
+              color="tx3"
+              _hover={{ color: "tx" }}
               p={1}
               aria-label="Drag to reorder"
             >
@@ -235,7 +236,7 @@ export function TimelineStop({
           </HStack>
         </Flex>
 
-        <Flex mt={2} gap={4} flexWrap="wrap" fontSize="xs" color="fg.muted">
+        <Flex mt={2} gap={4} flexWrap="wrap" fontSize="xs" color="tx3">
           <Flex align="center" gap={1}>
             <Icon as={FiClock} />
             <Text>

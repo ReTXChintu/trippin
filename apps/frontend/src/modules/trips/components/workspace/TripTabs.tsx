@@ -26,13 +26,20 @@ import type { TripTabKey } from "@/modules/trips/utils/trip-stage";
 
 export type TabBadges = Partial<Record<TripTabKey, { text: string; warn?: boolean }>>;
 
-/** Desktop tab row: icon, label, count. Underline on the active tab. */
+/** Desktop tab row as the segmented control (design system 7.3, which has no underline tabs): icon,
+ * label, count; the active tab is the raised surface thumb. Scrolls sideways when it runs out of room. */
 export function TripTabBar({ tab, badges, onChange }: { tab: TripTabKey; badges: TabBadges; onChange: (t: TripTabKey) => void }) {
   return (
     <Flex
       role="tablist"
       aria-label="Trip sections"
-      pl="2px"
+      display="inline-flex"
+      maxW="full"
+      gap={1}
+      p={1}
+      mb={4}
+      bg="sunk"
+      borderRadius="lg"
       overflowX="auto"
       sx={{ scrollbarWidth: "none", "&::-webkit-scrollbar": { display: "none" } }}
     >
@@ -51,20 +58,21 @@ export function TripTabBar({ tab, badges, onChange }: { tab: TripTabKey; badges:
             onClick={() => onChange(t.key)}
             align="center"
             gap={2}
-            h="44px"
-            px={1}
-            mr="22px"
+            h="36px"
+            px={3}
             flexShrink={0}
+            borderRadius="9px"
             fontSize="14px"
             fontWeight={on ? 600 : 500}
-            color={on ? "fg.default" : "fg.muted"}
-            borderBottomWidth="2px"
-            borderColor={on ? "accent" : "transparent"}
+            color={on ? "tx" : "tx2"}
+            bg={on ? "sf" : "transparent"}
+            boxShadow={on ? "ds1" : undefined}
             whiteSpace="nowrap"
-            _hover={{ color: "fg.default" }}
-            _focusVisible={{ outline: "2px solid", outlineColor: "accent", outlineOffset: "-2px" }}
+            transition="background .2s, color .2s"
+            _hover={on ? undefined : { color: "tx" }}
+            _focusVisible={{ outline: "3px solid", outlineColor: "ac", outlineOffset: "-3px" }}
           >
-            <Icon as={t.icon} boxSize="16px" />
+            <Icon as={t.icon} boxSize="16px" color={on ? "ac" : undefined} />
             {t.label}
             {badge && <TabCount warn={badge.warn}>{badge.text}</TabCount>}
           </Flex>
@@ -84,13 +92,15 @@ function NavItem({ icon, label, on, onClick }: { icon: IconType; label: string; 
       direction="column"
       align="center"
       justify="center"
-      gap="2px"
-      minH="44px"
-      color={on ? "accent.text" : "fg.muted"}
+      gap="4px"
+      minH="48px"
+      color={on ? "ac" : "tx2"}
       aria-current={on ? "page" : undefined}
     >
-      <Icon as={icon} boxSize="22px" />
-      <Text fontSize="12px" fontWeight={on ? 600 : 500}>
+      <Flex w="56px" h="32px" borderRadius="2xl" bg={on ? "acSoft" : "transparent"} align="center" justify="center" transition="background .2s">
+        <Icon as={icon} boxSize="24px" />
+      </Flex>
+      <Text fontSize="12px" lineHeight="16px" fontWeight={600}>
         {label}
       </Text>
     </Flex>
@@ -122,22 +132,22 @@ export function TripBottomNav({
       right={0}
       bottom={0}
       zIndex="sticky"
-      h="68px"
+      h="calc(72px + env(safe-area-inset-bottom))"
       px="6px"
       pb="env(safe-area-inset-bottom)"
-      bg="bg.surface"
+      bg="sf"
       borderTopWidth="1px"
-      borderColor="border.line"
+      borderColor="ln"
       display={{ base: "flex", lg: "none" }}
       sx={{ "@media print": { display: "none" } }}
     >
       <NavItem icon={LuMap} label="Plan" on={tab === "plan" && !moreOpen} onClick={() => onTab("plan")} />
       <NavItem icon={LuMapPin} label="Places" on={tab === "places" && !moreOpen} onClick={() => onTab("places")} />
-      <Flex as={Link} to={todayHref} flex={1} direction="column" align="center" gap="2px" mt="-14px" aria-label="Today">
-        <Flex w="52px" h="52px" borderRadius="full" bg="accent" color="accent.fg" boxShadow="raised" align="center" justify="center">
+      <Flex as={Link} to={todayHref} flex={1} direction="column" align="center" gap="4px" mt="-16px" aria-label="Today">
+        <Flex w="52px" h="52px" borderRadius="2xl" bg="ac" color="acTx" boxShadow="ds1" borderWidth="3px" borderColor="sf" align="center" justify="center">
           <Icon as={LuNavigation2} boxSize="24px" />
         </Flex>
-        <Text fontSize="12px" fontWeight={600} color="fg.default">
+        <Text fontSize="12px" lineHeight="16px" fontWeight={600} color="tx">
           Today
         </Text>
       </Flex>
@@ -160,10 +170,10 @@ export function MoreSheet({ isOpen, onClose, items }: { isOpen: boolean; onClose
   return (
     <Drawer isOpen={isOpen} onClose={onClose} placement="bottom">
       <DrawerOverlay />
-      <DrawerContent borderTopRadius="20px" bg="bg.surface" pb={4} aria-label="More">
+      <DrawerContent borderTopRadius="20px" bg="sf" pb={4} aria-label="More">
         <DrawerBody px={4} pt={2} pb={0}>
-          <Box w="40px" h="4px" borderRadius="2px" bg="border.line" mx="auto" mb={2} />
-          <Text fontSize="12px" fontWeight={600} textTransform="uppercase" letterSpacing="0.06em" color="fg.muted" mb={1}>
+          <Box w="36px" h="4px" borderRadius="2px" bg="ln2" mx="auto" mb={3} />
+          <Text fontSize="12px" lineHeight="16px" fontWeight={600} letterSpacing="0.02em" color="tx2" mb={1} px={3}>
             Trip
           </Text>
           {items.map((item) => (
@@ -178,22 +188,22 @@ export function MoreSheet({ isOpen, onClose, items }: { isOpen: boolean; onClose
               w="full"
               align="center"
               gap={3}
-              h="52px"
+              minH="52px"
               px={3}
               borderRadius="md"
-              _hover={{ bg: "bg.subtle" }}
+              _hover={{ bg: "sunk" }}
               textAlign="left"
             >
-              <Icon as={item.icon} boxSize="20px" />
-              <Text flex={1} fontWeight={600}>
+              <Icon as={item.icon} boxSize="20px" color="tx2" />
+              <Text flex={1} fontSize="15px" fontWeight={500}>
                 {item.label}
               </Text>
               {item.value && (
-                <Text fontSize="13px" color="fg.muted">
+                <Text fontSize="13px" color="tx3">
                   {item.value}
                 </Text>
               )}
-              <Icon as={LuChevronRight} boxSize="14px" color="fg.muted" />
+              <Icon as={LuChevronRight} boxSize="18px" color="tx3" />
             </Flex>
           ))}
         </DrawerBody>

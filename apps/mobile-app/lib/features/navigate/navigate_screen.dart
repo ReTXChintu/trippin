@@ -154,27 +154,28 @@ class _NavigateScreenState extends ConsumerState<NavigateScreen> {
                   Container(
                     width: 170,
                     height: 170,
-                    decoration: BoxDecoration(shape: BoxShape.circle, color: arrived ? context.successSoft : context.accentSoft),
+                    decoration: BoxDecoration(shape: BoxShape.circle, color: arrived ? context.ds.goodSoft : context.ds.acSoft),
                   ),
                   if (arrived)
-                    Icon(Icons.flag_rounded, size: 84, color: context.success)
+                    Icon(Icons.flag_rounded, size: 84, color: context.ds.good)
                   else if (facing != null && bearing != null)
                     AnimatedRotation(
                       turns: _arrowTurns((bearing - facing) % 360),
                       duration: const Duration(milliseconds: 250),
-                      child: Icon(Icons.navigation_rounded, size: 110, color: offRoute ? context.warn : context.accent),
+                      child: Icon(Icons.navigation_rounded, size: 110, color: offRoute ? context.ds.warn : context.ds.ac),
                     )
                   else
                     Column(mainAxisSize: MainAxisSize.min, children: [
-                      Text(bearing == null ? '' : compassPoint(bearing), style: TextStyle(fontSize: 52, fontWeight: FontWeight.w800, color: context.accent)),
-                      Text('Head this way', style: TextStyle(color: context.muted)),
+                      Text(bearing == null ? '' : compassPoint(bearing),
+                          style: TextStyle(fontSize: 44, height: 52 / 44, letterSpacing: -0.88, fontWeight: FontWeight.w600, color: context.ds.ac)),
+                      Text('Head this way', style: TextStyle(color: context.ds.tx2)),
                     ]),
                 ]),
               ),
               const SizedBox(height: 12),
               Text(
                 arrived ? 'You’re here' : formatDistance(roadLeft ?? distance!),
-                style: Theme.of(context).textTheme.displaySmall?.copyWith(fontWeight: FontWeight.w800),
+                style: Theme.of(context).textTheme.displaySmall?.copyWith(fontFeatures: Ds.tabular),
               ),
               Text(
                 arrived
@@ -184,13 +185,14 @@ class _NavigateScreenState extends ConsumerState<NavigateScreen> {
                         if (walkMin != null) '~${formatMinutes(walkMin)} on foot',
                         if (fix.accuracy > 50) 'GPS ±${fix.accuracy.round()} m',
                       ].join(' · '),
-                style: TextStyle(color: context.muted, fontSize: 15),
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: context.ds.tx2, fontFeatures: Ds.tabular),
                 textAlign: TextAlign.center,
               ),
               if (facing == null && !arrived)
                 Padding(
                   padding: const EdgeInsets.only(top: 6),
-                  child: Text('No compass on this phone — start walking and the arrow follows your direction.', style: TextStyle(color: context.muted, fontSize: 12.5), textAlign: TextAlign.center),
+                  child: Text('No compass on this phone — start walking and the arrow follows your direction.',
+                      style: TextStyle(color: context.ds.tx3, fontSize: 12, height: 16 / 12), textAlign: TextAlign.center),
                 ),
             ],
             if (offRoute) ...[
@@ -220,17 +222,18 @@ class _NavigateScreenState extends ConsumerState<NavigateScreen> {
                     children: [
                       ref.read(tilesProvider).layer(),
                       PolylineLayer(polylines: [
-                        if (target.route.length >= 2) Polyline(points: target.route, color: const Color(0xFF2563EB), strokeWidth: 6),
+                        if (target.route.length >= 2) Polyline(points: target.route, color: TrippinColors.route, strokeWidth: 6),
                         if (fix != null)
                           Polyline(
                             points: [fix.point, target.point],
-                            color: context.accent.withValues(alpha: 0.7),
+                            color: context.ds.ac.withValues(alpha: 0.7),
                             strokeWidth: 2.5,
                             pattern: StrokePattern.dashed(segments: const [8, 8]),
                           ),
                       ]),
                       MarkerLayer(markers: [
-                        Marker(point: target.point, width: 40, height: 40, alignment: Alignment.topCenter, child: Icon(Icons.location_on, size: 40, color: context.danger)),
+                        // The stop: an ink pin (red is kept for problems).
+                        Marker(point: target.point, width: 40, height: 40, alignment: Alignment.topCenter, child: Icon(Icons.location_on, size: 40, color: context.ds.tx)),
                         if (fix != null)
                           Marker(
                             point: fix.point,
@@ -240,12 +243,12 @@ class _NavigateScreenState extends ConsumerState<NavigateScreen> {
                               angle: (facing ?? 0) * math.pi / 180,
                               child: Container(
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFF2563EB),
+                                  color: context.ds.ac,
                                   shape: BoxShape.circle,
                                   border: Border.all(color: Colors.white, width: 3),
                                   boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 6)],
                                 ),
-                                child: facing != null ? const Icon(Icons.arrow_drop_up, color: Colors.white, size: 20) : null,
+                                child: facing != null ? Icon(Icons.arrow_drop_up, color: context.ds.acTx, size: 20) : null,
                               ),
                             ),
                           ),
@@ -256,14 +259,13 @@ class _NavigateScreenState extends ConsumerState<NavigateScreen> {
                     Positioned(
                       right: 12,
                       top: 12,
-                      child: FloatingActionButton.small(
-                        heroTag: 'follow',
+                      child: MapControl(
                         tooltip: 'Follow me',
+                        icon: Icons.my_location,
                         onPressed: () {
                           setState(() => _follow = true);
                           _map.move(fix.point, _map.camera.zoom < 15 ? 16 : _map.camera.zoom);
                         },
-                        child: const Icon(Icons.my_location),
                       ),
                     ),
                 ])
@@ -317,7 +319,7 @@ class _LocationProblem extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 24),
       child: Column(children: [
-        Icon(Icons.location_off_outlined, size: 48, color: context.warn),
+        DsIconTile(Icons.location_off_outlined, tone: DsTone.warn, size: 48),
         const SizedBox(height: 10),
         Text(e is LocationError ? e.message : 'Couldn’t get your location.', textAlign: TextAlign.center),
         if (e is LocationError) ...[
@@ -360,7 +362,8 @@ class _DriverCardState extends State<DriverCard> {
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               const Text('Please take me to', style: TextStyle(color: Colors.black54, fontSize: 20)),
               const SizedBox(height: 12),
-              Text(widget.name, style: const TextStyle(color: Colors.black, fontSize: 40, fontWeight: FontWeight.w800, height: 1.15)),
+              // Deliberately black on white in both themes: it's held up to a driver in daylight.
+              Text(widget.name, style: const TextStyle(color: Colors.black, fontSize: 40, fontWeight: FontWeight.w600, height: 48 / 40, letterSpacing: -0.8)),
               if (widget.address.isNotEmpty) ...[
                 const SizedBox(height: 20),
                 Text(widget.address, style: const TextStyle(color: Colors.black87, fontSize: 24, height: 1.3)),
