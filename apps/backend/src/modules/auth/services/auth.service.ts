@@ -1,5 +1,6 @@
 import type { OidcClaims } from "@/lib/oidc";
 import type { IUserDocument } from "@/models/User";
+import { emitForNewlyLinkedUser } from "@/modules/suite/services/suite-events.service";
 import { claimPendingMemberships } from "@/modules/trips/services/trip-members.service";
 import { UserRepository } from "@/repositories/user.repository";
 
@@ -38,6 +39,8 @@ export async function signInWithOidc(claims: OidcClaims): Promise<OidcSignInResu
         return { success: false, code: "account_conflict", error: "This email belongs to a Trippin account linked to someone else." };
       }
       user = await UserRepository.linkOidcSub(byEmail._id.toString(), claims.sub, claims.picture);
+      // Linked trips were sent to SpendLog/InFrame without this person until now.
+      if (user) await emitForNewlyLinkedUser(user._id.toString());
     } else {
       try {
         user = await UserRepository.create({

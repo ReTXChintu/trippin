@@ -646,6 +646,8 @@ export function SimpleTripForm({ header }: { header?: ReactNode }) {
   const [excluded, setExcluded] = useState("");
   const [notes, setNotes] = useState("");
   const [status, setStatus] = useState<TripStatus>("draft");
+  const [linkSpendlog, setLinkSpendlog] = useState(false);
+  const [linkInframe, setLinkInframe] = useState(false);
   const [attempted, setAttempted] = useState(false);
   const dragFrom = useRef<number | null>(null);
   const [dragging, setDragging] = useState<number | null>(null);
@@ -713,7 +715,7 @@ export function SimpleTripForm({ header }: { header?: ReactNode }) {
     if (!validated.success) return toast({ title: validated.error.issues[0]?.message ?? "Please check the form", status: "error" });
 
     try {
-      const result = await createTrip.mutateAsync(validated.data);
+      const result = await createTrip.mutateAsync({ ...validated.data, links: { spendlog: linkSpendlog, inframe: linkInframe } });
       toast({ title: "Trip created", description: "Next: pick the places you want to see.", status: "success", duration: 4000 });
       navigate(`/trips/${result.trip.id}?tab=places`);
     } catch (err) {
@@ -905,6 +907,27 @@ export function SimpleTripForm({ header }: { header?: ReactNode }) {
               </WrapItem>
             ))}
           </Wrap>
+        </Section>
+
+        <Section step={4} title="Connected apps" hint="Optional — switch either on or off later from the trip." id="connected-apps">
+          <SimpleGrid columns={{ base: 1, md: 2 }} spacing="12px">
+            <Checkbox isChecked={linkSpendlog} onChange={(e) => setLinkSpendlog(e.target.checked)} alignItems="flex-start">
+              <Text fontWeight={600} fontSize="14px">
+                Track spending in SpendLog
+              </Text>
+              <Text fontSize="12px" color="fg.muted">
+                Creates a SpendLog trip for everyone on it — log, split and settle what you actually spend.
+              </Text>
+            </Checkbox>
+            <Checkbox isChecked={linkInframe} onChange={(e) => setLinkInframe(e.target.checked)} alignItems="flex-start">
+              <Text fontWeight={600} fontSize="14px">
+                Share photos in InFrame
+              </Text>
+              <Text fontSize="12px" color="fg.muted">
+                Creates a shared InFrame event so everyone&apos;s trip photos land in one album.
+              </Text>
+            </Checkbox>
+          </SimpleGrid>
         </Section>
 
         <SurfaceCard as="section" aria-labelledby="more-options" p={{ base: "14px", md: "16px 20px" }}>

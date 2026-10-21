@@ -1,6 +1,7 @@
 import type { IconType } from "react-icons";
 import {
   LuBedDouble,
+  LuBlocks,
   LuBookOpen,
   LuColumns2,
   LuListChecks,
@@ -23,6 +24,7 @@ export const TRIP_TABS: { key: TripTabKey; label: string; icon: IconType }[] = [
   { key: "budget", label: "Budget", icon: LuWallet },
   { key: "checklist", label: "Checklist", icon: LuListChecks },
   { key: "guide", label: "Guide", icon: LuBookOpen },
+  { key: "apps", label: "Apps", icon: LuBlocks },
 ];
 
 export const MORE_ICONS = { compare: LuColumns2, print: LuPrinter, share: LuShare2 };

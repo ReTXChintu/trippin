@@ -75,4 +75,5 @@ class ApiClient {
 
   Future<Map<String, dynamic>> get(String path, {Map<String, dynamic>? query}) => request('GET', path, query: query);
   Future<Map<String, dynamic>> post(String path, {Object? body}) => request('POST', path, body: body);
+  Future<Map<String, dynamic>> patch(String path, {Object? body}) => request('PATCH', path, body: body);
 }

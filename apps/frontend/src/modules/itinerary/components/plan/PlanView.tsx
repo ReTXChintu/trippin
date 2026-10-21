@@ -86,7 +86,7 @@ import { MealPickerDrawer } from "./MealPickerDrawer";
 import { PlanProvider, type PlanActions } from "./PlanContext";
 import { StopQuickActions } from "./StopRow";
 
-export type TripTab = "plan" | "places" | "stays" | "food" | "bookings" | "budget" | "checklist" | "guide";
+export type TripTab = "plan" | "places" | "stays" | "food" | "bookings" | "budget" | "checklist" | "guide" | "apps";
 
 interface PlanViewProps {
   trip: Trip;

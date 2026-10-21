@@ -1,6 +1,7 @@
 import type { TripStatus, TravelStyle, TransportationMode } from "@/types";
 import type { TripLeg, TripLegTransfer } from "@/modules/trips/types/trip-leg.types";
 import type { ChecklistItem, TripBooking } from "@/modules/trips/types/trip-extras.types";
+import type { TripLinks } from "@/modules/suite/types/suite.types";
 import type {
   LegDestinationBrief,
   VehicleRentalSuggestion,
@@ -53,6 +54,8 @@ export interface Trip {
   status: TripStatus;
   isPublic: boolean;
   publicSlug?: string;
+  /** Opt-in links to SpendLog / InFrame. */
+  links: TripLinks;
   createdAt: string;
   updatedAt: string;
 }

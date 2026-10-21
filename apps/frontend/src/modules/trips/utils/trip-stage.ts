@@ -7,7 +7,7 @@ import { getUncoveredNights } from "@/modules/trips/utils/stay.utils";
  * status comes from the trip's own data. */
 export type StageKey = "setup" | "places" | "stays" | "plan" | "refine" | "book" | "travel";
 export type StageStatus = "done" | "warn" | "current" | "todo";
-export type TripTabKey = "plan" | "places" | "stays" | "food" | "bookings" | "budget" | "checklist" | "guide";
+export type TripTabKey = "plan" | "places" | "stays" | "food" | "bookings" | "budget" | "checklist" | "guide" | "apps";
 
 export interface TripStage {
   key: StageKey;

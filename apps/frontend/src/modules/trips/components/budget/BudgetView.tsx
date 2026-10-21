@@ -16,7 +16,7 @@ import {
 } from "@chakra-ui/react";
 import { type ComponentProps, type ReactNode, useState } from "react";
 import { FiArrowRight, FiEdit2, FiMoreHorizontal, FiPlus, FiTrash2 } from "react-icons/fi";
-import { LuWallet } from "react-icons/lu";
+import { LuExternalLink, LuTriangleAlert, LuWallet } from "react-icons/lu";
 import { EmptyState, Overline, Pill, SurfaceCard } from "@/components/ui";
 import { dayToken } from "@/components/ui/day";
 import { Bar, IconTile, Initials, SectionTitle, TabSplit } from "@/components/ui/tabs";
@@ -29,11 +29,16 @@ import { addDays, formatShortDate } from "@/modules/trips/utils/stay.utils";
 import { formatMoney } from "@/modules/trips/utils/money";
 import { CATEGORY_LABELS } from "./budgetMeta";
 import { ExpenseFormModal } from "./ExpenseFormModal";
+import { useTripLinksQuery } from "@/modules/suite/hooks/useTripLinks";
+import type { SpendlogSummary } from "@/modules/suite/types/suite.types";
+import { formatMinor } from "@/modules/suite/utils/promo-dismissal";
 
 interface BudgetViewProps {
   trip: Trip;
   currentUserId: string;
   onOpenSettings: () => void;
+  /** Opens the Connected apps tab. */
+  onOpenApps?: () => void;
 }
 
 function Card({ children, ...rest }: { children: ReactNode } & ComponentProps<typeof SurfaceCard>) {
@@ -44,7 +49,98 @@ function Card({ children, ...rest }: { children: ReactNode } & ComponentProps<ty
   );
 }
 
-export function BudgetView({ trip, currentUserId, onOpenSettings }: BudgetViewProps) {
+/**
+ * What SpendLog says was actually spent, next to Trippin's planned budget. Trippin's own expenses
+ * stay the plan; SpendLog owns the trip's real money once it's linked.
+ */
+function ActualSpendCard({ trip, budget, currency, onOpenApps }: { trip: Trip; budget?: number; currency: string; onOpenApps?: () => void }) {
+  const linked = Boolean(trip.links?.spendlog?.enabled);
+  const { data, isLoading } = useTripLinksQuery(trip.id, { enabled: linked });
+  if (!linked) return null;
+  const app = data?.apps.spendlog;
+  const summary = app?.summary as SpendlogSummary | null | undefined;
+  const url = app?.url ?? summary?.url ?? null;
+  const actual = summary ? summary.totalSpentMinor / 100 : null;
+  const comparable = actual !== null && budget !== undefined && summary?.currency === currency;
+
+  return (
+    <Card>
+      <Flex justify="space-between" align="flex-start" gap={3} flexWrap="wrap">
+        <Box>
+          <Overline>Actual spend (SpendLog)</Overline>
+          {isLoading ? (
+            <Text color="fg.muted" fontSize="13px">
+              Loading…
+            </Text>
+          ) : summary ? (
+            <Text fontFamily="heading" fontWeight={600} fontSize="28px" lineHeight={1.15}>
+              {formatMinor(summary.totalSpentMinor, summary.currency)}{" "}
+              {comparable && (
+                <Text as="span" fontFamily="body" fontSize="12px" fontWeight={400} color="fg.muted">
+                  of {formatMoney(budget!, currency)} planned
+                </Text>
+              )}
+            </Text>
+          ) : (
+            <Flex align="center" gap={2} fontSize="13px" color="fg.muted" mt={1}>
+              {app?.summaryError || app?.status === "error" ? <LuTriangleAlert /> : null}
+              <Text>
+                {app?.status === "error"
+                  ? "Not linked yet — see Connected apps."
+                  : app?.summaryError
+                    ? `${app.summaryError}.`
+                    : app?.status === "pending"
+                      ? "Setting up the SpendLog trip…"
+                      : "Nothing logged in SpendLog yet."}
+              </Text>
+            </Flex>
+          )}
+        </Box>
+        {url ? (
+          <Button as="a" href={url} target="_blank" rel="noopener noreferrer" size="sm" variant="outline" rightIcon={<LuExternalLink size={14} />}>
+            Open in SpendLog
+          </Button>
+        ) : (
+          onOpenApps && (
+            <Button size="sm" variant="ghost" onClick={onOpenApps}>
+              Connected apps
+            </Button>
+          )
+        )}
+      </Flex>
+      {comparable && (
+        <>
+          <Bar value={Math.min((actual! / budget!) * 100, 100)} color={actual! > budget! ? "danger" : actual! / budget! > 0.9 ? "warn" : "success"} aria-label="Planned budget used (SpendLog)" />
+          <Text fontSize="12px" color="fg.muted">
+            {actual! > budget! ? `${formatMoney(actual! - budget!, currency)} over the plan` : `${formatMoney(budget! - actual!, currency)} left of the plan`}
+          </Text>
+        </>
+      )}
+      {summary && (
+        <Flex gap={4} fontSize="12px" color="fg.muted" flexWrap="wrap">
+          <Text>
+            Your share <b>{formatMinor(summary.myShareMinor, summary.currency)}</b>
+          </Text>
+          {summary.iOweMinor > 0 && (
+            <Text>
+              You owe <b>{formatMinor(summary.iOweMinor, summary.currency)}</b>
+            </Text>
+          )}
+          {summary.owedToMeMinor > 0 && (
+            <Text>
+              Owed to you <b>{formatMinor(summary.owedToMeMinor, summary.currency)}</b>
+            </Text>
+          )}
+          <Text>
+            {summary.transactionCount} transaction{summary.transactionCount === 1 ? "" : "s"}
+          </Text>
+        </Flex>
+      )}
+    </Card>
+  );
+}
+
+export function BudgetView({ trip, currentUserId, onOpenSettings, onOpenApps }: BudgetViewProps) {
   const toast = useToast();
   const { data, isLoading } = useBudgetQuery(trip.id);
   const remove = useRemoveExpense(trip.id);
@@ -152,6 +248,8 @@ export function BudgetView({ trip, currentUserId, onOpenSettings }: BudgetViewPr
           </Text>
         )}
       </Card>
+
+      <ActualSpendCard trip={trip} budget={budget} currency={data.currency} onOpenApps={onOpenApps} />
 
       <Card>
         <Overline>By category</Overline>

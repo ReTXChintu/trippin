@@ -5,6 +5,7 @@ import {
   type ChecklistItem,
   type TripBooking,
 } from "@/modules/trips/types/trip-extras.types";
+import { SUITE_APPS, type SuiteLink, type TripLinks } from "@/modules/suite/types/suite.types";
 import type {
   TransportationMode,
   TravelStyle,
@@ -151,6 +152,8 @@ export interface ITripDocument extends Document {
   status: TripStatus;
   isPublic: boolean;
   publicSlug?: string;
+  /** Opt-in links to the suite's other apps (SpendLog trip, InFrame event). */
+  links?: TripLinks;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -308,6 +311,27 @@ const ChecklistItemSchema = new Schema<ChecklistItem>(
   { _id: false },
 );
 
+const SuiteLinkSchema = new Schema<SuiteLink>(
+  {
+    enabled: { type: Boolean, required: true, default: false },
+    status: { type: String, enum: ["pending", "linked", "error", "unlinked"], required: true, default: "pending" },
+    remoteId: { type: String },
+    url: { type: String },
+    lastError: { type: String },
+    linkedAt: { type: String },
+    skippedMembers: {
+      type: [new Schema({ sub: { type: String }, email: { type: String }, reason: { type: String } }, { _id: false })],
+      default: undefined,
+    },
+  },
+  { _id: false },
+);
+
+const TripLinksSchema = new Schema<TripLinks>(
+  Object.fromEntries(SUITE_APPS.map((app) => [app, { type: SuiteLinkSchema }])),
+  { _id: false },
+);
+
 const TripSchema = new Schema<ITripDocument>(
   {
     userId: { type: Schema.Types.ObjectId, ref: "User", required: true, index: true },
@@ -368,6 +392,7 @@ const TripSchema = new Schema<ITripDocument>(
     },
     isPublic: { type: Boolean, default: false },
     publicSlug: { type: String, unique: true, sparse: true },
+    links: { type: TripLinksSchema },
   },
   { timestamps: true },
 );

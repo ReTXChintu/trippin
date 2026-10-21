@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import http from "node:http";
 import https from "node:https";
 import { createApp } from "@/app";
+import { startSuiteOutboxWorker } from "@/modules/suite/services/suite-outbox.service";
 
 const PORT = Number(process.env.PORT);
 if (!Number.isInteger(PORT) || PORT <= 0) {
@@ -22,4 +23,6 @@ const server =
 
 server.listen(PORT, () => {
   console.log(`Backend listening on ${certPath && keyPath ? "https" : "http"}://localhost:${PORT}`);
+  // Delivers queued SpendLog / InFrame events (single process: PM2 runs one backend instance).
+  startSuiteOutboxWorker();
 });

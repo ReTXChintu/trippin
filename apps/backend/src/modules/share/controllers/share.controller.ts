@@ -13,5 +13,6 @@ export async function getSharedTrip(req: Request, res: Response) {
   const itineraryResult = await getPublicItinerary(slug);
   const itinerary = itineraryResult.success ? (itineraryResult.data?.itinerary ?? null) : null;
 
-  return sendOk(res, { trip, itinerary });
+  // The SpendLog / InFrame links are for people on the trip, not the public page.
+  return sendOk(res, { trip: { ...trip, links: {} }, itinerary });
 }

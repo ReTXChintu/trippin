@@ -1,7 +1,7 @@
 import { Box, Button, Flex, Icon, Link, Stack, Text, useDisclosure } from "@chakra-ui/react";
 import { useState } from "react";
 import { Link as RouterLink, useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { LuBookOpen, LuInfo, LuListChecks, LuTicket, LuUtensils, LuWallet } from "react-icons/lu";
+import { LuBlocks, LuBookOpen, LuInfo, LuListChecks, LuTicket, LuUtensils, LuWallet } from "react-icons/lu";
 import { LoadingState } from "@/components/ui/LoadingState";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ViewOnlyBanner } from "@/components/states";
@@ -25,6 +25,7 @@ import { getEffectiveLegs } from "@/modules/trips/utils/trip-leg.utils";
 import { getUncoveredNights } from "@/modules/trips/utils/stay.utils";
 import { getTripStages } from "@/modules/trips/utils/trip-stage";
 import { formatMoney } from "@/modules/trips/utils/money";
+import { ConnectedAppsSection } from "@/modules/suite/components/ConnectedAppsSection";
 
 export function TripDetailContent() {
   const { id = "" } = useParams();
@@ -95,12 +96,15 @@ export function TripDetailContent() {
   const hasPlan = Boolean(itinerary?.days.some((d) => d.stops.some((s) => s.stopType !== "meal")));
   const stages = getTripStages(trip, { hasPlan, edits: itinerary?.historyCount ?? 0 });
 
+  const linkedApps = [trip.links?.spendlog?.enabled && "SpendLog", trip.links?.inframe?.enabled && "InFrame"].filter((x): x is string => Boolean(x));
+
   const badges: TabBadges = {
     places: selectedCount > 0 ? { text: String(selectedCount) } : undefined,
     stays: gapCities > 0 ? { text: `${gapCities} gap${gapCities === 1 ? "" : "s"}`, warn: true } : undefined,
     food: savedFood > 0 ? { text: String(savedFood) } : undefined,
     bookings: trip.bookings.length > 0 ? { text: String(trip.bookings.length) } : undefined,
     checklist: trip.checklist.length > 0 ? { text: `${checklistDone}/${trip.checklist.length}` } : undefined,
+    apps: linkedApps.length > 0 ? { text: String(linkedApps.length) } : undefined,
   };
 
   const showKeysNote = (missingGoogleKey || missingAiKey) && !keysNoteDismissed;
@@ -179,6 +183,13 @@ export function TripDetailContent() {
       onClick: () => go("checklist"),
     },
     { key: "guide", icon: LuBookOpen, label: "Guide", value: "AI local guide", onClick: () => go("guide") },
+    {
+      key: "apps",
+      icon: LuBlocks,
+      label: "Connected apps",
+      value: linkedApps.length > 0 ? linkedApps.join(" · ") : "SpendLog · InFrame",
+      onClick: () => go("apps"),
+    },
     ...(canEdit && hasPlan
       ? [{ key: "compare", icon: MORE_ICONS.compare, label: "Compare with AI plan", onClick: () => navigate(`/trips/${trip.id}/itinerary/compare${cityId ? `?legId=${cityId}` : ""}`) }]
       : []),
@@ -230,8 +241,9 @@ export function TripDetailContent() {
       {panel("stays", <StaysView trip={trip} cityId={cityId} onCityChange={setCity} />)}
       {panel("food", <FoodView trip={trip} cityId={focusedCityId} onCityChange={setCity} onGoToGuide={() => go("guide")} />)}
       {panel("bookings", <BookingsView trip={trip} />)}
-      {panel("budget", <BudgetView trip={trip} currentUserId={currentUserId} onOpenSettings={settings.onOpen} />)}
+      {panel("budget", <BudgetView trip={trip} currentUserId={currentUserId} onOpenSettings={settings.onOpen} onOpenApps={() => go("apps")} />)}
       {panel("checklist", <ChecklistView trip={trip} />)}
+      {panel("apps", <ConnectedAppsSection tripId={trip.id} />)}
       {panel(
         "guide",
         focusedLeg && trip.legs.some((l) => l.id === focusedLeg.id) ? (

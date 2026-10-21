@@ -6,6 +6,7 @@ import * as places from "@/modules/trips/controllers/trip-places.controller";
 import * as stays from "@/modules/trips/controllers/trip-stays.controller";
 import * as logistics from "@/modules/trips/controllers/trip-logistics.controller";
 import * as collab from "@/modules/trips/controllers/trip-collab.controller";
+import * as suiteLinks from "@/modules/suite/controllers/suite-links.controller";
 import { tripWriteGuard } from "@/middleware/trip-write.middleware";
 import {
   get as getItinerary,
@@ -36,6 +37,10 @@ router.post("/:id/duplicate", trips.duplicate);
 router.post("/:id/share", trips.share);
 router.delete("/:id/share", trips.unshare);
 router.post("/:id/leave", members.leave);
+
+// SpendLog / InFrame links for the trip (switching them is owner-only).
+router.get("/:id/links", suiteLinks.get);
+router.patch("/:id/links", suiteLinks.update);
 
 router.get("/:id/members", members.list);
 router.post("/:id/members", members.add);

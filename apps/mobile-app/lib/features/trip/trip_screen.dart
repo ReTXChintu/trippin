@@ -6,6 +6,7 @@ import '../../core/theme.dart';
 import '../../data/app_state.dart';
 import '../../data/models.dart';
 import '../../shared/widgets.dart';
+import 'connected_apps.dart';
 import 'today_card.dart';
 
 class TripScreen extends ConsumerWidget {
@@ -109,6 +110,7 @@ class TripScreen extends ConsumerWidget {
               ),
             if (trip.days.isNotEmpty) const SectionTitle('Days'),
             for (final day in trip.days) ...[_DayTile(trip: trip, day: day), const SizedBox(height: 8)],
+            ConnectedAppsSection(tripId: tripId),
             _Stays(trip: trip),
             if (trip.bookings.isNotEmpty) ...[
               const SectionTitle('Bookings'),

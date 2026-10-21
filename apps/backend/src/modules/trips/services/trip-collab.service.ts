@@ -8,6 +8,7 @@ import { NotificationRepository } from "@/repositories/notification.repository";
 import { TripRepository } from "@/repositories/trip.repository";
 import { UserRepository } from "@/repositories/user.repository";
 import type { Trip } from "@/modules/trips/types/trip.types";
+import { emitTripEvent } from "@/modules/suite/services/suite-events.service";
 
 type Result<T> = { success: true; data: T; message?: string } | { success: false; error: string };
 
@@ -130,6 +131,7 @@ export async function acceptInvite(userId: string, token: string): Promise<Resul
   const trip = await TripModel.findByIdAndUpdate(tripId, update, { new: true }).select({ title: 1, userId: 1 }).lean();
   if (!trip) return { success: false, error: "This trip no longer exists" };
   await TripInvite.updateOne({ _id: invite._id }, { $inc: { uses: 1 } });
+  await emitTripEvent(tripId, "trip.members_changed");
 
   const joiner = await UserRepository.findById(userId);
   await NotificationRepository.create({

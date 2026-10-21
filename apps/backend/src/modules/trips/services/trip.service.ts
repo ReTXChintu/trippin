@@ -20,6 +20,8 @@ import type { TripLeg } from "@/modules/trips/types/trip-leg.types";
 import { defaultCurrencyFor } from "@/utils/currency";
 import { deleteExpensesForTrip } from "@/modules/trips/services/trip-budget.service";
 import { deleteCollabDataForTrip } from "@/modules/trips/services/trip-collab.service";
+import { emitTripEventFor, suiteFieldsChanged } from "@/modules/suite/services/suite-events.service";
+import { applyLinkToggles, parseLinkToggles } from "@/modules/suite/services/suite-links.service";
 
 export type ActionResult<T = void> =
   | { success: true; data?: T; message?: string }
@@ -80,7 +82,17 @@ export async function createTripFromRaw(
   parsed.data.legs = (await Promise.all(
     parsed.data.legs.map((leg) => locateDayTrips(normalizeDayTrips(leg as TripLeg))),
   )) as typeof parsed.data.legs;
-  const trip = await TripRepository.create({ userId, ...toTripPayload(parsed.data) });
+  let trip = await TripRepository.create({ userId, ...toTripPayload(parsed.data) });
+
+  // Opt-in: also create a SpendLog trip and/or an InFrame event for it.
+  const links = parseLinkToggles(raw.links);
+  if (links.spendlog || links.inframe) {
+    try {
+      trip = await applyLinkToggles(trip, { spendlog: links.spendlog === true, inframe: links.inframe === true });
+    } catch (err) {
+      console.error(`[suite] couldn't link new trip ${trip.id}:`, err);
+    }
+  }
   return { success: true, data: { trip }, message: "Trip created successfully" };
 }
 
@@ -116,6 +128,7 @@ export async function updateTripFromRaw(
 
   const trip = await TripRepository.update(tripId, userId, toTripPayload(parsed.data));
   if (!trip) return { success: false, error: "Trip not found" };
+  if (existing && suiteFieldsChanged(existing, trip)) await emitTripEventFor(trip, "trip.updated");
 
   return { success: true, data: { trip }, message: "Trip updated successfully" };
 }
@@ -130,6 +143,8 @@ export async function deleteTrip(tripId: string, userId: string): Promise<Action
   await ItineraryRepository.deleteByTripId(tripId);
   await deleteExpensesForTrip(tripId);
   await deleteCollabDataForTrip(tripId);
+  // The SpendLog trip / InFrame event stay — they hold real money and photos. Just stop syncing.
+  await emitTripEventFor(trip, "trip.unlinked");
 
   return { success: true, message: "Trip deleted" };
 }
@@ -178,6 +193,7 @@ export async function removeLegFromTrip(
   });
 
   if (!updated) return { success: false, error: "Failed to update trip" };
+  if (suiteFieldsChanged(trip, updated)) await emitTripEventFor(updated, "trip.updated");
 
   const existingItinerary = await ItineraryRepository.findByTripId(tripId);
   if (existingItinerary) {

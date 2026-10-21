@@ -17,9 +17,11 @@ import 'package:itinerary_planner/core/theme.dart';
 import 'package:itinerary_planner/data/app_state.dart';
 import 'package:itinerary_planner/data/models.dart';
 import 'package:itinerary_planner/data/offline_store.dart';
+import 'package:itinerary_planner/data/suite_models.dart';
 import 'package:itinerary_planner/data/tile_service.dart';
 import 'package:itinerary_planner/data/updates.dart';
 import 'package:itinerary_planner/features/navigate/location.dart';
+import 'package:itinerary_planner/features/trip/connected_apps.dart';
 import 'package:itinerary_planner/router.dart';
 import 'package:itinerary_planner/shared/widgets.dart';
 import 'package:latlong2/latlong.dart';
@@ -33,6 +35,51 @@ class _Store extends OfflineStore {
   Future<SavedTrip?> savedTrip(String id) async => saved;
   @override
   Future<AppSettings> settings() async => AppSettings();
+}
+
+/// The trip's SpendLog link with a live summary, and InFrame's promo (no account there yet).
+class _Links extends TripLinksNotifier {
+  @override
+  Future<TripLinks> build(String arg) async => TripLinks.fromJson({
+        'canManage': true,
+        'apps': {
+          'spendlog': {
+            'name': 'SpendLog',
+            'tagline': 'Creates a SpendLog trip for everyone on this trip — split and settle expenses there.',
+            'enabled': true,
+            'status': 'linked',
+            'url': 'http://example.test/spendlog',
+            'hasAccount': true,
+            'summary': {
+              'totalSpentMinor': 1845000,
+              'currency': 'INR',
+              'myShareMinor': 615000,
+              'iOweMinor': 0,
+              'owedToMeMinor': 120000,
+              'settlement': [
+                {'fromName': 'Asha', 'toName': 'Biswajit', 'amountMinor': 80000},
+                {'fromName': 'Ravi', 'toName': 'Biswajit', 'amountMinor': 40000},
+              ],
+              'transactionCount': 23,
+            },
+          },
+          'inframe': {
+            'name': 'InFrame',
+            'tagline': 'Creates a shared InFrame event so everyone’s trip photos land in one place.',
+            'enabled': false,
+            'status': null,
+            'hasAccount': false,
+            'promo': {
+              'title': 'Install InFrame to save your trip’s memories forever',
+              'body': 'Everyone’s photos from this trip, together in one shared event.',
+              'cta': 'Install InFrame',
+              'webUrl': 'http://example.test/inframe',
+              'apkUrl': 'http://example.test/inframe.apk',
+            },
+            'webUrl': 'http://example.test/inframe',
+          },
+        },
+      });
 }
 
 class _Tokens extends TokenStorage {
@@ -121,6 +168,7 @@ void main() {
             TripSummary(id: 'goa', title: 'Goa with friends', city: 'Goa', startDate: '2026-12-20', endDate: '2026-12-26'),
           ])),
       bundleProvider.overrideWith((ref, id) async => bundle),
+      tripLinksProvider.overrideWith(_Links.new),
       locationProvider.overrideWith((ref) => Stream.value(const Fix(me, 8, 0, 0))),
       headingProvider.overrideWith((ref) => Stream.value(35.0)),
       appVersionProvider.overrideWith((ref) async => '0.1.0 (1)'),
@@ -178,6 +226,11 @@ void main() {
 
   testWidgets('home', (t) => shoot(t, '1-home', '/'));
   testWidgets('trip', (t) => shoot(t, '2-trip', '/trip/${bundle.id}'));
+  testWidgets('trip connected apps', (t) => shoot(t, '2b-trip-apps', '/trip/${bundle.id}', then: (t) async {
+        await t.scrollUntilVisible(find.text('Install InFrame'), 300, scrollable: find.byType(Scrollable).first);
+        await t.drag(find.byType(Scrollable).first, const Offset(0, 200));
+        await t.pump(const Duration(milliseconds: 300));
+      }));
   testWidgets('day', (t) => shoot(t, '3-day', '/trip/${bundle.id}/day/1'));
   testWidgets('stop', (t) => shoot(t, '4-stop', '/trip/${bundle.id}/day/1', then: (t) async {
         await t.tap(find.text('Shri Mahakaleshwar Jyotirlinga Temple').first);

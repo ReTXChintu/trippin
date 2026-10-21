@@ -2,6 +2,7 @@ import type { ITripDocument } from "@/models/Trip";
 import type { Trip } from "@/modules/trips/types/trip.types";
 import type { TripLeg, TripLegTransfer } from "@/modules/trips/types/trip-leg.types";
 import { defaultCurrencyFor } from "@/utils/currency";
+import { SUITE_APPS, type TripLinks } from "@/modules/suite/types/suite.types";
 
 type TripDocLike = Pick<
   ITripDocument,
@@ -45,6 +46,7 @@ type TripDocLike = Pick<
   | "status"
   | "isPublic"
   | "publicSlug"
+  | "links"
   | "createdAt"
   | "updatedAt"
 >;
@@ -54,6 +56,26 @@ function toPlainCoordinates(
 ): Trip["hotelCoordinates"] {
   if (coords?.lat == null || coords?.lng == null) return undefined;
   return { lat: coords.lat, lng: coords.lng };
+}
+
+function toTripLinks(links?: TripLinks | null): TripLinks {
+  const out: TripLinks = {};
+  for (const app of SUITE_APPS) {
+    const link = links?.[app];
+    if (!link) continue;
+    out[app] = {
+      enabled: Boolean(link.enabled),
+      status: link.status ?? (link.enabled ? "pending" : "unlinked"),
+      remoteId: link.remoteId || undefined,
+      url: link.url || undefined,
+      lastError: link.lastError || undefined,
+      linkedAt: link.linkedAt || undefined,
+      skippedMembers: link.skippedMembers?.length
+        ? link.skippedMembers.map((m) => ({ sub: m.sub ?? null, email: m.email ?? "", reason: m.reason ?? "" }))
+        : undefined,
+    };
+  }
+  return out;
 }
 
 function toStringArray(value?: string[] | null): string[] {
@@ -245,6 +267,7 @@ export function toTripDTO(doc: TripDocLike): Trip {
     status: doc.status,
     isPublic: doc.isPublic,
     publicSlug: doc.publicSlug,
+    links: toTripLinks(doc.links),
     createdAt: new Date(doc.createdAt).toISOString(),
     updatedAt: new Date(doc.updatedAt).toISOString(),
   };

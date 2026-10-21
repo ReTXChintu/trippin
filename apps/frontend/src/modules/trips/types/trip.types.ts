@@ -5,6 +5,7 @@ import type {
   LegDestinationBrief,
   VehicleRentalSuggestion,
 } from "@/modules/trips/types/trip-enrichment.types";
+import type { TripLinks } from "@/modules/suite/types/suite.types";
 /** Someone on a trip — sent with trip lists (owner first). */
 export interface TripPerson {
   id: string;
@@ -62,6 +63,8 @@ export interface Trip {
   status: TripStatus;
   isPublic: boolean;
   publicSlug?: string;
+  /** SpendLog / InFrame links (absent on trips from older servers and on the public page). */
+  links?: TripLinks;
   createdAt: string;
   updatedAt: string;
 }

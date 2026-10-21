@@ -16,6 +16,7 @@ import {
   sendTripMemberAddedEmail,
   sendTripMemberLeftEmail,
 } from "@/services/email.service";
+import { emitTripEvent } from "@/modules/suite/services/suite-events.service";
 
 export type TripMemberActionResult<T = void> =
   | { success: true; data?: T; message?: string }
@@ -117,6 +118,7 @@ export async function addTripMember(
 
   const updated = await TripRepository.addMember(tripId, userId, targetId);
   if (!updated) return { success: false, error: "Failed to add member" };
+  await emitTripEvent(tripId, "trip.members_changed");
 
   await sendTripMemberAddedEmail({
     toEmail: targetUser.email,
@@ -176,6 +178,7 @@ export async function claimPendingMemberships(userId: string, email: string): Pr
       if (invite.role === "viewer") addToSet.viewerIds = uid;
       await TripModel.updateOne({ _id: invite.tripId }, { $addToSet: addToSet });
       joined.push(String(invite.tripId));
+      await emitTripEvent(String(invite.tripId), "trip.members_changed");
 
       await NotificationRepository.create({
         userId: String(trip.userId),
@@ -213,6 +216,7 @@ export async function removeTripMember(
 
   const updated = await TripRepository.removeMember(tripId, userId, memberUserId);
   if (!updated) return { success: false, error: "Failed to remove member" };
+  await emitTripEvent(tripId, "trip.members_changed");
 
   const members = await buildMemberList(updated.userId, updated.memberIds, updated.viewerIds);
   return { success: true, data: { members, pending: await listPendingMembers(tripId) }, message: "Member removed" };
@@ -232,6 +236,7 @@ export async function leaveTrip(tripId: string, userId: string): Promise<TripMem
 
   const updated = await TripRepository.leaveTrip(tripId, userId);
   if (!updated) return { success: false, error: "Failed to leave trip" };
+  await emitTripEvent(tripId, "trip.members_changed");
 
   if (owner) {
     await NotificationRepository.create({
@@ -269,6 +274,7 @@ export async function setTripMemberRole(
 
   const updated = await TripRepository.setMemberRole(tripId, memberUserId, role);
   if (!updated) return { success: false, error: "Failed to update role" };
+  await emitTripEvent(tripId, "trip.members_changed");
   const members = await buildMemberList(updated.userId, updated.memberIds, updated.viewerIds);
   return { success: true, data: { members, pending: await listPendingMembers(tripId) }, message: role === "viewer" ? "Now view-only" : "Can now edit" };
 }

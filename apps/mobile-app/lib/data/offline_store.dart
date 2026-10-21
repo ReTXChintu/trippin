@@ -207,6 +207,22 @@ class OfflineStore {
 
   Future<void> setSettings(AppSettings s) => _writeJson('settings.json', s.toJson());
 
+  // ---- dismissed SpendLog / InFrame promo cards: app → when ----
+  Future<Map<String, DateTime>> promoDismissals() async {
+    final j = await _readJson('promos.json');
+    if (j is! Map) return {};
+    return {
+      for (final e in j.entries)
+        if (DateTime.tryParse('${e.value}') != null) '${e.key}': DateTime.parse('${e.value}'),
+    };
+  }
+
+  Future<void> dismissPromo(String app, DateTime at) async {
+    final all = await promoDismissals();
+    all[app] = at;
+    await _writeJson('promos.json', all.map((k, v) => MapEntry(k, v.toIso8601String())));
+  }
+
   /// Signing out: forget everything on the phone.
   Future<void> clearAll() async {
     final root = await _root();
