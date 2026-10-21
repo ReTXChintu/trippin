@@ -32,7 +32,10 @@ fi
 APP_NAME="$(node -e 'console.log(require("./scripts/read-env.cjs").readEnv().PM2_APP_NAME || "trippin")')"
 if pm2 jlist 2>/dev/null | node -e '
   let s = ""; process.stdin.on("data", (d) => (s += d)).on("end", () => {
-    const p = JSON.parse(s || "[]").find((x) => x.name === process.argv[1]);
+    // PM2 can print a ">>> In-memory PM2 is out-of-date" banner ahead of the
+    // JSON when the CLI and the running daemon differ; read from the list itself.
+    const start = s.indexOf("[");
+    const p = JSON.parse(start >= 0 ? s.slice(start) : "[]").find((x) => x.name === process.argv[1]);
     process.exit(p && !/serve-frontend\.cjs$/.test(p.pm2_env?.pm_exec_path || "") ? 0 : 1);
   });' "$APP_NAME-frontend"; then
   echo "==> Replacing the old $APP_NAME-frontend process"
