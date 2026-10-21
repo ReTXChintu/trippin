@@ -1,5 +1,9 @@
+import mongoose from "mongoose";
+import { connectDB } from "@/lib/mongodb";
 import { isTripOwner } from "@/lib/trip-access";
-import type { TripMember } from "@/modules/trips/types/trip-member.types";
+import { Trip as TripModel } from "@/models/Trip";
+import { PendingTripMember as PendingTripMemberModel } from "@/models/TripCollab";
+import type { PendingTripMember, TripMember } from "@/modules/trips/types/trip-member.types";
 import {
   addTripMemberSchema,
   removeTripMemberSchema,
@@ -7,11 +11,17 @@ import {
 import { NotificationRepository } from "@/repositories/notification.repository";
 import { TripRepository } from "@/repositories/trip.repository";
 import { UserRepository } from "@/repositories/user.repository";
-import { sendTripMemberAddedEmail, sendTripMemberLeftEmail } from "@/services/email.service";
+import {
+  sendTripInviteEmail,
+  sendTripMemberAddedEmail,
+  sendTripMemberLeftEmail,
+} from "@/services/email.service";
 
 export type TripMemberActionResult<T = void> =
   | { success: true; data?: T; message?: string }
   | { success: false; error: string };
+
+export type TripMembersData = { members: TripMember[]; pending: PendingTripMember[]; invited?: boolean };
 
 export async function buildMemberList(ownerId: string, memberIds: string[], viewerIds: string[] = []): Promise<TripMember[]> {
   const owner = await UserRepository.findById(ownerId);
@@ -44,19 +54,27 @@ export async function buildMemberList(ownerId: string, memberIds: string[], view
 export async function getTripMembers(
   tripId: string,
   userId: string,
-): Promise<TripMemberActionResult<{ members: TripMember[] }>> {
+): Promise<TripMemberActionResult<TripMembersData>> {
   const trip = await TripRepository.findByIdForUser(tripId, userId);
   if (!trip) return { success: false, error: "Trip not found" };
 
   const members = await buildMemberList(trip.userId, trip.memberIds, trip.viewerIds);
-  return { success: true, data: { members } };
+  return { success: true, data: { members, pending: await listPendingMembers(tripId) } };
+}
+
+/** People added by email who haven't signed in to Trippin yet. */
+export async function listPendingMembers(tripId: string): Promise<PendingTripMember[]> {
+  if (!mongoose.isValidObjectId(tripId)) return [];
+  await connectDB();
+  const docs = await PendingTripMemberModel.find({ tripId: new mongoose.Types.ObjectId(tripId) }).sort({ createdAt: 1 }).lean();
+  return docs.map((d) => ({ email: d.email, role: d.role, invitedAt: new Date(d.createdAt).toISOString() }));
 }
 
 export async function addTripMember(
   tripId: string,
   userId: string,
   email: string,
-): Promise<TripMemberActionResult<{ members: TripMember[] }>> {
+): Promise<TripMemberActionResult<TripMembersData>> {
   const parsed = addTripMemberSchema.safeParse({ tripId, email });
   if (!parsed.success) {
     return { success: false, error: parsed.error.issues[0]?.message ?? "Invalid input" };
@@ -65,11 +83,30 @@ export async function addTripMember(
   const trip = await TripRepository.findByIdForUser(tripId, userId);
   if (!trip) return { success: false, error: "Trip not found" };
 
-  const targetUser = await UserRepository.findByEmail(email.trim());
+  const normalizedEmail = parsed.data.email.trim().toLowerCase();
+  const adder = await UserRepository.findById(userId);
+  const targetUser = await UserRepository.findByEmail(normalizedEmail);
+
   if (!targetUser) {
+    // Not on Trippin yet (they may only have an account on the identity server): remember the
+    // invite; it's claimed when they first sign in with this email, verified.
+    await connectDB();
+    await PendingTripMemberModel.updateOne(
+      { tripId: new mongoose.Types.ObjectId(tripId), email: normalizedEmail },
+      { $setOnInsert: { role: "editor", invitedBy: new mongoose.Types.ObjectId(userId) } },
+      { upsert: true },
+    );
+    await sendTripInviteEmail({
+      toEmail: normalizedEmail,
+      tripTitle: trip.title,
+      tripId: trip.id,
+      addedByName: adder?.name ?? "Someone",
+    });
+    const members = await buildMemberList(trip.userId, trip.memberIds, trip.viewerIds);
     return {
-      success: false,
-      error: "No account found with that email. They need to register first.",
+      success: true,
+      data: { members, pending: await listPendingMembers(tripId), invited: true },
+      message: `Invite sent to ${normalizedEmail}`,
     };
   }
 
@@ -81,7 +118,6 @@ export async function addTripMember(
   const updated = await TripRepository.addMember(tripId, userId, targetId);
   if (!updated) return { success: false, error: "Failed to add member" };
 
-  const adder = await UserRepository.findById(userId);
   await sendTripMemberAddedEmail({
     toEmail: targetUser.email,
     toName: targetUser.name,
@@ -94,16 +130,72 @@ export async function addTripMember(
 
   return {
     success: true,
-    data: { members },
+    data: { members, pending: await listPendingMembers(tripId) },
     message: `${targetUser.name} added to the trip`,
   };
+}
+
+/** Withdraws an email invite that hasn't been claimed yet: the owner, or whoever sent it. */
+export async function removePendingTripMember(
+  tripId: string,
+  userId: string,
+  email: string,
+): Promise<TripMemberActionResult<TripMembersData>> {
+  const trip = await TripRepository.findByIdForUser(tripId, userId);
+  if (!trip) return { success: false, error: "Trip not found" };
+
+  await connectDB();
+  const filter: Record<string, unknown> = { tripId: new mongoose.Types.ObjectId(tripId), email: email.trim().toLowerCase() };
+  if (!isTripOwner(trip, userId)) filter.invitedBy = new mongoose.Types.ObjectId(userId);
+  const res = await PendingTripMemberModel.deleteOne(filter);
+  if (res.deletedCount === 0) return { success: false, error: "Invite not found" };
+
+  const members = await buildMemberList(trip.userId, trip.memberIds, trip.viewerIds);
+  return { success: true, data: { members, pending: await listPendingMembers(tripId) }, message: "Invite withdrawn" };
+}
+
+/**
+ * Turns the email invites for `email` into trip membership. Runs at every sign-in, and only with
+ * an email the identity server has verified. Returns the ids of the trips joined.
+ */
+export async function claimPendingMemberships(userId: string, email: string): Promise<string[]> {
+  await connectDB();
+  const pending = await PendingTripMemberModel.find({ email: email.trim().toLowerCase() });
+  if (pending.length === 0) return [];
+
+  const joiner = await UserRepository.findById(userId);
+  const who = joiner?.name ?? email;
+  const uid = new mongoose.Types.ObjectId(userId);
+  const joined: string[] = [];
+
+  for (const invite of pending) {
+    const trip = await TripModel.findById(invite.tripId).select({ title: 1, userId: 1, memberIds: 1 }).lean();
+    const onTrip = trip && (String(trip.userId) === userId || (trip.memberIds ?? []).some((id) => String(id) === userId));
+    if (trip && !onTrip) {
+      const addToSet: Record<string, unknown> = { memberIds: uid };
+      if (invite.role === "viewer") addToSet.viewerIds = uid;
+      await TripModel.updateOne({ _id: invite.tripId }, { $addToSet: addToSet });
+      joined.push(String(invite.tripId));
+
+      await NotificationRepository.create({
+        userId: String(trip.userId),
+        type: "trip_member_joined",
+        title: `${who} joined your trip`,
+        message: `${who} (${email}) signed in to Trippin and joined "${trip.title}".`,
+        tripId: String(invite.tripId),
+      });
+    }
+    await PendingTripMemberModel.deleteOne({ _id: invite._id });
+  }
+
+  return joined;
 }
 
 export async function removeTripMember(
   tripId: string,
   userId: string,
   memberUserId: string,
-): Promise<TripMemberActionResult<{ members: TripMember[] }>> {
+): Promise<TripMemberActionResult<TripMembersData>> {
   const parsed = removeTripMemberSchema.safeParse({ tripId, memberUserId });
   if (!parsed.success) {
     return { success: false, error: parsed.error.issues[0]?.message ?? "Invalid input" };
@@ -123,7 +215,7 @@ export async function removeTripMember(
   if (!updated) return { success: false, error: "Failed to remove member" };
 
   const members = await buildMemberList(updated.userId, updated.memberIds, updated.viewerIds);
-  return { success: true, data: { members }, message: "Member removed" };
+  return { success: true, data: { members, pending: await listPendingMembers(tripId) }, message: "Member removed" };
 }
 
 export async function leaveTrip(tripId: string, userId: string): Promise<TripMemberActionResult> {
@@ -169,7 +261,7 @@ export async function setTripMemberRole(
   userId: string,
   memberUserId: string,
   role: unknown,
-): Promise<TripMemberActionResult<{ members: TripMember[] }>> {
+): Promise<TripMemberActionResult<TripMembersData>> {
   if (role !== "editor" && role !== "viewer") return { success: false, error: "Role must be editor or viewer" };
   const trip = await TripRepository.findByIdForOwner(tripId, userId);
   if (!trip) return { success: false, error: "Only the trip owner can change roles" };
@@ -178,5 +270,5 @@ export async function setTripMemberRole(
   const updated = await TripRepository.setMemberRole(tripId, memberUserId, role);
   if (!updated) return { success: false, error: "Failed to update role" };
   const members = await buildMemberList(updated.userId, updated.memberIds, updated.viewerIds);
-  return { success: true, data: { members }, message: role === "viewer" ? "Now view-only" : "Can now edit" };
+  return { success: true, data: { members, pending: await listPendingMembers(tripId) }, message: role === "viewer" ? "Now view-only" : "Can now edit" };
 }

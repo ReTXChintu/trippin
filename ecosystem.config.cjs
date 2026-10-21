@@ -46,6 +46,9 @@ module.exports = {
         NODE_ENV: "production",
         FRONTEND_DIST: path.join(ROOT, "apps/frontend/dist"),
         FRONTEND_PORT: String(frontendPort),
+        // HTTPS when a certificate is configured (the backend reads these from .env itself).
+        SSL_CERT_PATH: env.SSL_CERT_PATH || "",
+        SSL_KEY_PATH: env.SSL_KEY_PATH || "",
       },
     },
   ],

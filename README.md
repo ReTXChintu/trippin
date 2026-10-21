@@ -42,7 +42,17 @@ For the mobile app, see [apps/mobile-app/README.md](apps/mobile-app/README.md) �
 
 ## REST API
 
-The backend serves `/api/v1` for both the web frontend and the mobile app. Auth is a single JWT (issued at login): the mobile app receives it in the response body and sends it back as a `Bearer` token; the web frontend receives it as an `httpOnly` cookie sent automatically on subsequent requests.
+The backend serves `/api/v1` for both the web frontend and the mobile app.
+
+**Sign-in is single sign-on only**, through the OpenID Connect identity server shared with SpendLog and InFrame (`OIDC_ISSUER`). Trippin has no passwords, sign-up or password reset of its own.
+
+- **Web:** `GET /api/v1/auth/oidc/start?returnTo=/path` sends the browser to the identity server (authorization code + PKCE, state and nonce in a short-lived signed cookie); `GET /api/v1/auth/oidc/callback` checks them, verifies the ID token, finds or creates the local user and sets Trippin's `access_token` cookie, then redirects to `FRONTEND_URL` + `returnTo`. Register `OIDC_REDIRECT_URI` (= `BACKEND_URL/api/v1/auth/oidc/callback`) for the `trippin-web` client.
+- **Mobile:** the app signs in with `flutter_appauth` (public client `trippin-mobile`) and posts the ID token to `POST /api/v1/auth/oidc/mobile`, which returns `{ accessToken, user }`.
+- **Sign-out:** `POST /api/v1/auth/logout` clears the cookie and returns the identity server's `endSessionUrl` (`GET` redirects there).
+
+A sign-in is matched to a Trippin user by the identity server's `sub`, else by email (only when the email is verified), else a new user is created — user ids never change. Trippin's own token is a JWT: the mobile app receives it in the response body and sends it back as a `Bearer` token; the web frontend receives it as an `httpOnly` cookie sent automatically on subsequent requests.
+
+Adding a trip member by email works for people who haven't used Trippin yet: they get an email, and the invite is claimed when they first sign in with that (verified) address.
 
 Per-user OpenAI and Google Maps keys are stored encrypted on the User profile; trip operations use the **trip owner's** keys.
 
@@ -59,7 +69,7 @@ Production runs two PM2 processes defined in `ecosystem.config.cjs`, both config
 | `trippin-backend` | The API bundle (`apps/backend/dist/index.js`, `NODE_ENV=production`) | `PORT` |
 | `trippin-frontend` | The built frontend (`apps/frontend/dist`), served by `scripts/serve-frontend.cjs` (SPA fallback, APK download headers) | `FRONTEND_PORT` |
 
-Put a reverse proxy (nginx, Caddy…) with TLS in front of both ports, and set `FRONTEND_URL`, `BACKEND_URL` and `VITE_API_BASE_URL` in the server's `.env` to the public URLs — the frontend reads `VITE_*` values at build time, so they're baked in on each deploy.
+Production must be HTTPS on a hostname (e.g. a duckdns subdomain) — the identity server, secure cookies and Android all need it. Either set `SSL_CERT_PATH` / `SSL_KEY_PATH` (both processes then serve HTTPS themselves), or put a reverse proxy (nginx, Caddy…) with TLS in front of both ports. Set `FRONTEND_URL`, `BACKEND_URL`, `VITE_API_BASE_URL`, `OIDC_REDIRECT_URI` and `OIDC_POST_LOGOUT_URI` in the server's `.env` to the public `https://` URLs — the frontend reads `VITE_*` values at build time, so they're baked in on each deploy. The browser talks to the backend's port directly, so the sign-in callback is on the backend: `https://<name>.duckdns.org:<PORT>/api/v1/auth/oidc/callback`.
 
 **One-time server setup**
 
@@ -91,8 +101,9 @@ Add in Settings → Secrets and variables → Actions:
 | Variable | Value |
 |----------|-------|
 | `VPS_APP_DIR` | Checkout on the server (optional, default `/opt/var/trippin`) |
-| `MOBILE_API_BASE_URL` | API the app talks to, e.g. `http://187.127.179.114:50008/api/v1` |
-| `MOBILE_WEB_URL` | The website, e.g. `http://187.127.179.114:50009` — also where the app looks for updates |
+| `MOBILE_API_BASE_URL` | API the app talks to, e.g. `https://<name>.duckdns.org:50008/api/v1` |
+| `MOBILE_WEB_URL` | The website, e.g. `https://<name>.duckdns.org:50009` — also where the app looks for updates |
+| `MOBILE_OIDC_ISSUER` | The identity server the app signs in with, e.g. `https://id-x.duckdns.org:50011` (required) |
 | `MOBILE_MAP_TILE_URL` | Map tiles (optional, defaults to OpenStreetMap) |
 | `FLUTTER_VERSION` | Optional, defaults to 3.47.2 |
 

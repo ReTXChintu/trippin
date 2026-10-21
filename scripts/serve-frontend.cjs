@@ -12,9 +12,11 @@
  * Config from the environment (set by ecosystem.config.cjs from the root .env):
  *   FRONTEND_PORT   port to listen on (required)
  *   FRONTEND_DIST   folder to serve (default apps/frontend/dist)
+ *   SSL_CERT_PATH / SSL_KEY_PATH   serve HTTPS with this certificate (optional; plain HTTP without)
  */
 const fs = require("node:fs");
 const http = require("node:http");
+const https = require("node:https");
 const path = require("node:path");
 
 const ROOT = path.resolve(process.env.FRONTEND_DIST || path.join(__dirname, "..", "apps", "frontend", "dist"));
@@ -78,7 +80,7 @@ function serveFile(req, res, filePath, urlPath) {
   fs.createReadStream(filePath).pipe(res);
 }
 
-const server = http.createServer((req, res) => {
+function handler(req, res) {
   if (req.method !== "GET" && req.method !== "HEAD") return send(res, 405, "Method not allowed", { Allow: "GET, HEAD" });
 
   let urlPath;
@@ -97,6 +99,13 @@ const server = http.createServer((req, res) => {
   if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) return serveFile(req, res, filePath, urlPath);
   if (hasExt) return send(res, 404, "Not found");
   return serveFile(req, res, path.join(ROOT, "index.html"), "/index.html");
-});
+}
 
-server.listen(PORT, () => console.log(`Frontend: serving ${ROOT} on http://0.0.0.0:${PORT}`));
+const certPath = (process.env.SSL_CERT_PATH || "").trim();
+const keyPath = (process.env.SSL_KEY_PATH || "").trim();
+const tls = Boolean(certPath && keyPath);
+const server = tls
+  ? https.createServer({ cert: fs.readFileSync(certPath), key: fs.readFileSync(keyPath) }, handler)
+  : http.createServer(handler);
+
+server.listen(PORT, () => console.log(`Frontend: serving ${ROOT} on ${tls ? "https" : "http"}://0.0.0.0:${PORT}`));

@@ -1,6 +1,6 @@
 import { api } from "@/lib/api";
 import type { Trip, TripStats } from "@/modules/trips/types/trip.types";
-import type { TripMember } from "@/modules/trips/types/trip-member.types";
+import type { TripMembersData } from "@/modules/trips/types/trip-member.types";
 import type { TripStay } from "@/modules/trips/types/trip-leg.types";
 import type { CommentTarget, InviteLink, InvitePreview, TripComment } from "@/modules/trips/types/trip-collab.types";
 import type {
@@ -73,18 +73,24 @@ export async function getTripStats(): Promise<{ stats: TripStats; upcomingTrips:
 }
 
 // Members
-export async function getTripMembers(tripId: string): Promise<{ members: TripMember[] }> {
+export async function getTripMembers(tripId: string): Promise<TripMembersData> {
   const res = await api.get(`/trips/${tripId}/members`);
   return res.data.data;
 }
 
-export async function addTripMember(tripId: string, email: string): Promise<{ members: TripMember[] }> {
+export async function addTripMember(tripId: string, email: string): Promise<TripMembersData> {
   const res = await api.post(`/trips/${tripId}/members`, { email });
   return res.data.data;
 }
 
-export async function removeTripMember(tripId: string, memberUserId: string): Promise<{ members: TripMember[] }> {
+export async function removeTripMember(tripId: string, memberUserId: string): Promise<TripMembersData> {
   const res = await api.delete(`/trips/${tripId}/members`, { params: { memberUserId } });
+  return res.data.data;
+}
+
+/** Withdraws an email invite to someone who hasn't signed in yet. */
+export async function removePendingTripMember(tripId: string, email: string): Promise<TripMembersData> {
+  const res = await api.delete(`/trips/${tripId}/members`, { params: { email } });
   return res.data.data;
 }
 
@@ -203,7 +209,7 @@ export async function getWeather(tripId: string): Promise<{ days: DayWeather[] }
   return res.data.data;
 }
 
-export async function setMemberRole(tripId: string, userId: string, role: "editor" | "viewer"): Promise<{ members: TripMember[] }> {
+export async function setMemberRole(tripId: string, userId: string, role: "editor" | "viewer"): Promise<TripMembersData> {
   const res = await api.patch(`/trips/${tripId}/members/${userId}/role`, { role });
   return res.data.data;
 }

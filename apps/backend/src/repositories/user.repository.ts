@@ -5,7 +5,7 @@ import type { UserPreferences } from "@/types";
 export interface CreateUserInput {
   name: string;
   email: string;
-  passwordHash: string;
+  oidcSub?: string;
   avatar?: string;
   preferences?: UserPreferences;
 }
@@ -29,6 +29,21 @@ export class UserRepository {
   static async findByEmail(email: string): Promise<IUserDocument | null> {
     await connectDB();
     return User.findOne({ email: email.toLowerCase() });
+  }
+
+  static async findByOidcSub(sub: string): Promise<IUserDocument | null> {
+    await connectDB();
+    return User.findOne({ oidcSub: sub });
+  }
+
+  /** Ties an existing account to its identity-server subject; fills the avatar if it has none. */
+  static async linkOidcSub(id: string, sub: string, picture?: string): Promise<IUserDocument | null> {
+    await connectDB();
+    const user = await User.findById(id);
+    if (!user) return null;
+    user.oidcSub = sub;
+    if (!user.avatar && picture) user.avatar = picture;
+    return user.save();
   }
 
   static async findById(id: string): Promise<IUserDocument | null> {
@@ -88,40 +103,6 @@ export class UserRepository {
     return User.findByIdAndUpdate(
       id,
       { $unset: { googleMapsApiKeyEncrypted: "", googleMapsApiKeyLast4: "" } },
-      { new: true },
-    );
-  }
-
-  static async setPasswordResetToken(
-    email: string,
-    tokenHash: string,
-    expires: Date,
-  ): Promise<IUserDocument | null> {
-    await connectDB();
-    return User.findOneAndUpdate(
-      { email: email.toLowerCase() },
-      { resetPasswordToken: tokenHash, resetPasswordExpires: expires },
-      { new: true },
-    );
-  }
-
-  static async findByResetToken(tokenHash: string): Promise<IUserDocument | null> {
-    await connectDB();
-    return User.findOne({
-      resetPasswordToken: tokenHash,
-      resetPasswordExpires: { $gt: new Date() },
-    });
-  }
-
-  static async updatePassword(
-    id: string,
-    passwordHash: string,
-  ): Promise<IUserDocument | null> {
-    await connectDB();
-    return User.findByIdAndUpdate(
-      id,
-      // The reset token must stop working once used.
-      { $set: { passwordHash }, $unset: { resetPasswordToken: "", resetPasswordExpires: "" } },
       { new: true },
     );
   }

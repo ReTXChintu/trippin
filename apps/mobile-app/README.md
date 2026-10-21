@@ -20,13 +20,16 @@ safety info.
 - **Reminders** scheduled on the phone: "Leave in 10 min for …" and a morning plan.
 - **Auto-update** — on launch / resume / pull-to-refresh, saved trips that changed on the web are
   re-downloaded (only new map tiles are fetched).
+- **Sign in** with the shared account (Trippin, SpendLog and InFrame) through the identity server in
+  the browser (`flutter_appauth`, PKCE); the app swaps the ID token for Trippin's own token at
+  `POST /auth/oidc/mobile`. Sign-out also ends the identity server session.
 - Sign-in survives no signal and expired tokens: saved trips always open; syncing asks to sign in.
 
 ## Setup
 
 ```bash
 flutter pub get
-cp .env.example .env   # set API_BASE_URL / WEB_URL / MAP_TILE_URL
+cp .env.example .env   # set API_BASE_URL / WEB_URL / MAP_TILE_URL / OIDC_ISSUER
 flutter run
 ```
 
@@ -34,6 +37,7 @@ flutter run
 |---|---|
 | `API_BASE_URL` | `http://187.127.179.114:50008/api/v1` (production) · emulator `http://10.0.2.2:<PORT>/api/v1` · phone on Wi-Fi `http://<pc-lan-ip>:<PORT>/api/v1` |
 | `WEB_URL` | `http://187.127.179.114:50009` |
+| `OIDC_ISSUER` | The identity server, e.g. `https://id-x.duckdns.org:50011`. The app is its public client `trippin-mobile`; register the redirect URI `com.itineraryplanner.itinerary-planner:/oauth2redirect` (also used after sign-out). That's the applicationId with `_` → `-`, since `_` isn't allowed in a URI scheme. |
 | `MAP_TILE_URL` | OpenStreetMap by default. OSM's servers only allow light use — for many users, switch to a provider that permits offline saving (e.g. MapTiler `https://api.maptiler.com/maps/streets-v2/{z}/{x}/{y}.png?key=…`). |
 
 ## Build & check

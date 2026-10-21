@@ -11,32 +11,6 @@ export function useProfileQuery(enabled: boolean) {
   });
 }
 
-export function useLogin() {
-  const setUser = useAuthStore((s) => s.setUser);
-  return useMutation({
-    mutationFn: (data: { email: string; password: string }) => authApi.login(data.email, data.password),
-    onSuccess: (session) => setUser(session.user),
-  });
-}
-
-export function useRegister() {
-  return useMutation({
-    mutationFn: authApi.register,
-  });
-}
-
-export function useForgotPassword() {
-  return useMutation({
-    mutationFn: authApi.forgotPassword,
-  });
-}
-
-export function useResetPassword() {
-  return useMutation({
-    mutationFn: authApi.resetPassword,
-  });
-}
-
 export function useLogout() {
   const clearAuth = useAuthStore((s) => s.clearAuth);
   const queryClient = useQueryClient();

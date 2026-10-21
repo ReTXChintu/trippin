@@ -29,6 +29,7 @@ dependencies:
   flutter_timezone: ^5.1.1
   wakelock_plus: ^1.5.2
   package_info_plus: ^9.0.1
+  flutter_appauth: ^12.1.0
 
 dev_dependencies:
   flutter_test:

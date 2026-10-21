@@ -65,13 +65,19 @@ jobs:
           API_BASE_URL: ${{ vars.MOBILE_API_BASE_URL }}
           WEB_URL: ${{ vars.MOBILE_WEB_URL }}
           MAP_TILE_URL: ${{ vars.MOBILE_MAP_TILE_URL }}
+          OIDC_ISSUER: ${{ vars.MOBILE_OIDC_ISSUER }}
         run: |
           if [ -z "$API_BASE_URL" ]; then
-            echo "::error::Set the MOBILE_API_BASE_URL repository variable (e.g. http://<server-ip>:<PORT>/api/v1)."
+            echo "::error::Set the MOBILE_API_BASE_URL repository variable (e.g. https://<name>.duckdns.org:<PORT>/api/v1)."
+            exit 1
+          fi
+          if [ -z "$OIDC_ISSUER" ]; then
+            echo "::error::Set the MOBILE_OIDC_ISSUER repository variable — the identity server the app signs in with (e.g. https://id-x.duckdns.org:50011)."
             exit 1
           fi
           {
             echo "API_BASE_URL=$API_BASE_URL"
+            echo "OIDC_ISSUER=$OIDC_ISSUER"
             if [ -n "$WEB_URL" ]; then echo "WEB_URL=$WEB_URL"; fi
             if [ -n "$MAP_TILE_URL" ]; then echo "MAP_TILE_URL=$MAP_TILE_URL"; fi
           } > .env

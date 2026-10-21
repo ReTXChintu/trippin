@@ -5,7 +5,10 @@ import { AI_PROVIDERS, type AiProviderName } from "@/constants/ai";
 export interface IUserDocument extends Document {
   name: string;
   email: string;
-  passwordHash: string;
+  /** Subject from the shared identity server; set on first sign-in. */
+  oidcSub?: string;
+  /** Only on accounts from before single sign-on; nothing reads it any more. */
+  passwordHash?: string;
   avatar?: string;
   preferences?: UserPreferences;
   openaiApiKeyEncrypted?: string;
@@ -18,8 +21,6 @@ export interface IUserDocument extends Document {
   aiProvider?: AiProviderName;
   openaiModel?: string;
   geminiModel?: string;
-  resetPasswordToken?: string;
-  resetPasswordExpires?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -34,7 +35,8 @@ const UserSchema = new Schema<IUserDocument>(
       lowercase: true,
       trim: true,
     },
-    passwordHash: { type: String, required: true },
+    oidcSub: { type: String, unique: true, sparse: true },
+    passwordHash: { type: String },
     avatar: { type: String },
     preferences: {
       defaultTravelStyle: String,
@@ -50,8 +52,6 @@ const UserSchema = new Schema<IUserDocument>(
     aiProvider: { type: String, enum: AI_PROVIDERS },
     openaiModel: { type: String, trim: true },
     geminiModel: { type: String, trim: true },
-    resetPasswordToken: { type: String },
-    resetPasswordExpires: { type: Date },
   },
   { timestamps: true },
 );

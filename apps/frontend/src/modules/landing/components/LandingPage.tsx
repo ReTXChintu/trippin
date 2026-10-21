@@ -82,7 +82,7 @@ export function LandingPage() {
     const text = prompt.trim();
     if (text) savePendingTripPrompt(text);
     const next = text ? "/trips/new?mode=describe" : "/trips/new";
-    navigate(`/register?callbackUrl=${encodeURIComponent(next)}`);
+    navigate(`/login?callbackUrl=${encodeURIComponent(next)}`);
   };
 
   const navLink = { fontWeight: 600, textDecoration: "underline", textUnderlineOffset: "3px", _hover: { color: "accent.text" } } as const;
@@ -105,11 +105,8 @@ export function LandingPage() {
           </Link>
         </HStack>
         <HStack spacing={2}>
-          <Button as={RouterLink} to="/login" variant="ghost">
-            Log in
-          </Button>
-          <Button as={RouterLink} to="/register">
-            Sign up free
+          <Button as={RouterLink} to="/login">
+            Sign in
           </Button>
         </HStack>
       </Flex>
@@ -163,7 +160,7 @@ export function LandingPage() {
                 }}
               />
               <Flex mt={3} justify="space-between" align="center" gap={3} wrap="wrap">
-                <Link as={RouterLink} to={`/register?callbackUrl=${encodeURIComponent("/trips/new")}`} fontSize="12px" color="fg.muted">
+                <Link as={RouterLink} to={`/login?callbackUrl=${encodeURIComponent("/trips/new")}`} fontSize="12px" color="fg.muted">
                   Or set it up yourself, step by step
                 </Link>
                 <Button type="submit" size="lg" leftIcon={<FiArrowRight />}>
@@ -248,10 +245,7 @@ export function LandingPage() {
         </Text>
         <HStack spacing={4}>
           <Link as={RouterLink} to="/login" textDecoration="underline">
-            Log in
-          </Link>
-          <Link as={RouterLink} to="/register" textDecoration="underline">
-            Sign up
+            Sign in
           </Link>
           {apk && (
             <Link href={apk.url} download="trippin.apk" title={`Android app, version ${apk.version}`} textDecoration="underline">

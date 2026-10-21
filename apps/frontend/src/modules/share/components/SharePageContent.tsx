@@ -38,7 +38,7 @@ function ShareBar() {
         <Button variant="outline" leftIcon={<FiPrinter />} onClick={() => window.print()} display={{ base: "none", md: "inline-flex" }}>
           Print / PDF
         </Button>
-        <Button as={RouterLink} to={user ? "/trips/new" : "/register"} leftIcon={<FiPlus />}>
+        <Button as={RouterLink} to={user ? "/trips/new" : `/login?callbackUrl=${encodeURIComponent("/trips/new")}`} leftIcon={<FiPlus />}>
           Plan your own trip
         </Button>
       </HStack>

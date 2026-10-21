@@ -35,6 +35,11 @@ android {
         versionCode = flutter.versionCode
         versionName = flutter.versionName
         multiDexEnabled = true
+        // flutter_appauth: the identity server sends the browser back to
+        // com.itineraryplanner.itinerary-planner:/oauth2redirect. That is the applicationId with
+        // `_` → `-`, because `_` isn't allowed in a URI scheme. Keep in sync with
+        // AppConfig.oidcRedirectScheme (lib/core/config.dart).
+        manifestPlaceholders["appAuthRedirectScheme"] = "com.itineraryplanner.itinerary-planner"
     }
 
     signingConfigs {

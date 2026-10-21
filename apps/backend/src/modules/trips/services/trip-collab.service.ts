@@ -2,7 +2,7 @@ import { randomBytes } from "crypto";
 import mongoose from "mongoose";
 import { z } from "zod";
 import { connectDB } from "@/lib/mongodb";
-import { COMMENT_TARGETS, TripComment, TripInvite, type ITripCommentDocument } from "@/models/TripCollab";
+import { COMMENT_TARGETS, PendingTripMember, TripComment, TripInvite, type ITripCommentDocument } from "@/models/TripCollab";
 import { Trip as TripModel } from "@/models/Trip";
 import { NotificationRepository } from "@/repositories/notification.repository";
 import { TripRepository } from "@/repositories/trip.repository";
@@ -244,5 +244,9 @@ export async function deleteComment(userId: string, tripId: string, commentId: s
 export async function deleteCollabDataForTrip(tripId: string): Promise<void> {
   if (!mongoose.isValidObjectId(tripId)) return;
   await connectDB();
-  await Promise.all([TripComment.deleteMany({ tripId: oid(tripId) }), TripInvite.deleteMany({ tripId: oid(tripId) })]);
+  await Promise.all([
+    TripComment.deleteMany({ tripId: oid(tripId) }),
+    TripInvite.deleteMany({ tripId: oid(tripId) }),
+    PendingTripMember.deleteMany({ tripId: oid(tripId) }),
+  ]);
 }

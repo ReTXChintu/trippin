@@ -110,14 +110,13 @@ export function InvitePage() {
           </Link>
         ) : (
           <Text fontSize="13px" color="fg.muted">
-            Already have an account?{" "}
             <Link
               as={RouterLink}
               to={`/login?callbackUrl=${encodeURIComponent(here)}`}
               fontWeight={600}
               color="accent.text"
             >
-              Log in
+              Sign in
             </Link>
           </Text>
         )}

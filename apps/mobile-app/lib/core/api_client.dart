@@ -7,10 +7,20 @@ class TokenStorage {
   TokenStorage([FlutterSecureStorage? storage]) : _storage = storage ?? const FlutterSecureStorage();
   final FlutterSecureStorage _storage;
   static const _key = 'access_token';
+  static const _idTokenKey = 'id_token';
 
+  /// Trippin's own token, sent with every API request.
   Future<String?> read() => _storage.read(key: _key);
   Future<void> write(String token) => _storage.write(key: _key, value: token);
-  Future<void> clear() => _storage.delete(key: _key);
+
+  /// The identity server's ID token from the last sign-in — only used to end that session on sign-out.
+  Future<String?> readIdToken() => _storage.read(key: _idTokenKey);
+  Future<void> writeIdToken(String token) => _storage.write(key: _idTokenKey, value: token);
+
+  Future<void> clear() async {
+    await _storage.delete(key: _key);
+    await _storage.delete(key: _idTokenKey);
+  }
 }
 
 class ApiException implements Exception {

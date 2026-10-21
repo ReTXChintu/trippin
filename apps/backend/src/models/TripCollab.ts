@@ -28,6 +28,35 @@ const TripInviteSchema = new Schema<ITripInviteDocument>(
 export const TripInvite: Model<ITripInviteDocument> =
   mongoose.models.TripInvite ?? mongoose.model<ITripInviteDocument>("TripInvite", TripInviteSchema);
 
+/**
+ * Someone added by email who has no Trippin account yet (they may exist only in the identity
+ * server). Claimed — turned into trip membership — when they first sign in with that verified email.
+ */
+export interface IPendingTripMemberDocument extends Document {
+  tripId: mongoose.Types.ObjectId;
+  /** Lower-cased. */
+  email: string;
+  role: "editor" | "viewer";
+  invitedBy: mongoose.Types.ObjectId;
+  createdAt: Date;
+}
+
+const PendingTripMemberSchema = new Schema<IPendingTripMemberDocument>(
+  {
+    tripId: { type: Schema.Types.ObjectId, ref: "Trip", required: true },
+    email: { type: String, required: true, lowercase: true, trim: true, index: true },
+    role: { type: String, enum: ["editor", "viewer"], default: "editor" },
+    invitedBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
+  },
+  { timestamps: true },
+);
+
+PendingTripMemberSchema.index({ tripId: 1, email: 1 }, { unique: true });
+
+export const PendingTripMember: Model<IPendingTripMemberDocument> =
+  mongoose.models.PendingTripMember ??
+  mongoose.model<IPendingTripMemberDocument>("PendingTripMember", PendingTripMemberSchema);
+
 export const COMMENT_TARGETS = ["trip", "stop", "place"] as const;
 export type CommentTarget = (typeof COMMENT_TARGETS)[number];
 

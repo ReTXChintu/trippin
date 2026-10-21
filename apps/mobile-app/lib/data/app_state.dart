@@ -4,6 +4,7 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/api_client.dart';
+import '../core/identity.dart';
 import 'models.dart';
 import 'offline_store.dart';
 import 'reminders.dart';
@@ -12,6 +13,7 @@ import 'tile_service.dart';
 final storeProvider = Provider((_) => OfflineStore());
 final tokensProvider = Provider((_) => TokenStorage());
 final apiProvider = Provider((ref) => ApiClient(ref.watch(tokensProvider)));
+final identityProvider = Provider<IdentityClient>((_) => AppAuthIdentityClient());
 final tilesProvider = Provider((_) => TileService());
 final remindersProvider = Provider((_) => Reminders());
 
@@ -66,13 +68,17 @@ class SessionNotifier extends StateNotifier<Session> {
     }
   }
 
-  Future<void> signIn(String email, String password) async {
-    final api = ref.read(apiProvider);
-    final data = await api.post('/auth/login', body: {'email': email.trim(), 'password': password});
+  /// Signs in on the identity server's page (in the browser), then trades its ID token for
+  /// Trippin's own access token. Throws [SignInCancelled] if the person backs out.
+  Future<void> signIn() async {
+    final idToken = await ref.read(identityProvider).signIn();
+    final data = await ref.read(apiProvider).post('/auth/oidc/mobile', body: {'idToken': idToken});
     final token = data['accessToken'] as String?;
     final user = (data['user'] as Map?)?.cast<String, dynamic>();
     if (token == null || user == null) throw ApiException('Sign-in failed. Try again.');
-    await ref.read(tokensProvider).write(token);
+    final tokens = ref.read(tokensProvider);
+    await tokens.write(token);
+    await tokens.writeIdToken(idToken);
     await ref.read(storeProvider).setCachedUser(user);
     state = Session(user: user, loading: false);
   }
@@ -82,8 +88,16 @@ class SessionNotifier extends StateNotifier<Session> {
     if (state.user != null) state = Session(user: state.user, loading: false, needsSignIn: true);
   }
 
+  /// Signs out of the identity server too when it can (it may open a browser page briefly), then
+  /// clears everything on the phone either way.
   Future<void> signOut() async {
-    await ref.read(tokensProvider).clear();
+    final tokens = ref.read(tokensProvider);
+    try {
+      await ref.read(identityProvider).signOut(idTokenHint: await tokens.readIdToken());
+    } catch (_) {
+      // Offline, or the server said no — the phone is signed out regardless.
+    }
+    await tokens.clear();
     await ref.read(remindersProvider).cancelAll();
     await ref.read(tilesProvider).clear().catchError((_) {});
     await ref.read(storeProvider).clearAll();

@@ -1,18 +1,13 @@
 import { Router } from "express";
-import {
-  login,
-  register,
-  forgotPasswordHandler,
-  resetPasswordHandler,
-  logout,
-} from "@/modules/auth/controllers/auth.controller";
+import { logout, oidcCallback, oidcMobile, oidcStart } from "@/modules/auth/controllers/auth.controller";
 
+// Sign-in is single sign-on only, through the shared identity server (Trippin, SpendLog, InFrame).
 const router = Router();
 
-router.post("/login", login);
-router.post("/register", register);
-router.post("/forgot-password", forgotPasswordHandler);
-router.post("/reset-password", resetPasswordHandler);
+router.get("/oidc/start", oidcStart);
+router.get("/oidc/callback", oidcCallback);
+router.post("/oidc/mobile", oidcMobile);
 router.post("/logout", logout);
+router.get("/logout", logout);
 
 export default router;

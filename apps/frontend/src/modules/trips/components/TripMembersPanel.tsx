@@ -17,10 +17,11 @@ import {
   useToast,
 } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
-import { LuCopy, LuLink, LuMail, LuPencil, LuRefreshCw, LuTrash2 } from "react-icons/lu";
+import { LuCopy, LuLink, LuMail, LuPencil, LuRefreshCw, LuTrash2, LuX } from "react-icons/lu";
 import {
   useAddTripMember,
   useInviteLink,
+  useRemovePendingTripMember,
   useRemoveTripMember,
   useSetMemberRole,
   useTripMembersQuery,
@@ -126,19 +127,21 @@ export function TripMembersPanel({ trip, currentUserId }: TripMembersPanelProps)
   const toast = useToast();
   const { data } = useTripMembersQuery(trip.id);
   const members = data?.members ?? [];
+  const pending = data?.pending ?? [];
   const [email, setEmail] = useState("");
   const addMember = useAddTripMember(trip.id);
   const removeMember = useRemoveTripMember(trip.id);
+  const removePending = useRemovePendingTripMember(trip.id);
   const setRole = useSetMemberRole(trip.id);
   const [busyId, setBusyId] = useState<string | null>(null);
   const myRole = getTripRole(trip, currentUserId);
   const isOwner = myRole === "owner";
 
-  const run = async (id: string, fn: () => Promise<unknown>, success: string) => {
+  const run = async <T,>(id: string, fn: () => Promise<T>, success: string | ((result: T) => string)) => {
     setBusyId(id);
     try {
-      await fn();
-      toast({ title: success, status: "success", duration: 2000 });
+      const result = await fn();
+      toast({ title: typeof success === "function" ? success(result) : success, status: "success", duration: 3000 });
     } catch (err) {
       toast({ title: getApiErrorMessage(err), status: "error", duration: 5000 });
     } finally {
@@ -148,7 +151,10 @@ export function TripMembersPanel({ trip, currentUserId }: TripMembersPanelProps)
 
   const handleAdd = async () => {
     if (!email.trim()) return;
-    await run("add", () => addMember.mutateAsync(email.trim()), "Member added");
+    const to = email.trim();
+    await run("add", () => addMember.mutateAsync(to), (r) =>
+      r.invited ? `Invite sent to ${to} — they join when they first sign in` : "Member added",
+    );
     setEmail("");
   };
 
@@ -215,6 +221,44 @@ export function TripMembersPanel({ trip, currentUserId }: TripMembersPanelProps)
             )}
           </Flex>
         ))}
+        {pending.map((invite) => (
+          <Flex key={invite.email} align="center" gap="10px">
+            <Flex
+              w="30px"
+              h="30px"
+              borderRadius="full"
+              borderWidth="1px"
+              borderStyle="dashed"
+              borderColor="fg.muted"
+              color="fg.muted"
+              align="center"
+              justify="center"
+              flexShrink={0}
+              aria-hidden
+            >
+              <LuMail size={14} />
+            </Flex>
+            <Box flex={1} minW={0}>
+              <Text fontWeight={600} noOfLines={1}>
+                {invite.email}
+              </Text>
+              <Text fontSize="12px" color="fg.muted" noOfLines={1}>
+                Invited — joins when they first sign in
+              </Text>
+            </Box>
+            <Pill tone="neutral">Invited</Pill>
+            {myRole !== "viewer" && (
+              <IconButton
+                aria-label={`Withdraw the invite to ${invite.email}`}
+                title="Withdraw invite"
+                icon={<LuX size={18} />}
+                variant="ghost"
+                isLoading={busyId === invite.email && removePending.isPending}
+                onClick={() => void run(invite.email, () => removePending.mutateAsync(invite.email), "Invite withdrawn")}
+              />
+            )}
+          </Flex>
+        ))}
         <Text fontSize="12px" color="fg.muted">
           Editors change the plan. Viewers see everything and can vote and comment. Only the owner changes roles or removes members.
         </Text>
@@ -228,7 +272,7 @@ export function TripMembersPanel({ trip, currentUserId }: TripMembersPanelProps)
             <InviteLinkBox trip={trip} />
             <Flex gap={2} align="flex-end">
               <FormControl>
-                <FormLabel>Invite by email (someone who already has an account)</FormLabel>
+                <FormLabel>Invite by email — they join as an editor when they sign in</FormLabel>
                 <InputGroup>
                   <InputLeftElement pointerEvents="none" color="fg.muted">
                     <LuMail size={16} />

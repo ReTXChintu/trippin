@@ -126,6 +126,14 @@ export function useAddTripMember(tripId: string) {
   });
 }
 
+export function useRemovePendingTripMember(tripId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (email: string) => tripsApi.removePendingTripMember(tripId, email),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["trips", tripId, "members"] }),
+  });
+}
+
 export function useRemoveTripMember(tripId: string) {
   const queryClient = useQueryClient();
   return useMutation({

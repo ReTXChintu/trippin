@@ -1,25 +1,13 @@
-import { Box, Flex, FormControl, FormErrorMessage, FormLabel, Heading, Link, Stack, Text } from "@chakra-ui/react";
+import { Box, Flex, Heading, Link, Stack, Text } from "@chakra-ui/react";
 import type { ReactNode } from "react";
 import { FiMap } from "react-icons/fi";
-import { Link as RouterLink, useNavigate } from "react-router-dom";
-import { callbackQuery, isInviteCallback, useCallbackUrl } from "./auth-callback";
+import { Link as RouterLink } from "react-router-dom";
+import { isInviteCallback, useCallbackUrl } from "./auth-callback";
 import { BrandLogo } from "@/components/brand/BrandLogo";
-import { Banner, PhotoFallback, Segmented } from "@/components/ui";
+import { Banner, PhotoFallback } from "@/components/ui";
 
-/** Logo, the "you were invited" note, title and the Log in / Create account switch. */
-export function AuthIntro({
-  title,
-  subtitle,
-  mode,
-  notice,
-}: {
-  title: string;
-  subtitle: string;
-  /** Shows the Log in / Create account switch on those two screens. */
-  mode?: "login" | "register";
-  notice?: ReactNode;
-}) {
-  const navigate = useNavigate();
+/** Logo, the "you were invited" note and the title. */
+export function AuthIntro({ title, subtitle, notice }: { title: string; subtitle: string; notice?: ReactNode }) {
   const callbackUrl = useCallbackUrl();
   const invited = isInviteCallback(callbackUrl);
 
@@ -35,9 +23,7 @@ export function AuthIntro({
           <Box minW={0}>
             <Text fontWeight={600}>You&rsquo;ve been invited to a trip</Text>
             <Text fontSize="12px" color="accent.text">
-              {mode === "register"
-                ? "Create an account, then log in to join — you’ll come straight back."
-                : "Log in or create an account to join — you’ll come straight back."}
+              Sign in to join — you’ll come straight back.
             </Text>
           </Box>
         </Flex>
@@ -53,18 +39,6 @@ export function AuthIntro({
           {subtitle}
         </Text>
       </Box>
-
-      {mode && (
-        <Segmented
-          alignSelf="flex-start"
-          value={mode}
-          options={[
-            { value: "login", label: "Log in" },
-            { value: "register", label: "Create account" },
-          ]}
-          onChange={(v) => navigate(`/${v}${callbackQuery(callbackUrl)}`)}
-        />
-      )}
     </Stack>
   );
 }
@@ -76,29 +50,3 @@ export function AuthNotice({ tone, children }: { tone: "success" | "danger" | "a
     </Banner>
   );
 }
-
-/** Label + input + error, with the label row able to carry a link (Forgot password?). */
-export function AuthField({
-  label,
-  error,
-  labelAction,
-  children,
-}: {
-  label: string;
-  error?: string;
-  labelAction?: ReactNode;
-  children: ReactNode;
-}) {
-  return (
-    <FormControl isInvalid={!!error}>
-      <Flex justify="space-between" align="baseline">
-        <FormLabel>{label}</FormLabel>
-        {labelAction}
-      </Flex>
-      {children}
-      <FormErrorMessage>{error}</FormErrorMessage>
-    </FormControl>
-  );
-}
-
-

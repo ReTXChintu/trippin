@@ -7,7 +7,7 @@ interface AuthPageWrapperProps {
   children: React.ReactNode;
 }
 
-/** Log in, sign up, forgot and reset password: the form on the left, a drawn map on the right. */
+/** The sign-in page: the button on the left, a drawn map on the right. */
 export function AuthPageWrapper({ children }: AuthPageWrapperProps) {
   return (
     <Flex minH="100vh" bg="bg.canvas">

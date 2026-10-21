@@ -1,85 +1,62 @@
-import { Button, Link, Stack, Text } from "@chakra-ui/react";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Link as RouterLink, useNavigate, useSearchParams } from "react-router-dom";
-import { useState } from "react";
-import { useForm } from "react-hook-form";
-import { FiArrowRight, FiMail } from "react-icons/fi";
-import { LuKeyRound } from "react-icons/lu";
-import { loginSchema, type LoginInput } from "@/modules/auth/validators/auth.validator";
-import { useLogin } from "@/modules/auth/hooks/useAuth";
-import { getApiErrorMessage } from "@/lib/api";
-import { IconInput } from "@/components/ui/app";
-import { AuthField, AuthIntro, AuthNotice } from "./AuthIntro";
-import { authLinkProps, callbackQuery, isInviteCallback, useCallbackUrl } from "./auth-callback";
+import { Button, Stack, Text } from "@chakra-ui/react";
+import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
+import { FiLogIn } from "react-icons/fi";
+import { signInUrl } from "@/modules/auth/api/auth.api";
+import { AuthIntro, AuthNotice } from "./AuthIntro";
+import { isInviteCallback, useCallbackUrl } from "./auth-callback";
+
+/** Why the sign-in round trip came back without a session (`?error=` from the backend). */
+const SIGN_IN_ERRORS: Record<string, string> = {
+  cancelled: "Sign-in was cancelled.",
+  expired: "The sign-in took too long. Please try again.",
+  state: "That sign-in couldn’t be verified. Please try again.",
+  nonce: "That sign-in couldn’t be verified. Please try again.",
+  email_unverified: "A Trippin account already uses this email. Verify your email address in your account, then sign in again.",
+  account_conflict: "This email belongs to a Trippin account that’s linked to a different sign-in.",
+  missing_email: "Your account has no email address, and Trippin needs one.",
+  unavailable: "The sign-in service can’t be reached right now. Try again in a moment.",
+  not_configured: "Sign-in isn’t set up on this server yet.",
+};
 
 export function LoginForm() {
-  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const callback = useCallbackUrl();
-  const callbackUrl = callback ?? "/dashboard";
   const invited = isInviteCallback(callback);
-  const [error, setError] = useState<string | null>(null);
-  const login = useLogin();
+  const [leaving, setLeaving] = useState(false);
+  const errorCode = searchParams.get("error");
+  const error = errorCode ? (SIGN_IN_ERRORS[errorCode] ?? "Sign-in failed. Please try again.") : null;
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<LoginInput>({
-    resolver: zodResolver(loginSchema),
-  });
-
-  const onSubmit = async (data: LoginInput) => {
-    setError(null);
-    try {
-      await login.mutateAsync(data);
-      navigate(callbackUrl);
-    } catch (err) {
-      setError(getApiErrorMessage(err, "Invalid email or password"));
-    }
-  };
-
-  const notice = error ? (
-    <AuthNotice tone="danger">{error}</AuthNotice>
-  ) : searchParams.get("registered") ? (
-    <AuthNotice tone="success">Account created — log in to continue.</AuthNotice>
-  ) : searchParams.get("reset") ? (
-    <AuthNotice tone="success">Password updated — log in with your new password.</AuthNotice>
-  ) : null;
+  // Coming back with the browser's Back button restores this page as it was — spinner and all.
+  useEffect(() => {
+    const reset = () => setLeaving(false);
+    window.addEventListener("pageshow", reset);
+    return () => window.removeEventListener("pageshow", reset);
+  }, []);
 
   return (
     <Stack spacing="20px">
-      <AuthIntro title="Welcome back" subtitle="Log in to continue planning." mode="login" notice={notice} />
+      <AuthIntro
+        title="Welcome to Trippin"
+        subtitle="One account for Trippin, SpendLog and InFrame."
+        notice={error ? <AuthNotice tone="danger">{error}</AuthNotice> : null}
+      />
 
-      <form onSubmit={handleSubmit(onSubmit)} noValidate>
-        <Stack spacing="20px">
-          <AuthField label="Email" error={errors.email?.message}>
-            <IconInput icon={FiMail} type="email" autoComplete="email" placeholder="you@example.com" {...register("email")} />
-          </AuthField>
-
-          <AuthField
-            label="Password"
-            error={errors.password?.message}
-            labelAction={
-              <Link as={RouterLink} to="/forgot-password" fontSize="12px" {...authLinkProps}>
-                Forgot password?
-              </Link>
-            }
-          >
-            <IconInput icon={LuKeyRound} type="password" autoComplete="current-password" placeholder="Your password" {...register("password")} />
-          </AuthField>
-
-          <Button type="submit" size="xl" w="full" leftIcon={<FiArrowRight />} isLoading={login.isPending}>
-            {invited ? "Log in and join trip" : "Log in"}
-          </Button>
-        </Stack>
-      </form>
+      <Button
+        as="a"
+        href={signInUrl(callback)}
+        size="xl"
+        w="full"
+        leftIcon={<FiLogIn />}
+        isLoading={leaving}
+        loadingText="Signing in…"
+        onClick={() => setLeaving(true)}
+      >
+        {invited ? "Sign in and join the trip" : "Sign in with your account"}
+      </Button>
 
       <Text fontSize="12px" color="fg.muted">
-        New here?{" "}
-        <Link as={RouterLink} to={`/register${callbackQuery(callback)}`} {...authLinkProps}>
-          Create an account
-        </Link>
+        New here? The same button creates your account — you’ll come straight back to Trippin.
       </Text>
     </Stack>
   );

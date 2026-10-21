@@ -73,7 +73,11 @@ export function Navbar({ title, onToggleSidebar }: NavbarProps) {
   const logout = useLogout();
 
   const handleLogout = () => {
-    logout.mutate(undefined, { onSettled: () => navigate("/login") });
+    logout.mutate(undefined, {
+      // Sign out of the shared account too, when the identity server offers it.
+      onSuccess: ({ endSessionUrl }) => (endSessionUrl ? window.location.assign(endSessionUrl) : navigate("/login")),
+      onError: () => navigate("/login"),
+    });
   };
 
   return (

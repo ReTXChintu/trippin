@@ -68,6 +68,25 @@ export async function sendTripMemberAddedEmail(params: {
   return sendEmail(params.toEmail, subject, html, text);
 }
 
+/** To someone added by email who has no Trippin account yet: signing in is all it takes. */
+export async function sendTripInviteEmail(params: {
+  toEmail: string;
+  tripTitle: string;
+  tripId: string;
+  addedByName: string;
+}): Promise<SendEmailResult> {
+  const tripUrl = `${appBaseUrl()}/trips/${params.tripId}`;
+  const subject = `${params.addedByName} invited you to "${params.tripTitle}"`;
+  const html = `
+    <p>Hi,</p>
+    <p><strong>${params.addedByName}</strong> invited you to plan the trip <strong>${params.tripTitle}</strong> on Trippin.</p>
+    <p><a href="${tripUrl}">Open the trip</a> and sign in with your account (the same one you use for Trippin, SpendLog and InFrame) using <strong>${params.toEmail}</strong> — you'll be added as soon as you do.</p>
+  `;
+  const text = `${params.addedByName} invited you to "${params.tripTitle}" on Trippin. Sign in as ${params.toEmail} to join: ${tripUrl}`;
+
+  return sendEmail(params.toEmail, subject, html, text);
+}
+
 export async function sendTripMemberLeftEmail(params: {
   toEmail: string;
   toName: string;
