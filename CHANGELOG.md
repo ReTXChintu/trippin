@@ -1,5 +1,7 @@
 # Changelog
 
+## [0.2.6](https://github-personal/ReTXChintu/trippin/compare/v0.2.5...v0.2.6) (2026-10-21)
+
 ## [0.2.5](https://github-personal/ReTXChintu/trippin/compare/v0.2.4...v0.2.5) (2026-10-21)
 
 
