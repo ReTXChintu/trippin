@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -12,11 +14,17 @@ import '../../shared/widgets.dart';
 /// the trip itself never waits on it.
 final tripLinksProvider = AsyncNotifierProvider.autoDispose.family<TripLinksNotifier, TripLinks, String>(TripLinksNotifier.new);
 
+/// How often the screen asks again while a link is still being set up.
+const linkPollEvery = Duration(seconds: 4);
+
 class TripLinksNotifier extends AutoDisposeFamilyAsyncNotifier<TripLinks, String> {
+  Timer? _poll;
+
   @override
   Future<TripLinks> build(String arg) async {
+    ref.onDispose(() => _poll?.cancel());
     try {
-      return TripLinks.fromJson(await ref.read(apiProvider).get('/trips/$arg/links'));
+      return _watch(await _fetch());
     } on ApiException catch (e) {
       if (e.unauthorized) ref.read(sessionProvider.notifier).markSignedOut();
       rethrow;
@@ -26,7 +34,32 @@ class TripLinksNotifier extends AutoDisposeFamilyAsyncNotifier<TripLinks, String
   /// Owner only. Switching off unlinks: nothing in SpendLog or InFrame is deleted.
   Future<void> setEnabled(String app, bool on) async {
     final data = await ref.read(apiProvider).patch('/trips/$arg/links', body: {app: on});
-    state = AsyncData(TripLinks.fromJson(data));
+    state = AsyncData(_watch(TripLinks.fromJson(data)));
+  }
+
+  Future<TripLinks> _fetch() async => TripLinks.fromJson(await ref.read(apiProvider).get('/trips/$arg/links'));
+
+  /// A link the server is still setting up is delivered by its outbox within seconds, but the
+  /// answer we hold says "pending" — so ask again shortly, keeping what's on screen, until every
+  /// link is settled.
+  TripLinks _watch(TripLinks view) {
+    _poll?.cancel();
+    _poll = null;
+    if (view.apps.any((app) => app.enabled && app.status == 'pending')) {
+      _poll = Timer(linkPollEvery, _refresh);
+    }
+    return view;
+  }
+
+  Future<void> _refresh() async {
+    _poll = null;
+    try {
+      state = AsyncData(_watch(await _fetch()));
+    } catch (_) {
+      // Offline for a moment: keep what's shown and try again.
+      final current = state.valueOrNull;
+      if (current != null) _watch(current);
+    }
   }
 }
 

@@ -1,6 +1,7 @@
 // The trip screen's "Connected apps" section — SpendLog and InFrame — with the API faked:
 // the owner's link switches, the summary cards, the promo cards and the error states.
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:itinerary_planner/core/api_client.dart';
@@ -38,6 +39,26 @@ class _Links extends TripLinksNotifier {
     apps[app] = {...(apps[app] as Map<String, dynamic>), 'enabled': on, 'status': on ? 'pending' : 'unlinked'};
     view = {...view, 'apps': apps};
     state = AsyncData(TripLinks.fromJson(view));
+  }
+}
+
+/// The real notifier's API: GET answers [views] in turn (the last one repeats); PATCH answers [patched].
+class _Api extends ApiClient {
+  _Api(this.views, {required this.patched}) : super(TokenStorage());
+  final List<Map<String, dynamic>> views;
+  final Map<String, dynamic> patched;
+  int gets = 0;
+
+  @override
+  Future<Map<String, dynamic>> get(String path, {Map<String, dynamic>? query}) async {
+    expect(path, '/trips/t1/links');
+    return views[gets++ < views.length - 1 ? gets - 1 : views.length - 1];
+  }
+
+  @override
+  Future<Map<String, dynamic>> patch(String path, {Object? body}) async {
+    expect(body, {'inframe': true});
+    return patched;
   }
 }
 
@@ -142,6 +163,54 @@ void main() {
     expect(links.apps.last.hasAccount, isNull);
     expect(formatMinor(1234550, 'INR'), '₹12,345.50');
     expect(formatMinor(10000000, 'INR'), '₹1,00,000');
+  });
+
+  testWidgets('a link still being set up is asked about again until it is linked', (tester) async {
+    dotenv.testLoad(fileInput: 'API_BASE_URL=http://example.test/api/v1');
+    tester.view.physicalSize = const Size(1400, 3000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    final off = _view(spendlog: _app('spendlog'), inframe: _app('inframe'));
+    final pending = _view(spendlog: _app('spendlog'), inframe: _app('inframe', enabled: true, status: 'pending'));
+    final linked = _view(spendlog: _app('spendlog'), inframe: _app('inframe', enabled: true, status: 'linked', summary: _frameSummary));
+    // GET: nothing linked; after the switch, still pending once, then linked.
+    final api = _Api([off, pending, linked], patched: pending);
+    await tester.pumpWidget(ProviderScope(
+      overrides: [storeProvider.overrideWithValue(_Store()), apiProvider.overrideWithValue(api)],
+      child: MaterialApp(
+        theme: buildTheme(Brightness.light),
+        home: Scaffold(body: ListView(padding: const EdgeInsets.all(16), children: const [ConnectedAppsSection(tripId: 't1')])),
+      ),
+    ));
+    await tester.pumpAndSettle();
+    expect(api.gets, 1);
+
+    // Step the clock by hand: settling would run the "Linking…" toast's own seconds through the poll.
+    Future<void> frames() async {
+      await tester.pump(const Duration(milliseconds: 50));
+      await tester.pump(const Duration(milliseconds: 50));
+    }
+
+    await tester.tap(find.byKey(const ValueKey('link-inframe')));
+    await frames();
+    expect(find.textContaining('Setting up the InFrame event'), findsOneWidget);
+    expect(api.gets, 1, reason: 'the switch’s own answer is shown first');
+
+    // One poll later: still pending, so it asks again; the next poll finds it linked and stops.
+    await tester.pump(linkPollEvery);
+    await frames();
+    expect(api.gets, 2);
+    expect(find.textContaining('Setting up the InFrame event'), findsOneWidget);
+
+    await tester.pump(linkPollEvery);
+    await frames();
+    expect(api.gets, 3);
+    expect(find.text('Linked'), findsOneWidget);
+    expect(find.textContaining('Setting up the InFrame event'), findsNothing);
+
+    await tester.pump(linkPollEvery * 3);
+    expect(api.gets, 3, reason: 'nothing pending: no more polling');
+    await tester.pumpAndSettle();
   });
 
   testWidgets('the owner gets both link switches, with what each does', (tester) async {
