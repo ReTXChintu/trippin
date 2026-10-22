@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import { connectDB } from "@/lib/mongodb";
 import { Notification, type INotificationDocument, type NotificationType } from "@/models/Notification";
+import { pushToUser } from "@/modules/notifications/services/push.service";
 
 export interface NotificationDTO {
   id: string;
@@ -42,7 +43,14 @@ export class NotificationRepository {
       message: data.message,
       tripId: data.tripId ? new mongoose.Types.ObjectId(data.tripId) : undefined,
     });
-    return toDTO(doc);
+    const dto = toDTO(doc);
+    // Every in-app notification is also a push to their phones; it never holds up what caused it.
+    void pushToUser(dto.userId, {
+      title: dto.title,
+      body: dto.message,
+      data: { type: dto.type, notificationId: dto.id, ...(dto.tripId ? { tripId: dto.tripId, link: `/trip/${dto.tripId}` } : {}) },
+    });
+    return dto;
   }
 
   static async findForUser(userId: string, limit = 20): Promise<NotificationDTO[]> {

@@ -22,6 +22,7 @@ import { deleteExpensesForTrip } from "@/modules/trips/services/trip-budget.serv
 import { deleteCollabDataForTrip } from "@/modules/trips/services/trip-collab.service";
 import { emitTripEventFor, suiteFieldsChanged } from "@/modules/suite/services/suite-events.service";
 import { applyLinkToggles, parseLinkToggles } from "@/modules/suite/services/suite-links.service";
+import { notifyTripChanged } from "@/modules/trips/services/trip-change-notify.service";
 
 export type ActionResult<T = void> =
   | { success: true; data?: T; message?: string }
@@ -129,6 +130,7 @@ export async function updateTripFromRaw(
   const trip = await TripRepository.update(tripId, userId, toTripPayload(parsed.data));
   if (!trip) return { success: false, error: "Trip not found" };
   if (existing && suiteFieldsChanged(existing, trip)) await emitTripEventFor(trip, "trip.updated");
+  if (existing) await notifyTripChanged(existing, trip, userId);
 
   return { success: true, data: { trip }, message: "Trip updated successfully" };
 }
@@ -194,6 +196,7 @@ export async function removeLegFromTrip(
 
   if (!updated) return { success: false, error: "Failed to update trip" };
   if (suiteFieldsChanged(trip, updated)) await emitTripEventFor(updated, "trip.updated");
+  await notifyTripChanged(trip, updated, userId);
 
   const existingItinerary = await ItineraryRepository.findByTripId(tripId);
   if (existingItinerary) {

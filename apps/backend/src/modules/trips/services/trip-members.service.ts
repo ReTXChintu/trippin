@@ -127,6 +127,14 @@ export async function addTripMember(
     tripId: trip.id,
     addedByName: adder?.name ?? "Someone",
   });
+  // In the app (and so on their phone) as well as by email.
+  await NotificationRepository.create({
+    userId: targetId,
+    type: "trip_member_added",
+    title: `${adder?.name ?? "Someone"} added you to ${trip.title}`,
+    message: "Open the trip to see the plan.",
+    tripId: trip.id,
+  });
 
   const members = await buildMemberList(updated.userId, updated.memberIds, updated.viewerIds);
 
