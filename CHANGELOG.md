@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.7](https://github-personal/ReTXChintu/trippin/compare/v0.2.6...v0.2.7) (2026-10-22)
+
+
+### Bug Fixes
+
+* **mobile:** signing in no longer closes straight away ([3775a6e](https://github-personal/ReTXChintu/trippin/commit/3775a6e1f419d77cbe79b26df786adc831a6b640))
+
 ## [0.2.6](https://github-personal/ReTXChintu/trippin/compare/v0.2.5...v0.2.6) (2026-10-21)
 
 ## [0.2.5](https://github-personal/ReTXChintu/trippin/compare/v0.2.4...v0.2.5) (2026-10-21)
