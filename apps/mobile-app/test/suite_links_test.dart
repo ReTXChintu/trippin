@@ -1,5 +1,6 @@
 // Opening SpendLog/InFrame pages in those apps, and the router's handling of links into Trippin.
 import 'package:flutter_test/flutter_test.dart';
+import 'package:itinerary_planner/core/push_service.dart';
 import 'package:itinerary_planner/core/suite_links.dart';
 import 'package:itinerary_planner/router.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -83,6 +84,16 @@ void main() {
       expect(afterLogin(Uri.parse('/login?from=https%3A%2F%2Fevil.example')), '/');
       expect(afterLogin(Uri.parse('/login?from=%2F%2Fevil.example')), '/');
       expect(afterLogin(Uri.parse('/login?from=%2Flogin')), '/');
+    });
+  });
+
+  group('notification taps', () {
+    test('open the link the server sent, else the trip, else nothing', () {
+      expect(pushLink({'type': 'trip_changed', 'tripId': 't1', 'link': '/trip/t1'}), '/trip/t1');
+      expect(pushLink({'type': 'trip_comment', 'tripId': 't 2'}), '/trip/t%202');
+      expect(pushLink({'type': 'x'}), isNull);
+      expect(pushLink({'link': 'https://evil.example/trip/1'}), isNull);
+      expect(pushLink({'link': '//evil.example'}), isNull);
     });
   });
 }

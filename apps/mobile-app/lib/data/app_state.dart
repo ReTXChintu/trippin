@@ -9,6 +9,7 @@ import 'models.dart';
 import 'offline_store.dart';
 import 'reminders.dart';
 import 'tile_service.dart';
+import '../core/push_service.dart';
 
 final storeProvider = Provider((_) => OfflineStore());
 final tokensProvider = Provider((_) => TokenStorage());
@@ -92,6 +93,8 @@ class SessionNotifier extends StateNotifier<Session> {
   /// clears everything on the phone either way.
   Future<void> signOut() async {
     final tokens = ref.read(tokensProvider);
+    // While still signed in: this phone stops getting the account's notifications.
+    await ref.read(pushProvider).unregister();
     try {
       await ref.read(identityProvider).signOut(idTokenHint: await tokens.readIdToken());
     } catch (_) {

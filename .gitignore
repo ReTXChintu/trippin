@@ -39,3 +39,6 @@ node_modules/.tmp/
 apps/frontend/public/trippin.apk
 apps/frontend/public/trippin-apk.json
 /release/
+
+# Firebase config for push notifications: from the Firebase console, never committed.
+apps/mobile-app/android/app/google-services.json

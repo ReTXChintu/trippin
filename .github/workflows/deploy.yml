@@ -86,6 +86,22 @@ jobs:
             if [ -n "$MAP_TILE_URL" ]; then echo "MAP_TILE_URL=$MAP_TILE_URL"; fi
           } > .env
 
+      - name: Firebase config (push notifications)
+        # Optional: the GOOGLE_SERVICES_JSON secret (the file from the Firebase console, as JSON or
+        # base64). Without it the APK builds and runs without push notifications.
+        env:
+          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+        run: |
+          if [ -z "$GOOGLE_SERVICES_JSON" ]; then
+            echo "No GOOGLE_SERVICES_JSON secret: building without push notifications."
+            exit 0
+          fi
+          case "$GOOGLE_SERVICES_JSON" in
+            \{*) printf '%s' "$GOOGLE_SERVICES_JSON" > android/app/google-services.json ;;
+            *) printf '%s' "$GOOGLE_SERVICES_JSON" | base64 -d > android/app/google-services.json ;;
+          esac
+          echo "google-services.json written ($(wc -c < android/app/google-services.json) bytes)."
+
       - name: Signing key
         # Every release must be signed with the same key, or phones refuse to install the update.
         env:

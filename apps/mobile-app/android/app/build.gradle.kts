@@ -13,6 +13,13 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+// Push notifications need the Firebase config (google-services.json, never committed: CI writes it
+// from the GOOGLE_SERVICES_JSON secret). The plugin fails the build without it, so it is only applied
+// when the file is there - until then the app builds and simply has no push.
+if (file("google-services.json").exists()) {
+    apply(plugin = "com.google.gms.google-services")
+}
+
 android {
     namespace = "com.itineraryplanner.itinerary_planner"
     compileSdk = flutter.compileSdkVersion
