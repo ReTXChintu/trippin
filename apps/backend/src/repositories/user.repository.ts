@@ -61,7 +61,7 @@ export class UserRepository {
     data: Partial<Pick<IUserDocument, "name" | "avatar" | "preferences">>,
   ): Promise<IUserDocument | null> {
     await connectDB();
-    return User.findByIdAndUpdate(id, data, { new: true });
+    return User.findByIdAndUpdate(id, data, { returnDocument: "after" });
   }
 
   static async updateApiKeys(
@@ -70,13 +70,13 @@ export class UserRepository {
   ): Promise<IUserDocument | null> {
     await connectDB();
     const update = Object.fromEntries(Object.entries(data).filter(([, value]) => value !== undefined));
-    return User.findByIdAndUpdate(id, update, { new: true });
+    return User.findByIdAndUpdate(id, update, { returnDocument: "after" });
   }
 
   static async updateAiSettings(id: string, data: UpdateAiSettingsInput): Promise<IUserDocument | null> {
     await connectDB();
     const update = Object.fromEntries(Object.entries(data).filter(([, value]) => value !== undefined));
-    return User.findByIdAndUpdate(id, update, { new: true });
+    return User.findByIdAndUpdate(id, update, { returnDocument: "after" });
   }
 
   static async clearGeminiKey(id: string): Promise<IUserDocument | null> {
@@ -84,7 +84,7 @@ export class UserRepository {
     return User.findByIdAndUpdate(
       id,
       { $unset: { geminiApiKeyEncrypted: "", geminiApiKeyLast4: "" } },
-      { new: true },
+      { returnDocument: "after" },
     );
   }
 
@@ -94,7 +94,7 @@ export class UserRepository {
       id,
       // $unset, not `field: undefined` — Mongoose drops undefined values, making that a no-op.
       { $unset: { openaiApiKeyEncrypted: "", openaiApiKeyLast4: "" } },
-      { new: true },
+      { returnDocument: "after" },
     );
   }
 
@@ -103,7 +103,7 @@ export class UserRepository {
     return User.findByIdAndUpdate(
       id,
       { $unset: { googleMapsApiKeyEncrypted: "", googleMapsApiKeyLast4: "" } },
-      { new: true },
+      { returnDocument: "after" },
     );
   }
 }

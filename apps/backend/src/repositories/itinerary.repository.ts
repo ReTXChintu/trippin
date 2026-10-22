@@ -68,7 +68,7 @@ export class ItineraryRepository {
           userId: tripObjectId(ownerId),
         },
       },
-      { upsert: true, new: true, lean: true },
+      { upsert: true, returnDocument: "after", lean: true },
     );
 
     return toItineraryDTO(doc as unknown as IItineraryDocument);
@@ -131,7 +131,7 @@ export class ItineraryRepository {
     const doc = await ItineraryModel.findOneAndUpdate(
       { tripId: tripObjectId(tripId) },
       updatePayload,
-      { upsert: true, new: true, lean: true },
+      { upsert: true, returnDocument: "after", lean: true },
     );
 
     return toItineraryDTO(doc as unknown as IItineraryDocument);
@@ -177,7 +177,7 @@ export class ItineraryRepository {
 
     const doc = await ItineraryModel.findOneAndUpdate({ tripId: tripObjectId(tripId) }, update, {
       upsert: true,
-      new: true,
+      returnDocument: "after",
       lean: true,
       projection: WITHOUT_SNAPSHOT_BODIES,
     });
@@ -224,7 +224,7 @@ export class ItineraryRepository {
     const doc = await ItineraryModel.findOneAndUpdate(
       { tripId: tripObjectId(tripId) },
       { $setOnInsert: { tripId: tripObjectId(tripId), userId: tripObjectId(ownerId) } },
-      { upsert: true, new: true },
+      { upsert: true, returnDocument: "after" },
     );
 
     doc.aiCandidates = [
@@ -267,7 +267,7 @@ export class ItineraryRepository {
           summaryGeneratedAt: new Date(),
         },
       },
-      { new: true, lean: true },
+      { returnDocument: "after", lean: true },
     );
 
     if (!doc) return null;

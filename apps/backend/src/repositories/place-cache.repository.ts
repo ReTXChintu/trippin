@@ -94,7 +94,7 @@ export class PlaceCacheRepository {
         fetchedAt: new Date(),
         expiresAt: cacheExpiryDate(),
       },
-      { upsert: true, new: true },
+      { upsert: true, returnDocument: "after" },
     );
 
     return toPlainPlace(plain);
@@ -118,7 +118,7 @@ export class PlaceCacheRepository {
         richFetchedAt: new Date(),
         expiresAt: cacheExpiryDate(),
       },
-      { upsert: true, new: true },
+      { upsert: true, returnDocument: "after" },
     );
 
     return hydratePlaceDetailPhotos(plain);

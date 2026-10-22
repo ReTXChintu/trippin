@@ -45,7 +45,7 @@ export class RouteCacheRepository {
         fetchedAt: new Date(),
         expiresAt: cacheExpiryDate(),
       },
-      { upsert: true, new: true },
+      { upsert: true, returnDocument: "after" },
     );
   }
 }

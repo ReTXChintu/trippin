@@ -176,7 +176,7 @@ export class TripRepository {
       role === "viewer"
         ? { $addToSet: { viewerIds: toObjectId(memberUserId) } }
         : { $pull: { viewerIds: toObjectId(memberUserId) } };
-    const doc = await TripModel.findOneAndUpdate({ _id: tripId, memberIds: toObjectId(memberUserId) }, update, { new: true }).lean();
+    const doc = await TripModel.findOneAndUpdate({ _id: tripId, memberIds: toObjectId(memberUserId) }, update, { returnDocument: "after" }).lean();
     return doc ? toTripDTO(doc as unknown as ITripDocument) : null;
   }
 
@@ -195,7 +195,7 @@ export class TripRepository {
     await connectDB();
     if (!mongoose.isValidObjectId(tripId)) return null;
     const update = voted ? { $addToSet: { votes: { placeId, userId } } } : { $pull: { votes: { placeId, userId } } };
-    const doc = await TripModel.findOneAndUpdate({ _id: tripId, ...userAccessFilter(userId) }, update, { new: true }).lean();
+    const doc = await TripModel.findOneAndUpdate({ _id: tripId, ...userAccessFilter(userId) }, update, { returnDocument: "after" }).lean();
     return doc ? toTripDTO(doc as unknown as ITripDocument) : null;
   }
 
@@ -211,7 +211,7 @@ export class TripRepository {
     const doc = await TripModel.findOneAndUpdate(
       { _id: tripId, ...userAccessFilter(userId) },
       { $push: { [field]: item } },
-      { new: true, runValidators: true },
+      { returnDocument: "after", runValidators: true },
     ).lean();
     return doc ? toTripDTO(doc as unknown as ITripDocument) : null;
   }
@@ -228,7 +228,7 @@ export class TripRepository {
     const doc = await TripModel.findOneAndUpdate(
       { _id: tripId, ...userAccessFilter(userId), [`${field}.id`]: item.id },
       { $set: { [`${field}.$`]: item } },
-      { new: true, runValidators: true },
+      { returnDocument: "after", runValidators: true },
     ).lean();
     return doc ? toTripDTO(doc as unknown as ITripDocument) : null;
   }
@@ -239,7 +239,7 @@ export class TripRepository {
     const doc = await TripModel.findOneAndUpdate(
       { _id: tripId, ...userAccessFilter(userId) },
       { $pull: { [field]: { id: itemId } } },
-      { new: true },
+      { returnDocument: "after" },
     ).lean();
     return doc ? toTripDTO(doc as unknown as ITripDocument) : null;
   }
@@ -253,7 +253,7 @@ export class TripRepository {
     const doc = await TripModel.findOneAndUpdate(
       { _id: id, ...userAccessFilter(userId) },
       data,
-      { new: true },
+      { returnDocument: "after" },
     ).lean();
     return doc ? toTripDTO(doc as unknown as ITripDocument) : null;
   }
@@ -337,7 +337,7 @@ export class TripRepository {
     const doc = await TripModel.findOneAndUpdate(
       { _id: tripId, ...userAccessFilter(requesterId) },
       { $addToSet: { memberIds: toObjectId(memberUserId) } },
-      { new: true },
+      { returnDocument: "after" },
     ).lean();
 
     return doc ? toTripDTO(doc as unknown as ITripDocument) : null;
@@ -360,7 +360,7 @@ export class TripRepository {
     const doc = await TripModel.findOneAndUpdate(
       { _id: tripId, ...userAccessFilter(requesterId) },
       { $pull: { memberIds: toObjectId(memberUserId), viewerIds: toObjectId(memberUserId) } },
-      { new: true },
+      { returnDocument: "after" },
     ).lean();
 
     return doc ? toTripDTO(doc as unknown as ITripDocument) : null;

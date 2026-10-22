@@ -128,7 +128,7 @@ export async function acceptInvite(userId: string, token: string): Promise<Resul
 
   const update: Record<string, unknown> = { $addToSet: { memberIds: oid(userId) } };
   if (invite.role === "viewer") (update.$addToSet as Record<string, unknown>).viewerIds = oid(userId);
-  const trip = await TripModel.findByIdAndUpdate(tripId, update, { new: true }).select({ title: 1, userId: 1 }).lean();
+  const trip = await TripModel.findByIdAndUpdate(tripId, update, { returnDocument: "after" }).select({ title: 1, userId: 1 }).lean();
   if (!trip) return { success: false, error: "This trip no longer exists" };
   await TripInvite.updateOne({ _id: invite._id }, { $inc: { uses: 1 } });
   await emitTripEvent(tripId, "trip.members_changed");

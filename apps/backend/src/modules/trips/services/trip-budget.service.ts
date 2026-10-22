@@ -108,7 +108,7 @@ export async function updateExpense(userId: string, tripId: string, expenseId: s
   const doc = await Expense.findOneAndUpdate(
     { _id: oid(expenseId), tripId: oid(tripId) },
     { ...built.data, paidBy: oid(built.data.paidBy), splitWith: built.data.splitWith.map(oid) },
-    { new: true },
+    { returnDocument: "after" },
   );
   if (!doc) return { success: false, error: "Expense not found" };
   return { success: true, data: { expense: toDTO(doc) }, message: "Expense updated" };
