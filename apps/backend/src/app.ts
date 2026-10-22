@@ -9,14 +9,17 @@ import placesRoutes from "@/modules/places/routes/places.routes";
 import shareRoutes from "@/modules/share/routes/share.routes";
 import dashboardRoutes from "@/modules/dashboard/routes/dashboard.routes";
 import invitesRoutes from "@/modules/trips/routes/invites.routes";
+import { requestLog } from "@/middleware/request-log.middleware";
 
 /** The API, without listening — index.ts serves it, the tests mount it on a random port. */
 export function createApp() {
   const app = express();
 
-  // A reverse proxy on the same machine (nginx, Caddy) terminating TLS: trust its X-Forwarded-Proto
-  // so req.secure is right and the session cookie gets the `secure` flag.
+  // A reverse proxy on the same machine (nginx, Caddy, our own frontend server) terminating TLS:
+  // trust its X-Forwarded-* so req.secure and req.ip are right and the session cookie gets the
+  // `secure` flag.
   app.set("trust proxy", "loopback");
+  app.use(requestLog());
 
   app.use(
     cors({
