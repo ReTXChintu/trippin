@@ -2,9 +2,9 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/api_client.dart';
+import '../../core/suite_links.dart';
 import '../../core/theme.dart';
 import '../../data/app_state.dart';
 import '../../data/suite_models.dart';
@@ -98,9 +98,9 @@ bool _recentlyDismissed(Map<String, DateTime> dismissed, String app) {
   return at != null && DateTime.now().difference(at) < promoQuietPeriod;
 }
 
+/// A linked group/event opens in SpendLog/InFrame when installed; anything else in the browser.
 Future<void> _open(BuildContext context, String url) async {
-  final uri = Uri.tryParse(url);
-  final ok = uri != null && await launchUrl(uri, mode: LaunchMode.externalApplication).catchError((_) => false);
+  final ok = await openSuiteUrl(url);
   if (!ok && context.mounted) toast(context, 'Couldn’t open $url');
 }
 

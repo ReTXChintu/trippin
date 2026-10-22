@@ -1,0 +1,10 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.itineraryplanner.itinerary_planner",
+      "sha256_cert_fingerprints": ["B3:0A:F1:6E:FD:16:60:A4:58:0C:91:84:17:E6:FA:B7:18:6D:1C:C6:92:65:B2:CB:79:5A:7B:7B:15:55:B8:9E"]
+    }
+  }
+]

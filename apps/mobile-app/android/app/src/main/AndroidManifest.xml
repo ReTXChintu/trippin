@@ -33,6 +33,24 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
+            <!-- Trippin's own trip pages open here (App Links: verified against
+                 https://trip-pin.duckdns.org/.well-known/assetlinks.json). go_router
+                 maps /trips/:id to the trip screen. -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" android:host="trip-pin.duckdns.org" android:pathPrefix="/trips/" />
+            </intent-filter>
+            <!-- trippin://app/trip/<id>: what SpendLog and InFrame open, which works
+                 whether or not the App Link above is verified. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="trippin" android:host="app" />
+            </intent-filter>
+            <meta-data android:name="flutter_deeplinking_enabled" android:value="true" />
         </activity>
         <receiver android:exported="false" android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver" />
         <receiver android:exported="false" android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationBootReceiver">
@@ -58,6 +76,9 @@
         <intent><action android:name="android.intent.action.DIAL" /><data android:scheme="tel" /></intent>
         <intent><action android:name="android.intent.action.VIEW" /><data android:scheme="geo" /></intent>
         <intent><action android:name="android.intent.action.VIEW" /><data android:scheme="https" /></intent>
+        <!-- Opening a linked SpendLog group / InFrame event in that app. -->
+        <intent><action android:name="android.intent.action.VIEW" /><data android:scheme="spendlog" /></intent>
+        <intent><action android:name="android.intent.action.VIEW" /><data android:scheme="inframe" /></intent>
         <intent>
             <action android:name="android.intent.action.PROCESS_TEXT"/>
             <data android:mimeType="text/plain"/>
