@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.2.10](https://github-personal/ReTXChintu/trippin/compare/v0.2.9...v0.2.10) (2026-10-22)
+
+
+### Features
+
+* **backend:** push notifications to phones ([56121bf](https://github-personal/ReTXChintu/trippin/commit/56121bf935f66a42a46dcd22b85dad34477620c8))
+* link a trip to an existing SpendLog group or InFrame event ([fa52806](https://github-personal/ReTXChintu/trippin/commit/fa528060312cdfe1d5438f0b0ed653a7802e7c37))
+* **mobile:** linked groups and events open in SpendLog and InFrame ([9602ac8](https://github-personal/ReTXChintu/trippin/commit/9602ac893eb13972f021cc22fbc76ea8f6fa743a))
+* **mobile:** push notifications ([b85fc49](https://github-personal/ReTXChintu/trippin/commit/b85fc4988f8406fcbe7925e3306e5b7bc55f6ff1))
+
 ## [0.2.9](https://github-personal/ReTXChintu/trippin/compare/v0.2.8...v0.2.9) (2026-10-22)
 
 
