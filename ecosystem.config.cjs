@@ -49,6 +49,9 @@ module.exports = {
         // HTTPS when a certificate is configured (the backend reads these from .env itself).
         SSL_CERT_PATH: env.SSL_CERT_PATH || "",
         SSL_KEY_PATH: env.SSL_KEY_PATH || "",
+        // /api/* on the frontend port goes to the backend on this machine (same scheme as it serves).
+        BACKEND_INTERNAL_URL:
+          env.BACKEND_INTERNAL_URL || `${env.SSL_CERT_PATH && env.SSL_KEY_PATH ? "https" : "http"}://127.0.0.1:${backendPort}`,
       },
     },
   ],

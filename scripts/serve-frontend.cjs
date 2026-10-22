@@ -8,11 +8,14 @@
  *   - .apk: the Android package type + "download as trippin.apk".
  *   - trippin-apk.json and index.html: never cached, so a new release shows up at once.
  *   - /assets/*: cached forever (Vite content-hashes the names).
+ *   - /api/*: forwarded as-is to the backend (BACKEND_INTERNAL_URL), so the web app and its API
+ *     are one origin on one port — what a single HTTPS port (443 through Traefik) needs.
  *
  * Config from the environment (set by ecosystem.config.cjs from the root .env):
  *   FRONTEND_PORT   port to listen on (required)
  *   FRONTEND_DIST   folder to serve (default apps/frontend/dist)
  *   SSL_CERT_PATH / SSL_KEY_PATH   serve HTTPS with this certificate (optional; plain HTTP without)
+ *   BACKEND_INTERNAL_URL   where /api/* goes, e.g. https://127.0.0.1:50008 (optional; /api is 404 without)
  */
 const fs = require("node:fs");
 const http = require("node:http");
@@ -80,7 +83,58 @@ function serveFile(req, res, filePath, urlPath) {
   fs.createReadStream(filePath).pipe(res);
 }
 
+// The backend, for /api/*. Only a loopback target skips certificate checks: the backend serves
+// the public hostname's certificate, which 127.0.0.1 can never match.
+const BACKEND = (() => {
+  const raw = (process.env.BACKEND_INTERNAL_URL || "").trim();
+  if (!raw) return null;
+  const url = new URL(raw);
+  const loopback = ["127.0.0.1", "localhost", "[::1]", "::1"].includes(url.hostname);
+  return { url, lib: url.protocol === "https:" ? https : http, loopback };
+})();
+const UPSTREAM_TIMEOUT_MS = 95_000; // a little past the backend's slowest calls (clients give up at 90s)
+
+function isApiPath(urlPath) {
+  return urlPath === "/api" || urlPath.startsWith("/api/");
+}
+
+/** Streams the request to the backend and its answer back, headers and status untouched. */
+function proxy(req, res) {
+  const target = new URL(req.url, BACKEND.url);
+  const headers = { ...req.headers };
+  const peer = req.socket.remoteAddress || "";
+  headers["x-forwarded-for"] = headers["x-forwarded-for"] ? `${headers["x-forwarded-for"]}, ${peer}` : peer;
+  headers["x-forwarded-proto"] = tls ? "https" : "http";
+  headers["x-forwarded-host"] = req.headers.host || "";
+
+  const upstream = BACKEND.lib.request(
+    target,
+    { method: req.method, headers, rejectUnauthorized: !BACKEND.loopback, timeout: UPSTREAM_TIMEOUT_MS },
+    (answer) => {
+      res.writeHead(answer.statusCode || 502, answer.headers);
+      answer.pipe(res);
+    },
+  );
+  upstream.on("timeout", () => upstream.destroy(new Error("timeout")));
+  upstream.on("error", (err) => {
+    if (res.headersSent) return res.destroy();
+    send(res, err.message === "timeout" ? 504 : 502, "Trippin's API isn't reachable right now. Try again in a moment.");
+  });
+  req.pipe(upstream);
+}
+
 function handler(req, res) {
+  let apiPath;
+  try {
+    apiPath = new URL(req.url, "http://localhost").pathname;
+  } catch {
+    return send(res, 400, "Bad request");
+  }
+  if (isApiPath(apiPath)) {
+    if (!BACKEND) return send(res, 404, "Not found");
+    return proxy(req, res);
+  }
+
   if (req.method !== "GET" && req.method !== "HEAD") return send(res, 405, "Method not allowed", { Allow: "GET, HEAD" });
 
   let urlPath;
