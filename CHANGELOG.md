@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.2.9](https://github-personal/ReTXChintu/trippin/compare/v0.2.8...v0.2.9) (2026-10-22)
+
+
+### Bug Fixes
+
+* **backend:** updates return the new document without the deprecated `new` option ([4ce4d3c](https://github-personal/ReTXChintu/trippin/commit/4ce4d3c0ce29c4112e88216bb643bab84504ebd1))
+
+
+### Features
+
+* **backend:** one log line per answered request ([c8ffade](https://github-personal/ReTXChintu/trippin/commit/c8ffade24cb1616bd06404a470a46498ab792811))
+* **frontend-server:** /api/* forwarded to the backend ([e1015b1](https://github-personal/ReTXChintu/trippin/commit/e1015b1039a8f14c40d907cfa20144da654405b8))
+
 ## [0.2.8](https://github-personal/ReTXChintu/trippin/compare/v0.2.7...v0.2.8) (2026-10-22)
 
 
