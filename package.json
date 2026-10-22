@@ -1,7 +1,7 @@
 {
   "name": "itinerary-planner",
   "private": true,
-  "version": "0.2.7",
+  "version": "0.2.8",
   "workspaces": [
     "apps/frontend",
     "apps/backend"

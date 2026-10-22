@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.8](https://github-personal/ReTXChintu/trippin/compare/v0.2.7...v0.2.8) (2026-10-22)
+
+
+### Bug Fixes
+
+* **mobile:** a link being set up no longer spins forever ([58d73ef](https://github-personal/ReTXChintu/trippin/commit/58d73ef1040b06eafbc164be0cad172a7732fbdd))
+
 ## [0.2.7](https://github-personal/ReTXChintu/trippin/compare/v0.2.6...v0.2.7) (2026-10-22)
 
 
