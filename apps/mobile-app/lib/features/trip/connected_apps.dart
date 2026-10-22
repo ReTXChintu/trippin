@@ -9,6 +9,7 @@ import '../../core/theme.dart';
 import '../../data/app_state.dart';
 import '../../data/suite_models.dart';
 import '../../shared/widgets.dart';
+import 'link_picker_sheet.dart';
 
 /// The trip's links to SpendLog and InFrame, with each linked app's live summary. Online only —
 /// the trip itself never waits on it.
@@ -31,10 +32,18 @@ class TripLinksNotifier extends AutoDisposeFamilyAsyncNotifier<TripLinks, String
     }
   }
 
-  /// Owner only. Switching off unlinks: nothing in SpendLog or InFrame is deleted.
-  Future<void> setEnabled(String app, bool on) async {
-    final data = await ref.read(apiProvider).patch('/trips/$arg/links', body: {app: on});
+  /// Owner only. Switching off unlinks: nothing in SpendLog or InFrame is deleted. [attachTo] links
+  /// one of the owner's existing groups/events there instead of a new one.
+  Future<void> setEnabled(String app, bool on, {String? attachTo}) async {
+    final toggle = on && attachTo != null ? {'on': true, 'attachTo': attachTo} : on;
+    final data = await ref.read(apiProvider).patch('/trips/$arg/links', body: {app: toggle});
     state = AsyncData(_watch(TripLinks.fromJson(data)));
+  }
+
+  /// Owner only: their existing groups (SpendLog) / events (InFrame) this trip could link to.
+  Future<List<LinkCandidate>> candidates(String app) async {
+    final data = await ref.read(apiProvider).get('/trips/$arg/links/$app/candidates');
+    return (data['candidates'] as List? ?? const []).whereType<Map>().map((e) => LinkCandidate.fromJson(e.cast<String, dynamic>())).toList();
   }
 
   Future<TripLinks> _fetch() async => TripLinks.fromJson(await ref.read(apiProvider).get('/trips/$arg/links'));
@@ -186,8 +195,29 @@ class _LinkTogglesState extends ConsumerState<_LinkToggles> {
       if (ok != true) return;
     }
     setState(() => _pending[app.app] = on);
+    final links = ref.read(tripLinksProvider(widget.tripId).notifier);
+    String? attachTo;
+    if (on) {
+      // Offer the owner's existing groups/events first, so a trip doesn't get a duplicate.
+      List<LinkCandidate> found = const [];
+      var couldNotCheck = false;
+      try {
+        found = await links.candidates(app.app);
+      } catch (_) {
+        couldNotCheck = true;
+      }
+      if (!mounted) return;
+      if (found.isNotEmpty || couldNotCheck) {
+        final choice = await showLinkPicker(context, app: app.app, appName: app.name, candidates: found, couldNotCheck: couldNotCheck);
+        if (choice == null) {
+          if (mounted) setState(() => _pending.remove(app.app));
+          return;
+        }
+        attachTo = choice.attachTo;
+      }
+    }
     try {
-      await ref.read(tripLinksProvider(widget.tripId).notifier).setEnabled(app.app, on);
+      await links.setEnabled(app.app, on, attachTo: attachTo);
       if (mounted) toast(context, on ? 'Linking to ${app.name}…' : 'Unlinked from ${app.name} — nothing was deleted there');
     } catch (e) {
       if (mounted) toast(context, e.toString());

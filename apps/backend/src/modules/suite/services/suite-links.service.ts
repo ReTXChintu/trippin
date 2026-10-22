@@ -3,11 +3,12 @@ import { connectDB } from "@/lib/mongodb";
 import { Trip as TripModel } from "@/models/Trip";
 import { suiteAppConfig, suitePromo, type SuiteAppConfig } from "@/modules/suite/config/suite-apps";
 import { signSuiteRequest } from "@/modules/suite/lib/suite-signature";
-import { enqueueSuiteEvents } from "@/modules/suite/services/suite-events.service";
+import { enqueueSuiteEvents, suiteTripFields } from "@/modules/suite/services/suite-events.service";
 import {
   SUITE_APPS,
   type ConnectedAppView,
   type SuiteApp,
+  type SuiteCandidatesView,
   type SuiteLink,
   type SuiteSummary,
   type TripLinksView,
@@ -150,11 +151,21 @@ export async function getTripLinks(tripId: string, userId: string): Promise<Resu
 // Switching apps on and off
 // ---------------------------------------------------------------------------------------------
 
+/** `true` / `false`, or `{ on: true, attachTo: "<id>" }` to link one of the owner's existing items there. */
+const toggleSchema = z.union([
+  z.boolean(),
+  z.object({ on: z.boolean(), attachTo: z.string().trim().min(1).max(200).optional() }).strict(),
+]);
+
 export const linkTogglesSchema = z
-  .object({ spendlog: z.boolean().optional(), inframe: z.boolean().optional() })
+  .object({ spendlog: toggleSchema.optional(), inframe: toggleSchema.optional() })
   .refine((v) => v.spendlog !== undefined || v.inframe !== undefined, "Say which app to switch: spendlog and/or inframe");
 
-export type LinkToggles = z.infer<typeof linkTogglesSchema>;
+export type LinkToggle = z.infer<typeof toggleSchema>;
+export type LinkToggles = Partial<Record<SuiteApp, LinkToggle>>;
+
+const wanted = (toggle: LinkToggle | undefined) => (typeof toggle === "object" ? toggle.on : toggle);
+const attachOf = (toggle: LinkToggle | undefined) => (typeof toggle === "object" && toggle.on ? toggle.attachTo : undefined);
 
 /** Lenient read of `links` from the trip-creation body (JSON or form fields). */
 export function parseLinkToggles(raw: unknown): LinkToggles {
@@ -183,7 +194,7 @@ export async function applyLinkToggles(trip: Trip, toggles: LinkToggles): Promis
   const unset: Record<string, 1> = {};
 
   for (const app of SUITE_APPS) {
-    const want = toggles[app];
+    const want = wanted(toggles[app]);
     const current = trip.links?.[app];
     // "Try again": switching on an app that's on but in error re-sends trip.linked.
     const retry = want === true && !!current?.enabled && current.status === "error";
@@ -205,10 +216,50 @@ export async function applyLinkToggles(trip: Trip, toggles: LinkToggles): Promis
   await TripModel.updateOne({ _id: trip.id }, { $set: set, $unset: unset });
   const updated = (await TripRepository.findByIdForOwner(trip.id, trip.userId)) ?? trip;
 
-  if (turnOn.length > 0) await enqueueSuiteEvents(updated, "trip.linked", turnOn);
+  // An app linked to an existing item there gets its own trip.linked naming it.
+  const attach = Object.fromEntries(turnOn.map((app) => [app, attachOf(toggles[app])]).filter(([, id]) => id));
+  if (turnOn.length > 0) await enqueueSuiteEvents(updated, "trip.linked", turnOn, attach);
   if (turnOff.length > 0) await enqueueSuiteEvents(updated, "trip.unlinked", turnOff);
   for (const app of [...turnOn, ...turnOff]) clearSuiteCache(`summary:${app}:${trip.id}:`);
   return updated;
+}
+
+const candidateSchema = z.object({
+  id: z.string().min(1),
+  name: z.string(),
+  startDate: z.string().nullable(),
+  endDate: z.string().nullable(),
+  archived: z.boolean().default(false),
+  linkedHere: z.boolean().default(false),
+  counts: z.record(z.string(), z.number()).default({}),
+  impact: z.object({ added: z.number(), leaving: z.number() }).nullable().default(null),
+});
+
+/**
+ * GET /trips/:id/links/:app/candidates — the owner's existing groups (SpendLog) or events
+ * (InFrame) this trip could be linked to instead of a new one, best match first, each with what
+ * linking it would change. Asked fresh every time: it's what the owner is about to confirm.
+ */
+export async function getLinkCandidates(tripId: string, userId: string, app: string): Promise<Result<SuiteCandidatesView>> {
+  if (!(SUITE_APPS as readonly string[]).includes(app)) return { success: false, error: "Unknown app" };
+  const role = await TripRepository.getRole(tripId, userId);
+  if (!role) return { success: false, error: "Trip not found" };
+  if (role !== "owner") return { success: false, error: "Only the trip owner can connect SpendLog or InFrame" };
+  const trip = await TripRepository.findByIdForOwner(tripId, userId);
+  const owner = await UserRepository.findById(userId);
+  if (!trip) return { success: false, error: "Trip not found" };
+
+  const suiteApp = app as SuiteApp;
+  const config = suiteAppConfig(suiteApp);
+  // No identity yet: nothing of theirs can be found there.
+  if (!owner?.oidcSub) return { success: true, data: { app: suiteApp, candidates: [] } };
+  const fields = suiteTripFields(trip);
+  const query = new URLSearchParams({ sub: owner.oidcSub, tripId: trip.id, title: fields.title, start: fields.startDate, end: fields.endDate });
+  const res = await signedGet(config, `/integrations/trippin/candidates?${query}`);
+  if (res.status !== 200) return { success: false, error: `Couldn't reach ${config.name}` };
+  const parsed = z.array(candidateSchema).safeParse(res.body.candidates);
+  if (!parsed.success) return { success: false, error: `Couldn't reach ${config.name}` };
+  return { success: true, data: { app: suiteApp, candidates: parsed.data } };
 }
 
 export async function setTripLinks(tripId: string, userId: string, raw: unknown): Promise<Result<TripLinksView>> {

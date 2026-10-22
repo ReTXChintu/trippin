@@ -198,3 +198,76 @@ class TripLinks {
   final bool canManage;
   final List<ConnectedApp> apps;
 }
+
+/// One of the owner's existing SpendLog groups / InFrame events this trip could be linked to
+/// instead of a new one (GET /trips/:id/links/:app/candidates).
+class LinkCandidate {
+  LinkCandidate({
+    required this.id,
+    required this.name,
+    this.startDate,
+    this.endDate,
+    this.archived = false,
+    this.linkedHere = false,
+    this.counts = const {},
+    this.added,
+    this.leaving,
+  });
+
+  factory LinkCandidate.fromJson(Json j) {
+    final impact = _map(j['impact']);
+    return LinkCandidate(
+      id: _str(j['id']) ?? '',
+      name: _str(j['name']) ?? 'Untitled',
+      startDate: DateTime.tryParse(_str(j['startDate']) ?? ''),
+      endDate: DateTime.tryParse(_str(j['endDate']) ?? ''),
+      archived: j['archived'] == true,
+      linkedHere: j['linkedHere'] == true,
+      counts: {for (final e in (_map(j['counts']) ?? const {}).entries) e.key: _int(e.value)},
+      added: impact == null ? null : _int(impact['added']),
+      leaving: impact == null ? null : _int(impact['leaving']),
+    );
+  }
+
+  final String id, name;
+  final DateTime? startDate, endDate;
+  final bool archived;
+
+  /// It held this trip's link before (or holds it now).
+  final bool linkedHere;
+  final Map<String, int> counts;
+
+  /// SpendLog only: payments in the trip's dates that linking adds, and automatic ones outside them that leave.
+  final int? added, leaving;
+
+  /// "16–20 Oct 2026", "From 3 Dec", or null when undated.
+  String? get dates {
+    final s = startDate, e = endDate;
+    if (s == null) return null;
+    if (e == null) return 'From ${DateFormat('d MMM y').format(s)}';
+    if (s.year == e.year && s.month == e.month) return '${s.day}–${DateFormat('d MMM y').format(e)}';
+    if (s.year == e.year) return '${DateFormat('d MMM').format(s)} – ${DateFormat('d MMM y').format(e)}';
+    return '${DateFormat('d MMM y').format(s)} – ${DateFormat('d MMM y').format(e)}';
+  }
+
+  /// "12 payments · 3 people" / "240 photos · 8 videos · 5 people".
+  String countsLine(String app) {
+    String n(int v, String one, String many) => '$v ${v == 1 ? one : many}';
+    final people = n(counts['members'] ?? 0, 'person', 'people');
+    if (app == 'spendlog') return '${n(counts['transactions'] ?? 0, 'payment', 'payments')} · $people';
+    final videos = counts['videos'] ?? 0;
+    return [n(counts['photos'] ?? 0, 'photo', 'photos'), if (videos > 0) n(videos, 'video', 'videos'), people].join(' · ');
+  }
+
+  /// What linking it changes, or null when nothing moves.
+  String? get impactLine {
+    if (added == null && leaving == null) return null;
+    final a = added ?? 0, l = leaving ?? 0;
+    if (a == 0 && l == 0) return 'No payments move: everything in it already falls in this trip’s dates.';
+    final parts = [
+      if (a > 0) '$a ${a == 1 ? 'payment' : 'payments'} in this trip’s dates will be added',
+      if (l > 0) '$l ${l == 1 ? 'payment' : 'payments'} outside them will leave the group',
+    ];
+    return '${parts.join('; ')}.';
+  }
+}

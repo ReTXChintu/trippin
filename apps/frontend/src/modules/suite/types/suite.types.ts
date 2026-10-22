@@ -77,7 +77,26 @@ export interface TripLinksView {
   apps: Record<SuiteApp, ConnectedAppView>;
 }
 
+/** `true`/`false`, or `{ on: true, attachTo }` to link one of the owner's existing items there. */
+export type LinkToggle = boolean | { on: boolean; attachTo?: string };
+
 export interface LinkToggles {
-  spendlog?: boolean;
-  inframe?: boolean;
+  spendlog?: LinkToggle;
+  inframe?: LinkToggle;
+}
+
+/** One of the owner's existing SpendLog groups / InFrame events this trip could link to instead of a new one. */
+export interface SuiteCandidate {
+  id: string;
+  name: string;
+  /** YYYY-MM-DD, or null when undated. */
+  startDate: string | null;
+  endDate: string | null;
+  archived: boolean;
+  /** It held this trip's link before (or holds it now). */
+  linkedHere: boolean;
+  /** SpendLog: transactions, members. InFrame: photos, videos, members. */
+  counts: Record<string, number>;
+  /** SpendLog only: payments linking adds, and automatic ones outside the trip's dates that leave. */
+  impact: { added: number; leaving: number } | null;
 }

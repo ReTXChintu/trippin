@@ -41,6 +41,7 @@ router.post("/:id/leave", members.leave);
 // SpendLog / InFrame links for the trip (switching them is owner-only).
 router.get("/:id/links", suiteLinks.get);
 router.patch("/:id/links", suiteLinks.update);
+router.get("/:id/links/:app/candidates", suiteLinks.candidates);
 
 router.get("/:id/members", members.list);
 router.post("/:id/members", members.add);

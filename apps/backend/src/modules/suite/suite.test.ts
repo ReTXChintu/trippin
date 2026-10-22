@@ -43,6 +43,9 @@ interface Stub {
   summaries: Map<string, Record<string, unknown>>;
   summaryHits: number;
   existsHits: number;
+  /** What GET /candidates answers, and the queries it was asked. */
+  candidates: Record<string, unknown>[];
+  candidateQueries: URLSearchParams[];
 }
 
 let verify: typeof import("@/modules/suite/lib/suite-signature").verifySuiteSignature;
@@ -68,6 +71,8 @@ async function startStub(secret: string, app: "spendlog" | "inframe"): Promise<S
     summaries: new Map(),
     summaryHits: 0,
     existsHits: 0,
+    candidates: [],
+    candidateQueries: [],
   };
   stub.server.on("request", async (req, res) => {
     const json = (status: number, body: unknown) => {
@@ -103,6 +108,10 @@ async function startStub(secret: string, app: "spendlog" | "inframe"): Promise<S
       stub.summaryHits += 1;
       const body = stub.summaries.get(summary[1]);
       return body ? json(200, body) : json(404, { linked: false });
+    }
+    if (req.method === "GET" && url.pathname === "/api/integrations/trippin/candidates") {
+      stub.candidateQueries.push(url.searchParams);
+      return json(200, { candidates: stub.candidates });
     }
     const user = url.pathname.match(/^\/api\/integrations\/trippin\/users\/([^/]+)$/);
     if (req.method === "GET" && user) {
@@ -236,6 +245,8 @@ beforeEach(async () => {
     stub.failNext = 0;
     stub.respond = null;
     stub.down = false;
+    stub.candidates = [];
+    stub.candidateQueries = [];
   }
   clearSuiteCache();
 });
@@ -648,6 +659,30 @@ describe("switching apps on and off", () => {
     assert.equal((await queued(trip.id)).length, 0);
   });
 
+  test("{ on, attachTo } links an existing item there: its trip.linked names it; the boolean shape still works", async () => {
+    const owner = await makeUser();
+    const trip = await createTrip(owner);
+
+    const res = await call(owner, "PATCH", `/trips/${trip.id}/links`, { inframe: { on: true, attachTo: "evt-existing" }, spendlog: true });
+    assert.equal(res.status, 200, JSON.stringify(res.body));
+    assert.equal(res.body.data.apps.inframe.status, "pending");
+    await drain();
+    assert.equal(inframe.events.length, 1);
+    assert.equal(inframe.events[0].type, "trip.linked");
+    assert.equal(inframe.events[0].attachTo, "evt-existing");
+    assert.equal(spendlog.events.length, 1);
+    assert.equal(spendlog.events[0].attachTo, undefined, "no choice made: a new one");
+
+    // Off with an attachTo is just off.
+    await call(owner, "PATCH", `/trips/${trip.id}/links`, { inframe: { on: false, attachTo: "ignored" } });
+    await drain();
+    assert.deepEqual(inframe.events.map((e) => [e.type, e.attachTo]), [["trip.linked", "evt-existing"], ["trip.unlinked", undefined]]);
+
+    assert.equal((await call(owner, "PATCH", `/trips/${trip.id}/links`, { inframe: { on: "yes" } })).status, 400);
+    assert.equal((await call(owner, "PATCH", `/trips/${trip.id}/links`, { inframe: { on: true, attachTo: "" } })).status, 400);
+    assert.equal((await call(owner, "PATCH", `/trips/${trip.id}/links`, { inframe: { on: true, extra: 1 } })).status, 400);
+  });
+
   test("an off toggle wins over a link that's still being delivered", async () => {
     const owner = await makeUser();
     const trip = await createTrip(owner, { spendlog: true });
@@ -656,6 +691,58 @@ describe("switching apps on and off", () => {
     const stored = await models.Trip.findById(trip.id).lean();
     assert.equal(stored?.links?.spendlog?.enabled, false);
     assert.equal(stored?.links?.spendlog?.status, "unlinked", "the late trip.linked answer doesn't flip it back");
+  });
+});
+
+describe("existing items to link to", () => {
+  const candidate = {
+    id: "grp-1",
+    name: "Goa (from before)",
+    startDate: "2026-12-19",
+    endDate: "2026-12-26",
+    archived: false,
+    linkedHere: false,
+    counts: { transactions: 12, members: 3 },
+    impact: { added: 3, leaving: 0 },
+  };
+
+  test("asks the app for the owner's items, with the trip's name and dates, and passes them on", async () => {
+    const owner = await makeUser("Asha");
+    const trip = await createTrip(owner);
+    spendlog.candidates = [candidate, { ...candidate, id: "grp-2", impact: undefined, archived: undefined }];
+
+    const res = await call(owner, "GET", `/trips/${trip.id}/links/spendlog/candidates`);
+    assert.equal(res.status, 200, JSON.stringify(res.body));
+    assert.equal(res.body.data.app, "spendlog");
+    assert.deepEqual(res.body.data.candidates[0], candidate);
+    assert.deepEqual(res.body.data.candidates[1].impact, null, "missing fields get defaults");
+    assert.equal(res.body.data.candidates[1].archived, false);
+
+    const q = spendlog.candidateQueries[0];
+    assert.equal(q.get("sub"), owner.sub);
+    assert.equal(q.get("tripId"), trip.id);
+    assert.equal(q.get("title"), "Goa with friends");
+    assert.equal(q.get("start"), "2026-12-20");
+    assert.equal(q.get("end"), "2026-12-26");
+
+    // Never cached: it's what the owner is about to confirm.
+    await call(owner, "GET", `/trips/${trip.id}/links/spendlog/candidates`);
+    assert.equal(spendlog.candidateQueries.length, 2);
+  });
+
+  test("owner only; unknown app refused; an app that can't be reached says so", async () => {
+    const owner = await makeUser();
+    const editor = await makeUser("Editor");
+    const trip = await createTrip(owner);
+    await call(owner, "POST", `/trips/${trip.id}/members`, { email: editor.email });
+
+    assert.equal((await call(editor, "GET", `/trips/${trip.id}/links/inframe/candidates`)).status, 403);
+    assert.equal((await call(owner, "GET", `/trips/${trip.id}/links/maps/candidates`)).status, 400);
+    assert.equal((await call(await makeUser("Stranger"), "GET", `/trips/${trip.id}/links/inframe/candidates`)).status, 404);
+    inframe.down = true;
+    const down = await call(owner, "GET", `/trips/${trip.id}/links/inframe/candidates`);
+    assert.equal(down.status, 502);
+    assert.equal(down.body.error, "Couldn't reach InFrame");
   });
 });
 

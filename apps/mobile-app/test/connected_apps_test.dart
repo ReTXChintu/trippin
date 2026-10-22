@@ -21,10 +21,15 @@ class _Store extends OfflineStore {
 
 /// GET /trips/:id/links answers [view] (or throws [error]); PATCH flips `enabled` like the server.
 class _Links extends TripLinksNotifier {
-  _Links(this.view, {this.error, this.calls});
+  _Links(this.view, {this.error, this.calls, this.found = const [], this.candidatesError});
   Map<String, dynamic> view;
   final Object? error;
   final List<Map<String, bool>>? calls;
+
+  /// What GET …/candidates answers (or throws), and the attachTo each PATCH carried.
+  final List<Map<String, dynamic>> found;
+  final Object? candidatesError;
+  final attached = <String?>[];
 
   @override
   Future<TripLinks> build(String arg) async {
@@ -33,8 +38,15 @@ class _Links extends TripLinksNotifier {
   }
 
   @override
-  Future<void> setEnabled(String app, bool on) async {
+  Future<List<LinkCandidate>> candidates(String app) async {
+    if (candidatesError != null) throw candidatesError!;
+    return found.map(LinkCandidate.fromJson).toList();
+  }
+
+  @override
+  Future<void> setEnabled(String app, bool on, {String? attachTo}) async {
     calls?.add({app: on});
+    attached.add(attachTo);
     final apps = {...(view['apps'] as Map<String, dynamic>)};
     apps[app] = {...(apps[app] as Map<String, dynamic>), 'enabled': on, 'status': on ? 'pending' : 'unlinked'};
     view = {...view, 'apps': apps};
@@ -51,6 +63,7 @@ class _Api extends ApiClient {
 
   @override
   Future<Map<String, dynamic>> get(String path, {Map<String, dynamic>? query}) async {
+    if (path == '/trips/t1/links/inframe/candidates') return {'candidates': <Object>[]};
     expect(path, '/trips/t1/links');
     return views[gets++ < views.length - 1 ? gets - 1 : views.length - 1];
   }
@@ -211,6 +224,119 @@ void main() {
     await tester.pump(linkPollEvery * 3);
     expect(api.gets, 3, reason: 'nothing pending: no more polling');
     await tester.pumpAndSettle();
+  });
+
+  /// After a switch goes on, the link card spins while it's "Setting up": step past the sheet and
+  /// the toast instead of waiting for the spinner to settle.
+  Future<void> settleLink(WidgetTester tester) async {
+    for (var i = 0; i < 10; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    await tester.pump(const Duration(seconds: 5));
+  }
+
+  test('parses a link candidate: dates, counts and what linking changes', () {
+    final group = LinkCandidate.fromJson({
+      'id': 'g1',
+      'name': 'Indore',
+      'startDate': '2026-10-15',
+      'endDate': '2026-10-20',
+      'archived': true,
+      'linkedHere': true,
+      'counts': {'transactions': 61, 'members': 3},
+      'impact': {'added': 3, 'leaving': 0},
+    });
+    expect(group.dates, '15–20 Oct 2026');
+    expect(group.countsLine('spendlog'), '61 payments · 3 people');
+    expect(group.impactLine, '3 payments in this trip’s dates will be added.');
+    expect(group.archived && group.linkedHere, isTrue);
+
+    final event = LinkCandidate.fromJson({'id': 'e1', 'name': 'Goa', 'counts': {'photos': 1, 'videos': 0, 'members': 1}, 'impact': null});
+    expect(event.dates, isNull);
+    expect(event.countsLine('inframe'), '1 photo · 1 person');
+    expect(event.impactLine, isNull);
+    expect(LinkCandidate.fromJson({'id': 'x', 'name': 'X', 'impact': {'added': 0, 'leaving': 2}}).impactLine,
+        '2 payments outside them will leave the group.');
+  });
+
+  final indore = {
+    'id': 'grp-indore',
+    'name': 'Indore',
+    'startDate': '2026-10-15',
+    'endDate': '2026-10-20',
+    'archived': true,
+    'linkedHere': false,
+    'counts': {'transactions': 61, 'members': 3},
+    'impact': {'added': 3, 'leaving': 1},
+  };
+
+  testWidgets('switching on with existing groups asks which to use, and sends the choice', (tester) async {
+    final calls = <Map<String, bool>>[];
+    final links = _Links(_view(spendlog: _app('spendlog'), inframe: _app('inframe')), calls: calls, found: [indore]);
+    await pump(tester, links);
+
+    await tester.tap(find.byKey(const ValueKey('link-spendlog')));
+    await tester.pumpAndSettle();
+    expect(find.text('Link to SpendLog'), findsOneWidget);
+    expect(find.text('Indore'), findsOneWidget);
+    expect(find.text('15–20 Oct 2026'), findsOneWidget);
+    expect(find.text('61 payments · 3 people'), findsOneWidget);
+    expect(find.text('Archived'), findsOneWidget);
+    expect(find.text('Create and link'), findsOneWidget, reason: '"Create new" is the default unless one was linked here before');
+
+    await tester.tap(find.byKey(const ValueKey('candidate-grp-indore')));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('3 payments in this trip’s dates will be added; 1 payment outside them will leave'), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('link-confirm')));
+    await settleLink(tester);
+
+    expect(calls, [
+      {'spendlog': true},
+    ]);
+    expect(links.attached, ['grp-indore']);
+  });
+
+  testWidgets('one linked here before is preselected; cancelling the sheet sends nothing', (tester) async {
+    final calls = <Map<String, bool>>[];
+    final links = _Links(_view(spendlog: _app('spendlog'), inframe: _app('inframe')), calls: calls, found: [
+      {...indore, 'linkedHere': true},
+    ]);
+    await pump(tester, links);
+    await tester.tap(find.byKey(const ValueKey('link-spendlog')));
+    await tester.pumpAndSettle();
+    expect(find.text('Linked to this trip before'), findsOneWidget);
+    expect(find.text('Link this group'), findsOneWidget);
+
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
+    expect(calls, isEmpty);
+    final toggle = tester.widget<SwitchListTile>(find.byKey(const ValueKey('link-spendlog')));
+    expect(toggle.value, isFalse);
+    expect(toggle.onChanged, isNotNull, reason: 'usable again');
+  });
+
+  testWidgets('no existing items: links a new one straight away, as before', (tester) async {
+    final calls = <Map<String, bool>>[];
+    final links = _Links(_view(spendlog: _app('spendlog'), inframe: _app('inframe')), calls: calls);
+    await pump(tester, links);
+    await tester.tap(find.byKey(const ValueKey('link-inframe')));
+    await settleLink(tester);
+    expect(find.text('Link to InFrame'), findsNothing);
+    expect(calls, [
+      {'inframe': true},
+    ]);
+    expect(links.attached, [null]);
+  });
+
+  testWidgets('when the app can’t be checked, the sheet says so and offers only a new one', (tester) async {
+    final links = _Links(_view(spendlog: _app('spendlog'), inframe: _app('inframe')), calls: [], candidatesError: ApiException('down'));
+    await pump(tester, links);
+    await tester.tap(find.byKey(const ValueKey('link-inframe')));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Couldn’t check InFrame for your existing events'), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('link-confirm')));
+    await settleLink(tester);
+    expect(links.attached, [null]);
   });
 
   testWidgets('the owner gets both link switches, with what each does', (tester) async {

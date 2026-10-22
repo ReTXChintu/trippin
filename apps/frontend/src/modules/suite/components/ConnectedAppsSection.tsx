@@ -22,8 +22,10 @@ import { Banner, Overline, Pill, SurfaceCard } from "@/components/ui";
 import { SectionTitle } from "@/components/ui/tabs";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { getApiErrorMessage } from "@/lib/api";
+import * as suiteApi from "@/modules/suite/api/suite.api";
+import { LinkPickerModal } from "@/modules/suite/components/LinkPickerModal";
 import { useSetTripLinks, useTripLinksQuery } from "@/modules/suite/hooks/useTripLinks";
-import type { ConnectedAppView, InframeSummary, SpendlogSummary, SuiteApp, SuitePromo } from "@/modules/suite/types/suite.types";
+import type { ConnectedAppView, InframeSummary, SpendlogSummary, SuiteApp, SuiteCandidate, SuitePromo } from "@/modules/suite/types/suite.types";
 import { dismissPromo, formatMinor, isPromoDismissed } from "@/modules/suite/utils/promo-dismissal";
 
 const APP_ICON = { spendlog: LuWallet, inframe: LuCamera } as const;
@@ -214,10 +216,31 @@ function AppCard({ app, canManage, tripId }: { app: ConnectedAppView; canManage:
     setPromoHidden(true);
   };
 
-  const toggle = async (on: boolean) => {
+  const picker = useDisclosure();
+  const [checking, setChecking] = useState(false);
+  const [found, setFound] = useState<{ candidates: SuiteCandidate[]; couldNotCheck: boolean }>({ candidates: [], couldNotCheck: false });
+
+  // Switching on: offer the owner's existing groups/events first, so a trip doesn't get a duplicate.
+  const switchOn = async () => {
+    setChecking(true);
+    let candidates: SuiteCandidate[] = [];
+    let couldNotCheck = false;
     try {
-      await setLinks.mutateAsync({ [app.app]: on });
+      candidates = await suiteApi.getLinkCandidates(tripId, app.app);
+    } catch {
+      couldNotCheck = true;
+    }
+    setChecking(false);
+    if (candidates.length === 0 && !couldNotCheck) return toggle(true);
+    setFound({ candidates, couldNotCheck });
+    picker.onOpen();
+  };
+
+  const toggle = async (on: boolean, attachTo?: string | null) => {
+    try {
+      await setLinks.mutateAsync({ [app.app]: on && attachTo ? { on: true, attachTo } : on });
       confirmOff.onClose();
+      picker.onClose();
       toast({
         title: on ? `Linking to ${app.name}…` : `Unlinked from ${app.name}`,
         description: on ? undefined : `Nothing was deleted — ${KEPT[app.app]}.`,
@@ -244,13 +267,24 @@ function AppCard({ app, canManage, tripId }: { app: ConnectedAppView; canManage:
         id={`link-${app.app}`}
         flexShrink={0}
         isChecked={app.enabled}
-        isDisabled={setLinks.isPending}
-        onChange={(e) => (e.target.checked ? void toggle(true) : confirmOff.onOpen())}
+        isDisabled={setLinks.isPending || checking}
+        onChange={(e) => (e.target.checked ? void switchOn() : confirmOff.onOpen())}
       />
     </Flex>
   );
 
   const unlinkDialog = (
+    <>
+    <LinkPickerModal
+      isOpen={picker.isOpen}
+      onClose={picker.onClose}
+      onChoose={(attachTo) => void toggle(true, attachTo)}
+      app={app.app}
+      appName={app.name}
+      candidates={found.candidates}
+      couldNotCheck={found.couldNotCheck}
+      isLoading={setLinks.isPending}
+    />
     <ConfirmDialog
       isOpen={confirmOff.isOpen}
       onClose={confirmOff.onClose}
@@ -260,6 +294,7 @@ function AppCard({ app, canManage, tripId }: { app: ConnectedAppView; canManage:
       confirmLabel="Unlink"
       isLoading={setLinks.isPending}
     />
+    </>
   );
 
   // Not on for this trip: the promo for people who don't use the app, otherwise the switch.

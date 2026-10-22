@@ -61,6 +61,32 @@ export interface SuiteEvent {
   type: SuiteEventType;
   occurredAt: string;
   trip: SuiteTripPayload;
+  /** trip.linked only: the owner chose this existing group/event there instead of a new one. */
+  attachTo?: string;
+}
+
+// ---------------------------------------------------------------------------------------------
+// Existing items a trip could be linked to (GET {APP_API_URL}/integrations/trippin/candidates)
+// ---------------------------------------------------------------------------------------------
+
+export interface SuiteCandidate {
+  id: string;
+  name: string;
+  /** YYYY-MM-DD, or null when undated. */
+  startDate: string | null;
+  endDate: string | null;
+  archived: boolean;
+  /** Already holds this trip's link (linked now or before). */
+  linkedHere: boolean;
+  /** SpendLog: transactions, members. InFrame: photos, videos, members. */
+  counts: Record<string, number>;
+  /** SpendLog only: payments that linking would add to / take out of it. Null when nothing moves. */
+  impact: { added: number; leaving: number } | null;
+}
+
+export interface SuiteCandidatesView {
+  app: SuiteApp;
+  candidates: SuiteCandidate[];
 }
 
 // ---------------------------------------------------------------------------------------------

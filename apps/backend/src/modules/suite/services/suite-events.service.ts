@@ -76,14 +76,21 @@ export function enabledSuiteApps(trip: Pick<Trip, "links">): SuiteApp[] {
  * Writes `type` to the outbox for each app — by default the ones enabled on the trip. Snapshot of
  * the trip taken now, so a trip that's about to be deleted can still be unlinked.
  */
-export async function enqueueSuiteEvents(trip: Trip, type: SuiteEventType, apps: SuiteApp[] = enabledSuiteApps(trip)): Promise<SuiteEvent[]> {
+export async function enqueueSuiteEvents(
+  trip: Trip,
+  type: SuiteEventType,
+  apps: SuiteApp[] = enabledSuiteApps(trip),
+  /** trip.linked: per app, the existing item there the owner chose instead of a new one. */
+  attachTo: Partial<Record<SuiteApp, string>> = {},
+): Promise<SuiteEvent[]> {
   if (apps.length === 0) return [];
   const payload = await buildSuiteTripPayload(trip);
   const now = new Date();
-  const events = apps.map((app) => ({
-    app,
-    event: { id: randomUUID(), type, occurredAt: now.toISOString(), trip: payload } satisfies SuiteEvent,
-  }));
+  const events = apps.map((app) => {
+    const event: SuiteEvent = { id: randomUUID(), type, occurredAt: now.toISOString(), trip: payload };
+    if (type === "trip.linked" && attachTo[app]) event.attachTo = attachTo[app];
+    return { app, event };
+  });
   await SuiteOutbox.insertMany(
     events.map(({ app, event }) => ({
       eventId: event.id,

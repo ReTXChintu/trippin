@@ -1,5 +1,5 @@
 import { api } from "@/lib/api";
-import type { LinkToggles, TripLinksView } from "@/modules/suite/types/suite.types";
+import type { LinkToggles, SuiteApp, SuiteCandidate, TripLinksView } from "@/modules/suite/types/suite.types";
 
 /** Link status per app, the live SpendLog / InFrame summaries for the viewer, and promos. */
 export async function getTripLinks(tripId: string): Promise<TripLinksView> {
@@ -11,4 +11,10 @@ export async function getTripLinks(tripId: string): Promise<TripLinksView> {
 export async function setTripLinks(tripId: string, toggles: LinkToggles): Promise<TripLinksView> {
   const res = await api.patch(`/trips/${tripId}/links`, toggles);
   return res.data.data;
+}
+
+/** Owner only: their existing groups (SpendLog) / events (InFrame) this trip could link to instead of a new one. */
+export async function getLinkCandidates(tripId: string, app: SuiteApp): Promise<SuiteCandidate[]> {
+  const res = await api.get(`/trips/${tripId}/links/${app}/candidates`);
+  return res.data.data.candidates;
 }
